@@ -1,0 +1,1 @@
+This serializer relies on unitys garbage collector not moving objects in memory so you will see a lot of code that uses 
