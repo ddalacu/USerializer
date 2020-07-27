@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
@@ -235,7 +236,7 @@ namespace USerialization
 
         public void WriteFloat(float value)
         {
-            _stringWriter.Append(value);
+            _stringWriter.Append(((double)value).ToString("R", CultureInfo.InvariantCulture));
             CheckArraySeparator();
         }
 

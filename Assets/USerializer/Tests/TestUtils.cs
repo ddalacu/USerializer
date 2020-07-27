@@ -15,13 +15,25 @@ namespace Tests
 
             var json = output.GetData();
 
-            var input = new SerializerInput(json);
 
-            uSerializer.Deserialize<T>(input, out var result);
+            uSerializer.TryDeserialize<T>(new SerializerInput(json), out var deserializeResult);
 
             output.Clear();
-            uSerializer.Serialize(output, result);
+            uSerializer.Serialize(output, deserializeResult);
             var json2 = output.GetData();
+
+
+            var ob = default(T);
+            uSerializer.TryPopulateObject(new SerializerInput(json), ref ob);
+
+            output.Clear();
+            uSerializer.Serialize(output, deserializeResult);
+            var json3 = output.GetData();
+
+            Debug.Log(json);
+            Debug.Log(json2);
+            Debug.Log(json3);
+
 
             if (json == json2)
             {
@@ -33,7 +45,7 @@ namespace Tests
                 Debug.Log(json2);
 
                 Debug.Log(JsonUtility.ToJson(value));
-                Debug.Log(JsonUtility.ToJson(result));
+                Debug.Log(JsonUtility.ToJson(deserializeResult));
 
                 Assert.Fail();
             }

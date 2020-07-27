@@ -218,7 +218,7 @@ namespace USerialization
         }
 
 
-        public unsafe bool Deserialize<T>(SerializerInput input, out T result)
+        public unsafe bool TryDeserialize<T>(SerializerInput input, out T result)
         {
             if (TryGetSerializationMethods(typeof(T), out var serializationMethods))
             {
@@ -231,14 +231,24 @@ namespace USerialization
             return false;
         }
 
-        public unsafe void DeserializeObject<T>(SerializerInput input, Type type, ref T result)
+        public bool TryPopulateObject<T>(SerializerInput input, ref T result)
         {
+            return TryPopulateObject(input, typeof(T), ref result);
+        }
+
+        public unsafe bool TryPopulateObject<T>(SerializerInput input, Type type, ref T result)
+        {
+            if (type != result.GetType())
+                throw new Exception("Invalid type passed!");
+
             if (TryGetSerializationMethods(type, out var serializationMethods))
             {
                 serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
+                return true;
             }
-        }
 
+            return false;
+        }
 
         public unsafe bool DeserializeObject(SerializerInput input, object obj)
         {
