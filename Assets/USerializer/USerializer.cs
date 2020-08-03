@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using Object = System.Object;
 
 namespace USerialization
 {
@@ -27,6 +26,7 @@ namespace USerialization
 
     public class USerializer
     {
+        private readonly ISerializationPolicy _serializationPolicy;
 
         private TypeDictionary<TypeData> _datas = new TypeDictionary<TypeData>(1024);
 
@@ -45,8 +45,9 @@ namespace USerialization
 
         private TypeDictionary<SerializationMethods> _methods = new TypeDictionary<SerializationMethods>(1024);
 
-        public USerializer()
+        public USerializer(ISerializationPolicy serializationPolicy)
         {
+            _serializationPolicy = serializationPolicy;
             foreach (var serializationProvider in Providers)
             {
                 serializationProvider.Initialize(this);
@@ -95,16 +96,9 @@ namespace USerialization
             for (int i = 0; i < length; i++)
             {
                 var fieldInfo = allFields[i];
-                if (fieldInfo.IsPrivate)
-                {
-                    if (Attribute.IsDefined(fieldInfo, typeof(SerializeField)) == false)//todo cache typeof
-                        continue;
-                }
-                else
-                {
-                    if (Attribute.IsDefined(fieldInfo, typeof(NonSerializedAttribute)))//todo cache typeof
-                        continue;
-                }
+
+                if (_serializationPolicy.ShouldSerialize(fieldInfo) == false)
+                    continue;
 
                 if (TryGetSerializationMethods(fieldInfo.FieldType, out var serializationMethods))
                 {
@@ -119,42 +113,13 @@ namespace USerialization
             return fields;
         }
 
-        public static bool ShouldProvide(Type type)
-        {
-            if (type.IsAbstract)
-                return false;
-
-            if (type.IsGenericType)// Type<int>
-                return false;
-
-            if (type.IsGenericTypeDefinition)// Type<>
-                return false;
-
-            if (type.IsClass)
-            {
-                if (typeof(Object).IsAssignableFrom(type))
-                    return true;
-
-                if (type.GetCustomAttribute<SerializableAttribute>() != null)
-                    return true;
-            }
-
-            if (type.IsValueType)
-            {
-                return true;
-            }
-
-            return false;
-        }
 
         public bool GetTypeData(Type type, out TypeData typeData)
         {
             if (_datas.TryGetValue(type, out typeData))
-            {
                 return typeData.Fields != null;
-            }
 
-            if (ShouldProvide(type))
+            if (_serializationPolicy.ShouldSerialize(type))
             {
                 typeData = new TypeData();
                 typeData.Type = type;
@@ -238,8 +203,11 @@ namespace USerialization
 
         public unsafe bool TryPopulateObject<T>(SerializerInput input, Type type, ref T result)
         {
-            if (type != result.GetType())
-                throw new Exception("Invalid type passed!");
+            if (typeof(T).IsAssignableFrom(type) == false)
+            {
+                Debug.LogError($"You are try to use a serializer:{type}  on a non compatible type {typeof(T)}");
+                return false;
+            }
 
             if (TryGetSerializationMethods(type, out var serializationMethods))
             {

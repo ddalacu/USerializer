@@ -9,7 +9,7 @@ namespace Tests
         public static void SerializeDeserializeTest<T>(T value)
         {
             var output = new SerializerOutput(2048);
-            var uSerializer = new USerializer();
+            var uSerializer = new USerializer(new UnitySerializationPolicy());
 
             uSerializer.Serialize(output, value);
 

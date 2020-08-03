@@ -98,155 +98,130 @@
 //    }
 
 
-//    public sealed unsafe class ComponentProvider : ISerializationProvider
+using System;
+using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
+using USerialization;
+using Object = System.Object;
+
+//public sealed unsafe class ComponentProvider : ISerializationProvider
+//{
+//    private Type _objectType;
+//    private USerializer _uSerializer;
+
+//    public void Initialize(USerializer serializer)
 //    {
-//        private Type _objectType;
+//        _uSerializer = serializer;
+//        _objectType = typeof(Component);
+//    }
 
-//        public UnityObjectSerializer ObjectSerializer;
+//    private void WriteFields(Object obj, TypeData typeData, SerializerOutput output)
+//    {
+//        output.OpenObject();
+//        var serializers = typeData.Fields;
+//        var fieldsLength = serializers.Length;
 
-//        private USerializer _uSerializer;
+//        byte* objectAddress;
+//        UnsafeUtility.CopyObjectAddressToPtr(obj, &objectAddress);
 
-//        public void Initialize(USerializer serializer)
+//        for (var index = 0; index < fieldsLength; index++)
 //        {
-//            _uSerializer = serializer;
-//            _objectType = typeof(Component);
+//            var serializer = serializers[index];
+//            output.OpenField(serializer.FieldInfo.Name);
+//            serializer.SerializationMethods.Serialize(objectAddress + serializer.Offset, output);
+//            output.CloseField();
 //        }
 
-//        private void WriteFields(Object obj, TypeData typeData, SerializerOutput output)
+//        output.CloseObject();
+//    }
+
+//    private bool _root = true;
+
+//    private void Writer(void* fieldAddress, SerializerOutput output)
+//    {
+//        var component = Unsafe.Read<Component>(fieldAddress);
+//        if (component != null)
 //        {
-//            output.OpenObject();
-//            var serializers = typeData.Fields;
-//            var fieldsLength = serializers.Length;
-
-//            byte* objectAddress;
-//            UnsafeUtility.CopyObjectAddressToPtr(obj, &objectAddress);
-
-//            for (var index = 0; index < fieldsLength; index++)
+//            if (_root == false)
 //            {
-//                var serializer = serializers[index];
-//                output.OpenField(serializer.FieldInfo.Name);
-//                serializer.SerializationMethods.Serialize(objectAddress + serializer.Offset, output);
-//                output.CloseField();
+//                //var identifier = ObjectSerializer.GetUniqueId(component);
+//                //output.WriteInt(identifier);
+//                output.WriteInt(0);
+//                return;
 //            }
 
-//            output.CloseObject();
+//            if (_uSerializer.GetTypeData(component.GetType(), out var typeData) == false)
+//                throw new Exception();
+
+//            _root = false;
+//            WriteFields(component, typeData, output);
+//            _root = true;
 //        }
-
-//        private bool _root = true;
-
-//        private void Writer(void* fieldAddress, SerializerOutput output)
+//        else
 //        {
-//            var component = Unsafe.Read<Component>(fieldAddress);
-//            if (component != null)
-//            {
-//                if (_root == false)
-//                {
-//                    var identifier = ObjectSerializer.GetUniqueId(component);
-//                    output.WriteInt(identifier);
-//                    return;
-//                }
-
-//                if (_uSerializer.GetTypeData(component.GetType(), out var typeData) == false)
-//                    throw new Exception();
-
-//                _root = false;
-
-//                output.OpenArray();
-//                {
-//                    output.WriteInt(ObjectSerializer.GetUniqueId(component.gameObject));
-//                    WriteFields(component, typeData, output);
-//                }
-//                output.CloseArray();
-
-//                _root = true;
-//            }
-//            else
-//            {
-//                output.Null();
-//            }
-//        }
-
-//        private void ReadFields(Component instance, Type type, SerializerInput input)
-//        {
-//            if (input.BeginReadObject())
-//            {
-//                if (_uSerializer.GetTypeData(type, out var typeData) == false)
-//                {
-//                    throw new Exception();
-//                }
-
-//                byte* objectAddress;
-//                UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
-
-//                var fieldDatas = typeData.Fields;
-//                var fieldsLength = fieldDatas.Length;
-
-//                while (input.BeginReadField(out var field))
-//                {
-//                    for (var index = 0; index < fieldsLength; index++)
-//                    {
-//                        var fieldData = fieldDatas[index];
-
-//                        if (field == fieldData.FieldInfo.Name)
-//                        {
-//                            fieldData.SerializationMethods.Deserialize(objectAddress + fieldData.Offset, input);
-//                            break;
-//                        }
-//                    }
-
-//                    input.CloseField();
-//                }
-
-//                input.CloseObject();
-//            }
-//            else
-//            {
-//                instance = null;
-//            }
-
-//        }
-
-
-//        public bool TryGetSerializationMethods(Type type, out SerializationMethods writer)
-//        {
-//            if (_objectType.IsAssignableFrom(type))
-//            {
-//                void Deserialize(void* fieldAddress, SerializerInput input)
-//                {
-//                    ref var instance = ref Unsafe.AsRef<Component>(fieldAddress);
-
-//                    input.BeginReadArray(out var arrayCount);
-//                    {
-//                        var gameObjectId = input.ReadInt();
-
-//                        var gameObject = (GameObject)ObjectSerializer.GetInstance(_uSerializer, input, gameObjectId);
-
-//                        if (input.BeginReadObject())
-//                        {
-//                            instance = gameObject.GetComponent(type);
-//                            if (instance == null)
-//                                instance = gameObject.AddComponent(type);
-
-//                            ReadFields(instance, type, input);
-
-//                            input.CloseObject();
-//                        }
-//                        else
-//                        {
-//                            instance = null;
-//                        }
-//                    }
-//                    input.EndArray();
-//                }
-
-//                writer = new SerializationMethods(Writer, Deserialize);
-//                return true;
-//            }
-
-//            writer = default;
-//            return false;
+//            output.Null();
 //        }
 //    }
+
+//    void Deserialize(void* fieldAddress, SerializerInput input)
+//    {
+//        ref var instance = ref Unsafe.AsRef<Component>(fieldAddress);
+//        if (instance == null)
+//        {
+//            Debug.LogError("No component!!");
+//            return;
+//        }
+
+//        if (input.BeginReadObject(out var enumerator))
+//        {
+//            if (_uSerializer.GetTypeData(instance.GetType(), out var typeData) == false)
+//            {
+//                throw new Exception();
+//            }
+
+//            byte* objectAddress;
+//            UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
+
+//            var fieldDatas = typeData.Fields;
+//            var fieldsLength = fieldDatas.Length;
+
+//            var readIndex = 0;
+//            while (enumerator.Next(ref readIndex, out var field))
+//            {
+//                for (var index = 0; index < fieldsLength; index++)
+//                {
+//                    var fieldData = fieldDatas[index];
+
+//                    if (field == fieldData.FieldInfo.Name)
+//                    {
+//                        fieldData.SerializationMethods.Deserialize(objectAddress + fieldData.Offset, input);
+//                        break;
+//                    }
+//                }
+//            }
+
+//            input.CloseObject();
+//        }
+//        else
+//        {
+//            instance = null;
+//        }
+
+//    }
+
+//    public bool TryGetSerializationMethods(Type type, out SerializationMethods writer)
+//    {
+//        if (_objectType.IsAssignableFrom(type))
+//        {
+//            writer = new SerializationMethods(Writer, Deserialize);
+//            return true;
+//        }
+
+//        writer = default;
+//        return false;
+//    }
+//}
 
 //    public sealed unsafe class GameObjectSerializer : ISerializationProvider
 //    {

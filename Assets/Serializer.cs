@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
@@ -18,7 +19,7 @@ public class Serializer : MonoBehaviour
 
     private void Awake()
     {
-        _uSerializer = new USerializer();
+        _uSerializer = new USerializer(new UnitySerializationPolicy());
 
         var watch = Stopwatch.StartNew();
         _uSerializer.PreCacheLayout(typeof(TestClass));
@@ -30,10 +31,6 @@ public class Serializer : MonoBehaviour
 
     private ObjectInternals _internals;
 
-    public class Serialize
-    {
-
-    }
 
     [Serializable]
     public class FieldAccessTest
@@ -291,17 +288,30 @@ public class Serializer : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
+
             var output = new SerializerOutput(2048);
+
+
+            UnitySerialization.Serialize(ToSerialize, output);
+
+            var message = output.GetData();
+
+            Debug.Log(message);
+
+            UnitySerialization.Deserialize(new SerializerInput(message));
+
+            return;
 
             var testClass = ToSerialize.GetComponent<TestClass>();
             _uSerializer.Serialize(output, testClass);
 
-            var data = output.GetData();
+            var data = message;
             Debug.Log(data);
             Debug.Log(JsonUtility.ToJson(testClass));
 
             _uSerializer.DeserializeObject(new SerializerInput(data), testClass);
         }
+
 
         return;
 

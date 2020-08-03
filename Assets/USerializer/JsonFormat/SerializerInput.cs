@@ -7,7 +7,13 @@ namespace USerialization
     {
         private Node _current;
 
-        private void MarkAsRead()
+        public Node CurrentNode
+        {
+            get { return _current; }
+            set { _current = value; }
+        }
+
+        public void MarkAsRead()
         {
             _current = null;
         }
@@ -298,7 +304,6 @@ namespace USerialization
 
         public void CloseObject()
         {
-            Debug.Assert(_current == null);
             MarkAsRead();
         }
     }

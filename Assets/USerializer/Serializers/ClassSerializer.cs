@@ -54,8 +54,13 @@ namespace USerialization
             {
                 var obj = Unsafe.Read<object>(fieldAddress);
 
+                var callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
+
                 if (obj != null)
                 {
+                    if (callSerializationEvents)
+                        Unsafe.As<ISerializationCallbackReceiver>(obj).OnBeforeSerialize();
+
                     output.OpenObject();
 
                     var fieldDatas = typeData.Fields;
@@ -85,10 +90,11 @@ namespace USerialization
 
         private static ReadDelegate GetReader(Type fieldType, TypeData typeData)
         {
+            var callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
+
             return delegate (void* fieldAddress, SerializerInput input)
             {
                 ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
-
 
                 if (input.BeginReadObject(out var enumerator))
                 {
@@ -117,6 +123,10 @@ namespace USerialization
                     }
 
                     input.CloseObject();
+
+                    if (callSerializationEvents)
+                        Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
+
                 }
                 else
                 {

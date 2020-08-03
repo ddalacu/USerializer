@@ -1,176 +1,287 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using UnityEngine;
-//using USerialization;
-//using Object = UnityEngine.Object;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
+using USerialization;
+using Object = UnityEngine.Object;
 
-//public class UnityObjectSerializer
-//{
-//    public struct ObjectAndId
-//    {
-//        public Object Obj;
-//        public int Identifier;
+[assembly: CustomSerializer(typeof(ObjectWrapperSerialization))]
 
-//        public ObjectAndId(Object obj, int identifier)
-//        {
-//            Obj = obj;
-//            Identifier = identifier;
-//        }
-//    }
+public class UnitySerialization
+{
+    [Serializable]
+    public class GameObjectData
+    {
+        public string Name;
 
-//    private Queue<ObjectAndId> _toSerialize = new Queue<ObjectAndId>();
-//    private HashSet<int> _toBeSerialized = new HashSet<int>();
-//    private readonly List<Component> _componentsBuffer = new List<Component>(64);
-//    private readonly Type _componentType = typeof(Component);
+        public bool Active;
 
-//    public int GetUniqueId(Object o)
-//    {
-//        return o.GetInstanceID();
-//    }
+        public int Id;
 
-//    public int AddDependency(Object obj)
-//    {
-//        var uniqueId = GetUniqueId(obj);
+        public List<ObjectWrapper> Components = new List<ObjectWrapper>();
 
-//        if (_toBeSerialized.Add(uniqueId))
-//        {
-//            _toSerialize.Enqueue(new ObjectAndId(obj, uniqueId));
-//        }
+        public void AddComponentEntry(Component component, int uniqueId)
+        {
+            Components.Add(new ObjectWrapper()
+            {
+                Instance = component,
+                ID = uniqueId,
+                TypeName= component.GetType().AssemblyQualifiedName
+            });
+        }
+    }
 
-//        return uniqueId;
-//    }
+    [Serializable]
+    public class PrefabData
+    {
+        public List<GameObjectData> GameObjects = new List<GameObjectData>();
+        public List<ObjectWrapper> Objects = new List<ObjectWrapper>();
+    }
 
-//    private void AddRoots(Transform transform)
-//    {
-//        var gameObject = transform.gameObject;
+    private static readonly List<Component> ComponentsBuffer = new List<Component>(64);
+    private static readonly Type ComponentType = typeof(Component);
 
-//        if ((gameObject.hideFlags & HideFlags.DontSave) == HideFlags.DontSave)
-//            return;
+    private static int GetObjectUniqueId(Object o)
+    {
+        return o.GetInstanceID();
+    }
 
-//        int goId = GetUniqueId(gameObject);
-//        _toBeSerialized.Add(goId);
-//        _toSerialize.Enqueue(new ObjectAndId(gameObject, goId));
+    private static void AddRoots(Transform transform, PrefabData prefabData)
+    {
+        var gameObject = transform.gameObject;
 
-//        var transformChildCount = transform.childCount;
-//        for (int i = 0; i < transformChildCount; i++)
-//            AddRoots(transform.GetChild(i));
+        if ((gameObject.hideFlags & HideFlags.DontSave) == HideFlags.DontSave)
+            return;
 
-//        var buff = _componentsBuffer;
-//        gameObject.GetComponents(_componentType, buff);
-//        var bufferCount = buff.Count;
-//        for (int i = 0; i < bufferCount; i++)
-//        {
-//            Component comp = buff[i];
+        var gameObjectId = GetObjectUniqueId(gameObject);
+        //_toBeSerialized.Insert(instanceId);
+        //_toSerializeQueue.Enqueue(new ObjectAndSerializer(gameObject, GameObjectSerialization.GetGameObjectSerializeData(), instanceId));
 
-//            if (comp == null)
-//                continue;
-
-//            if ((comp.hideFlags & HideFlags.DontSave) == HideFlags.DontSave)
-//                continue;
-
-//            int runtimeIdentifier = GetUniqueId(comp);
-//            _toBeSerialized.Add(runtimeIdentifier);
-//            _toSerialize.Enqueue(new ObjectAndId(comp, runtimeIdentifier));
-//        }
-//    }
+        var gameObjectData = new GameObjectData()
+        {
+            Name = gameObject.name,
+            Active = gameObject.activeSelf,
+            Id = gameObjectId
+        };
 
 
-//    public void Serialize(USerializer serializer, SerializerOutput output, GameObject o)
-//    {
-//        _toSerialize.Clear();
-//        _toBeSerialized.Clear();
-
-//        //AddRoots(o.transform);
-
-//        AddDependency(o);
-
-//        var unityObjectProvider = serializer.GetProvider<ComponentProvider>();
-//        unityObjectProvider.ObjectSerializer = this;
-
-//        var gameObjectSerializer = serializer.GetProvider<GameObjectSerializer>();
-//        gameObjectSerializer.ObjectSerializer = this;
-
-//        var customSerializer = serializer.GetProvider<CustomSerializerProvider>();
-//        customSerializer.TryGetInstance(typeof(Transform), out TransformSerializer transformSerializer);
-//        transformSerializer.ObjectSerializer = this;
+        prefabData.GameObjects.Add(gameObjectData);
 
 
-//        output.OpenArray();
-//        while (_toSerialize.Count > 0)
-//        {
-//            var item = _toSerialize.Dequeue();
-//            output.WriteString(item.Obj.GetType().AssemblyQualifiedName);
-//            output.WriteInt(item.Identifier);
+        var transformChildCount = transform.childCount;
+        for (int i = 0; i < transformChildCount; i++)
+            AddRoots(transform.GetChild(i), prefabData);
 
-//            serializer.Serialize(output, item.Obj);
-//        }
-//        output.CloseArray();
-//    }
+        var buff = ComponentsBuffer;
+        gameObject.GetComponents(ComponentType, buff);
 
-//    private class DeserializeData
-//    {
-//        public Type Type;
-//        public SerializerInput.Node Node;
+        var bufferCount = buff.Count;
+        for (int i = 0; i < bufferCount; i++)
+        {
+            var comp = buff[i];
 
-//        private Object _instance;
-//        private bool _deserialized;
+            if (comp == null)
+                continue;
 
-//        public Object GetInstance(USerializer serializer, SerializerInput input)
-//        {
-//            if (_deserialized)
-//                return _instance;
-//            _deserialized = true;
+            if ((comp.hideFlags & HideFlags.DontSave) == HideFlags.DontSave)
+                continue;
 
-//            //input.CurrentNodeId = Node;
+            gameObjectData.AddComponentEntry(comp, GetObjectUniqueId(comp));
+        }
+    }
 
-//            throw new NotImplementedException();
+    public static void Serialize(GameObject go, SerializerOutput output)
+    {
+        var serializer = new USerializer(new UnitySerializationPolicy());
 
-//            serializer.DeserializeObject(input, Type, ref _instance);
+        var prefabData = new PrefabData();
 
-//            return _instance;
-//        }
-//    }
+        AddRoots(go.transform, prefabData);
 
-//    public Object GetInstance(USerializer serializer, SerializerInput input, int id)
-//    {
-//        if (_nodes.TryGetValue(id, out var data))
-//        {
-//            return data.GetInstance(serializer, input);
-//        }
-//        Debug.Log("wtf");
-//        return null;
-//    }
+        serializer.Serialize(output, prefabData);
 
-//    private Dictionary<int, DeserializeData> _nodes = new Dictionary<int, DeserializeData>();
+    }
 
-//    public void Deserialize(USerializer serializer, SerializerInput input)
-//    {
-//        _nodes = new Dictionary<int, DeserializeData>();
+    public static void Deserialize(SerializerInput input)
+    {
+        var serializer = new USerializer(new UnitySerializationPolicy());
 
-//        if (input.BeginReadArray(out var count))
-//        {
-//            for (int i = 0; i < count; i += 3)
-//            {
-//                var type = input.ReadString();
-//                var identifier = input.ReadInt();
-//                var nodeRef = input.CurrentNode;
+        serializer.TryDeserialize(input, out PrefabData prefabData);
 
-//                _nodes.Add(identifier, new DeserializeData()
-//                {
-//                    Type = Type.GetType(type),
-//                    Node = nodeRef
-//                });
-//            }
+        var set = new HashSet<int>();
 
-//            input.EndArray();
-//        }
+        foreach (var prefabDataGameObject in prefabData.GameObjects)
+        {
+            var goInstance = new GameObject(prefabDataGameObject.Name);
 
-//        foreach (var entry in _nodes.Values)
-//        {
-//            var result = entry.GetInstance(serializer, input);
+            var componentsCount = prefabDataGameObject.Components.Count;
 
-//            //Debug.Log(result);
-//        }
-//    }
+            for (var index = 0; index < componentsCount; index++)
+            {
+                var componentWrapper = prefabDataGameObject.Components[index];
+                var type = Type.GetType(componentWrapper.TypeName);
 
-//}
+                var existing = goInstance.GetComponent(type);
+
+                if (existing != null)
+                {
+                    var existingInstanceId = existing.GetInstanceID();
+
+                    if (set.Contains(existingInstanceId) == false)
+                    {
+                        set.Add(existingInstanceId);
+
+                        prefabDataGameObject.Components[index].Instance = existing;
+
+                        continue;
+                    }
+                }
+
+                var component = goInstance.AddComponent(type);
+
+                set.Add(component.GetInstanceID());
+
+                prefabDataGameObject.Components[index].Instance = component;
+            }
+        }
+
+        foreach (var prefabDataGameObject in prefabData.GameObjects)
+        {
+            var componentsCount = prefabDataGameObject.Components.Count;
+
+            for (var index = 0; index < componentsCount; index++)
+            {
+                prefabDataGameObject.Components[index].Populate(input, serializer);
+            }
+        }
+    }
+
+}
+
+
+
+public sealed class ObjectWrapperSerialization : ICustomSerializer
+{
+    public Type SerializedType => typeof(ObjectWrapper);
+    public USerializer Serializer { get; set; }
+
+    public unsafe void Write(void* fieldAddress, SerializerOutput output)
+    {
+        var wrapper = Unsafe.Read<ObjectWrapper>(fieldAddress);
+
+        if (wrapper == null)
+        {
+            output.Null();
+            return;
+        }
+
+        var instance = wrapper.Instance;
+
+        if (Serializer.GetTypeData(instance.GetType(), out var typeData) == false)
+            throw new Exception();
+
+        output.OpenObject();
+        {
+            var serializers = typeData.Fields;
+            var fieldsLength = serializers.Length;
+
+            byte* objectAddress;
+            UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
+
+            output.OpenField("$Id");
+            output.WriteInt(wrapper.ID);
+            output.CloseField();
+
+            output.OpenField("$TypeName");
+            output.WriteString(wrapper.TypeName);
+            output.CloseField();
+
+            for (var index = 0; index < fieldsLength; index++)
+            {
+                var serializer = serializers[index];
+                output.OpenField(serializer.FieldInfo.Name);
+                serializer.SerializationMethods.Serialize(objectAddress + serializer.Offset, output);
+                output.CloseField();
+            }
+        }
+        output.CloseObject();
+    }
+
+    public unsafe void Read(void* fieldAddress, SerializerInput input)
+    {
+        ref var value = ref Unsafe.AsRef<ObjectWrapper>(fieldAddress);
+
+        if (value == null)
+            value = new ObjectWrapper();
+
+        value.Node = input.CurrentNode;
+
+        if (input.BeginReadObject(out var enumerator))
+        {
+            var index = 0;
+            enumerator.Next(ref index, out var idFieldName);
+            value.ID = input.ReadInt();
+            enumerator.Next(ref index, out var typeFieldName);
+            value.TypeName = input.ReadString();
+
+            //input.CloseObject();
+        }
+
+        input.MarkAsRead();
+    }
+}
+
+[Serializable]
+public unsafe class ObjectWrapper
+{
+    public SerializerInput.Node Node;
+
+    public Object Instance;
+
+    public int ID;
+
+    public string TypeName;
+    public void Populate(SerializerInput input, USerializer uSerializer)
+    {
+        var current = input.CurrentNode;
+        input.CurrentNode = Node;
+
+        if (input.BeginReadObject(out var enumerator))
+        {
+            if (uSerializer.GetTypeData(Instance.GetType(), out var typeData) == false)
+            {
+                throw new Exception();
+            }
+
+            byte* objectAddress;
+            UnsafeUtility.CopyObjectAddressToPtr(Instance, &objectAddress);
+
+            var fieldDatas = typeData.Fields;
+            var fieldsLength = fieldDatas.Length;
+
+            var readIndex = 2;
+            while (enumerator.Next(ref readIndex, out var field))
+            {
+                for (var index = 0; index < fieldsLength; index++)
+                {
+                    var fieldData = fieldDatas[index];
+
+                    if (field == fieldData.FieldInfo.Name)
+                    {
+                        fieldData.SerializationMethods.Deserialize(objectAddress + fieldData.Offset, input);
+                        break;
+                    }
+                }
+            }
+
+            input.CloseObject();
+        }
+        else
+        {
+            Debug.LogError("Wtf");
+        }
+
+        input.CurrentNode = current;
+    }
+}
