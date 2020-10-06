@@ -65,15 +65,18 @@ namespace USerialization
 
                  if (array != null)
                  {
-                     var length = array.Length;
+                     var count = array.Length;
                      output.OpenArray();
 
                      var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
-                     for (var index = 0; index < length; index++)
+                     for (var index = 0; index < count; index++)
                      {
                          serializeElement(address, output);
                          address += size;
+
+                         if (index < count - 1)
+                             output.WriteArraySeparator();
                      }
 
                      UnsafeUtility.ReleaseGCObject(handle);
@@ -126,12 +129,12 @@ namespace USerialization
 
                 if (array != null)
                 {
-                    var length = array.Length;
+                    var count = array.Length;
                     output.OpenArray();
 
                     var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
-                    for (var index = 0; index < length; index++)
+                    for (var index = 0; index < count; index++)
                     {
                         var o = array[index];
                         if (o != null)
@@ -144,6 +147,9 @@ namespace USerialization
                         }
 
                         address += sizeof(void*);
+
+                        if (index < count - 1)
+                            output.WriteArraySeparator();
                     }
 
                     UnsafeUtility.ReleaseGCObject(handle);

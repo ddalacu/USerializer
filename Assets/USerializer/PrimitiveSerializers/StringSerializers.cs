@@ -23,8 +23,8 @@ namespace USerialization
         }
         public unsafe void Read(void* fieldAddress, SerializerInput input)
         {
-           ref var value = ref Unsafe.AsRef<string>(fieldAddress);
-           value = input.ReadString();
+            ref var value = ref Unsafe.AsRef<string>(fieldAddress);
+            value = input.ReadString();
         }
     }
 
@@ -36,10 +36,22 @@ namespace USerialization
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<string[]>(fieldAddress);
-            if (array != null)
-                output.WriteStringArray(array, array.Length);
-            else
+            if (array == null)
+            {
                 output.WriteNull();
+                return;
+            }
+
+            output.OpenArray();
+            var count = array.Length;
+            for (var index = 0; index < count; index++)
+            {
+                output.WriteString(array[index]);
+
+                if (index < count - 1)
+                    output.WriteArraySeparator();
+            }
+            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -68,7 +80,18 @@ namespace USerialization
             }
 
             var array = _listHelper.GetArray(list, out var count);
-            output.WriteStringArray(array, count);
+
+            output.OpenArray();
+
+            for (var index = 0; index < count; index++)
+            {
+                output.WriteString(array[index]);
+
+                if (index < count - 1)
+                    output.WriteArraySeparator();
+            }
+
+            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)

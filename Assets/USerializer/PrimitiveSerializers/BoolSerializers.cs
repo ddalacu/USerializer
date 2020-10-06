@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using Unity.Collections.LowLevel.Unsafe;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(BoolSerializer))]
@@ -20,7 +17,11 @@ namespace USerialization
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = *(bool*)(fieldAddress);
-            output.WriteBool(value);
+
+            if (value)
+                output.Write("true");
+            else
+                output.Write("false");
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -38,10 +39,29 @@ namespace USerialization
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<bool[]>(fieldAddress);
-            if (array != null)
-                output.WriteBoolArray(array, array.Length);
-            else
+            if (array == null)
+            {
                 output.Null();
+                return;
+            }
+
+            output.OpenArray();
+
+            var count = array.Length;
+            for (var index = 0; index < count; index++)
+            {
+                var value = array[index];
+
+                if (value)
+                    output.Write("true");
+                else
+                    output.Write("false");
+
+                if (index < count - 1)
+                    output.WriteArraySeparator();
+            }
+
+            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -70,7 +90,23 @@ namespace USerialization
             }
 
             var array = _listHelper.GetArray(list, out var count);
-            output.WriteBoolArray(array, count);
+
+            output.OpenArray();
+
+            for (var index = 0; index < count; index++)
+            {
+                var value = array[index];
+
+                if (value)
+                    output.Write("true");
+                else
+                    output.Write("false");
+
+                if (index < count - 1)
+                    output.WriteArraySeparator();
+            }
+
+            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)

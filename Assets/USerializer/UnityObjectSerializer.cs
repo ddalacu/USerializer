@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if DISABLE
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
@@ -285,3 +287,5 @@ public unsafe class ObjectWrapper
         input.CurrentNode = current;
     }
 }
+
+#endif

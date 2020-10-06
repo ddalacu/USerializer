@@ -40,6 +40,9 @@ namespace USerialization
                 {
                     elementWriter(address, output);
                     address += size;
+
+                    if (index < count - 1)
+                        output.WriteArraySeparator();
                 }
 
                 UnsafeUtility.ReleaseGCObject(hande);
@@ -119,6 +122,9 @@ namespace USerialization
                     }
 
                     address += sizeof(void*);
+
+                    if (index < count - 1)
+                        output.WriteArraySeparator();
                 }
 
                 UnsafeUtility.ReleaseGCObject(handle);

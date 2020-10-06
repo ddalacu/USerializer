@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Unity.Collections.LowLevel.Unsafe;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(IntSerializer))]
@@ -18,7 +17,7 @@ namespace USerialization
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = *(int*)(fieldAddress);
-            output.WriteInt(value);
+            output.Write(value.ToString());
         }
         public unsafe void Read(void* fieldAddress, SerializerInput input)
         {
@@ -35,10 +34,22 @@ namespace USerialization
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<int[]>(fieldAddress);
-            if (array != null)
-                output.WriteIntArray(array, array.Length);
-            else
+            if (array == null)
+            {
                 output.Null();
+                return;
+            }
+
+            output.OpenArray();
+            var count = array.Length;
+            for (var index = 0; index < count; index++)
+            {
+                output.Write(array[index].ToString());
+
+                if (index < count - 1)
+                    output.WriteArraySeparator();
+            }
+            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -67,7 +78,18 @@ namespace USerialization
             }
 
             var array = _listHelper.GetArray(list, out var count);
-            output.WriteIntArray(array, count);
+
+            output.OpenArray();
+
+            for (var index = 0; index < count; index++)
+            {
+                output.Write(array[index].ToString());
+
+                if (index < count - 1)
+                    output.WriteArraySeparator();
+            }
+
+            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)

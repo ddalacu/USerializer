@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -19,7 +20,8 @@ namespace USerialization
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = *(float*)(fieldAddress);
-            output.WriteFloat(value);
+
+            output.Write(value.ToString("R", CultureInfo.InvariantCulture));
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -37,10 +39,22 @@ namespace USerialization
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<float[]>(fieldAddress);
-            if (array != null)
-                output.WriteFloatArray(array, array.Length);
-            else
+            if (array == null)
+            {
                 output.Null();
+                return;
+            }
+
+            output.OpenArray();
+            var count = array.Length;
+            for (var index = 0; index < count; index++)
+            {
+                output.Write(array[index].ToString("R", CultureInfo.InvariantCulture));
+
+                if (index < count - 1)
+                    output.WriteArraySeparator();
+            }
+            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -69,7 +83,18 @@ namespace USerialization
             }
 
             var array = _listHelper.GetArray(list, out var count);
-            output.WriteFloatArray(array, count);
+
+            output.OpenArray();
+
+            for (var index = 0; index < count; index++)
+            {
+                output.Write(array[index].ToString("R", CultureInfo.InvariantCulture));
+
+                if (index < count - 1)
+                    output.WriteArraySeparator();
+            }
+
+            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)

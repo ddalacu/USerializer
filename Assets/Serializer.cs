@@ -292,13 +292,13 @@ public class Serializer : MonoBehaviour
             var output = new SerializerOutput(2048);
 
 
-            UnitySerialization.Serialize(ToSerialize, output);
+            //UnitySerialization.Serialize(ToSerialize, output);
 
             var message = output.GetData();
 
             Debug.Log(message);
 
-            UnitySerialization.Deserialize(new SerializerInput(message));
+            //UnitySerialization.Deserialize(new SerializerInput(message));
 
             return;
 
