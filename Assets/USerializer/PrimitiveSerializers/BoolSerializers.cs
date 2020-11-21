@@ -45,23 +45,23 @@ namespace USerialization
                 return;
             }
 
-            output.OpenArray();
-
             var count = array.Length;
-            for (var index = 0; index < count; index++)
+
+            using (var block = new ValueArrayBlock(output, count, sizeof(bool)))
             {
-                var value = array[index];
+                for (var index = 0; index < count; index++)
+                {
+                    var value = array[index];
 
-                if (value)
-                    output.Write("true");
-                else
-                    output.Write("false");
+                    if (value)
+                        output.Write("true");
+                    else
+                        output.Write("false");
 
-                if (index < count - 1)
-                    output.WriteArraySeparator();
+                    if (index < count - 1)
+                        block.WriteSeparator();
+                }
             }
-
-            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -91,22 +91,21 @@ namespace USerialization
 
             var array = _listHelper.GetArray(list, out var count);
 
-            output.OpenArray();
-
-            for (var index = 0; index < count; index++)
+            using (var block = new ValueArrayBlock(output, count, sizeof(bool)))
             {
-                var value = array[index];
+                for (var index = 0; index < count; index++)
+                {
+                    var value = array[index];
 
-                if (value)
-                    output.Write("true");
-                else
-                    output.Write("false");
+                    if (value)
+                        output.Write("true");
+                    else
+                        output.Write("false");
 
-                if (index < count - 1)
-                    output.WriteArraySeparator();
+                    if (index < count - 1)
+                        block.WriteSeparator();
+                }
             }
-
-            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)

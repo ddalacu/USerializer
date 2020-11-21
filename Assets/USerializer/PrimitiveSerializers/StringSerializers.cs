@@ -38,20 +38,21 @@ namespace USerialization
             var array = Unsafe.Read<string[]>(fieldAddress);
             if (array == null)
             {
-                output.WriteNull();
+                output.Null();
                 return;
             }
 
-            output.OpenArray();
             var count = array.Length;
-            for (var index = 0; index < count; index++)
+            using (var block = new ReferenceArrayBlock(output, count))
             {
-                output.WriteString(array[index]);
+                for (var index = 0; index < count; index++)
+                {
+                    output.WriteString(array[index]);
 
-                if (index < count - 1)
-                    output.WriteArraySeparator();
+                    if (index < count - 1)
+                        block.WriteSeparator();
+                }
             }
-            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -81,17 +82,16 @@ namespace USerialization
 
             var array = _listHelper.GetArray(list, out var count);
 
-            output.OpenArray();
-
-            for (var index = 0; index < count; index++)
+            using (var block = new ReferenceArrayBlock(output, count))
             {
-                output.WriteString(array[index]);
+                for (var index = 0; index < count; index++)
+                {
+                    output.WriteString(array[index]);
 
-                if (index < count - 1)
-                    output.WriteArraySeparator();
+                    if (index < count - 1)
+                        block.WriteSeparator();
+                }
             }
-
-            output.CloseArray();
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)

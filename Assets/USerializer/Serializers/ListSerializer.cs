@@ -33,21 +33,21 @@ namespace USerialization
 
                 var array = listHelper.GetArray(list, out var count);
 
-                output.OpenArray();
-
-                var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var hande);
-                for (var index = 0; index < count; index++)
+                using (var block = new ValueArrayBlock(output, count, size))
                 {
-                    elementWriter(address, output);
-                    address += size;
+                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var hande);
 
-                    if (index < count - 1)
-                        output.WriteArraySeparator();
+                    for (var index = 0; index < count; index++)
+                    {
+                        elementWriter(address, output);
+                        address += size;
+
+                        if (index < count - 1)
+                            block.WriteSeparator();
+                    }
+
+                    UnsafeUtility.ReleaseGCObject(hande);
                 }
-
-                UnsafeUtility.ReleaseGCObject(hande);
-
-                output.CloseArray();
             };
         }
 
@@ -104,32 +104,31 @@ namespace USerialization
                 }
 
                 var array = listHelper.GetArray<object>(list, out var count);
-                output.OpenArray();
-
-                var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-
-                for (var index = 0; index < count; index++)
+                using (var block = new ReferenceArrayBlock(output, count))
                 {
-                    var o = array[index];
-                    if (o != null)
+
+                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
+
+                    for (var index = 0; index < count; index++)
                     {
-                        elementWriter(address, output);
-                    }
-                    else
-                    {
-                        output.Null();
+                        var o = array[index];
+                        if (o != null)
+                        {
+                            elementWriter(address, output);
+                        }
+                        else
+                        {
+                            output.Null();
+                        }
+
+                        address += sizeof(void*);
+
+                        if (index < count - 1)
+                            block.WriteSeparator();
                     }
 
-                    address += sizeof(void*);
-
-                    if (index < count - 1)
-                        output.WriteArraySeparator();
+                    UnsafeUtility.ReleaseGCObject(handle);
                 }
-
-                UnsafeUtility.ReleaseGCObject(handle);
-
-                output.CloseArray();
             };
         }
 

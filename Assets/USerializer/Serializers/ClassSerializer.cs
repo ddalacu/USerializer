@@ -61,25 +61,10 @@ namespace USerialization
                     if (callSerializationEvents)
                         Unsafe.As<ISerializationCallbackReceiver>(obj).OnBeforeSerialize();
 
-                    output.OpenObject();
-
-                    var fieldDatas = typeData.Fields;
-                    var fieldsLength = fieldDatas.Length;
-
-
                     byte* objectAddress;
                     UnsafeUtility.CopyObjectAddressToPtr(obj, &objectAddress);
 
-                    for (var index = 0; index < fieldsLength; index++)
-                    {
-                        var fieldData = fieldDatas[index];
-                        output.OpenField(fieldData.FieldInfo.Name);
-                        fieldData.SerializationMethods.Serialize(objectAddress + fieldData.Offset, output);
-                        output.CloseField();
-                    }
-
-
-                    output.CloseObject();
+                    Shared.WriteObject(output, typeData.Fields, objectAddress);
                 }
                 else
                 {

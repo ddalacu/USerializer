@@ -66,21 +66,22 @@ namespace USerialization
                  if (array != null)
                  {
                      var count = array.Length;
-                     output.OpenArray();
 
-                     var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-                     for (var index = 0; index < count; index++)
+                     using (var block = new ValueArrayBlock(output, count, size))
                      {
-                         serializeElement(address, output);
-                         address += size;
+                         var address = (byte*) UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
-                         if (index < count - 1)
-                             output.WriteArraySeparator();
+                         for (var index = 0; index < count; index++)
+                         {
+                             serializeElement(address, output);
+                             address += size;
+
+                             if (index < count - 1)
+                                 block.WriteSeparator();
+                         }
+
+                         UnsafeUtility.ReleaseGCObject(handle);
                      }
-
-                     UnsafeUtility.ReleaseGCObject(handle);
-                     output.CloseArray();
                  }
                  else
                  {
@@ -130,31 +131,30 @@ namespace USerialization
                 if (array != null)
                 {
                     var count = array.Length;
-                    output.OpenArray();
-
-                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-                    for (var index = 0; index < count; index++)
+                    using (var block = new ReferenceArrayBlock(output, count))
                     {
-                        var o = array[index];
-                        if (o != null)
+                        var address = (byte*) UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
+
+                        for (var index = 0; index < count; index++)
                         {
-                            serializeElement(address, output);
-                        }
-                        else
-                        {
-                            output.Null();
+                            var o = array[index];
+                            if (o != null)
+                            {
+                                serializeElement(address, output);
+                            }
+                            else
+                            {
+                                output.Null();
+                            }
+
+                            address += sizeof(void*);
+
+                            if (index < count - 1)
+                                block.WriteSeparator();
                         }
 
-                        address += sizeof(void*);
-
-                        if (index < count - 1)
-                            output.WriteArraySeparator();
+                        UnsafeUtility.ReleaseGCObject(handle);
                     }
-
-                    UnsafeUtility.ReleaseGCObject(handle);
-
-                    output.CloseArray();
                 }
                 else
                 {

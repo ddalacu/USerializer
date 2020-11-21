@@ -49,20 +49,7 @@ namespace USerialization
         {
             return delegate (void* fieldAddress, SerializerOutput output)
             {
-                output.OpenObject();
-
-                var fields = typeData.Fields;
-                var fieldsLength = fields.Length;
-
-                for (var index = 0; index < fieldsLength; index++)
-                {
-                    var serializer = fields[index];
-                    output.OpenField(serializer.FieldInfo.Name);
-                    serializer.SerializationMethods.Serialize((byte*)fieldAddress + serializer.Offset, output);
-                    output.CloseField();
-                }
-
-                output.CloseObject();
+                Shared.WriteObject(output, typeData.Fields, (byte*)fieldAddress);
             };
         }
 
