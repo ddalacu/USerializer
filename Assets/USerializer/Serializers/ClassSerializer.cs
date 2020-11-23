@@ -43,7 +43,7 @@ namespace USerialization
             var writer = GetWriter(typeData);
             var reader = GetReader(type, typeData);
 
-            serializationMethods = new SerializationMethods(writer, reader);
+            serializationMethods = new SerializationMethods(writer, reader, DataType.VariableSize);
 
             return true;
         }
@@ -68,7 +68,7 @@ namespace USerialization
                 }
                 else
                 {
-                    output.Null();
+                    output.WriteNull();
                 }
             };
         }
@@ -81,8 +81,10 @@ namespace USerialization
             {
                 ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
 
-                if (input.BeginReadObject(out var enumerator))
+                if (input.BeginReadSize(out var end))
                 {
+                    var fieldsCount = input.ReadByte();
+
                     if (instance == null)
                         instance = Activator.CreateInstance(fieldType);
 
@@ -92,26 +94,38 @@ namespace USerialization
                     var fieldDatas = typeData.Fields;
                     var fieldsLength = fieldDatas.Length;
 
-                    var fieldIndex = 0;
-                    while (enumerator.Next(ref fieldIndex, out var field))
+                    for (int i = 0; i < fieldsCount; i++)
                     {
+                        var field = input.ReadString();
+                        var type = (DataType)input.ReadByte();
+
+                        var deserialized = false;
+
                         for (var index = 0; index < fieldsLength; index++)
                         {
                             var fieldData = fieldDatas[index];
 
-                            if (field == fieldData.FieldInfo.Name)
+                            if (field == fieldData.FieldInfo.Name && 
+                                type == fieldData.SerializationMethods.DataType)
                             {
                                 fieldData.SerializationMethods.Deserialize(objectAddress + fieldData.Offset, input);
+                                deserialized = true;
                                 break;
                             }
                         }
-                    }
 
-                    input.CloseObject();
+                        if (deserialized == false)
+                        {
+                            input.SkipData(type);
+                            //skip field
+                            Debug.Log("Skipping field!");
+                        }
+                    }
 
                     if (callSerializationEvents)
                         Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
 
+                    input.EndObject(end);
                 }
                 else
                 {

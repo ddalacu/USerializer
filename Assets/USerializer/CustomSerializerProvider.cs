@@ -10,6 +10,8 @@ namespace USerialization
 
         USerializer Serializer { get; set; }
 
+        DataType DataType { get; }
+
         void Write(void* fieldAddress, SerializerOutput output);
 
         void Read(void* fieldAddress, SerializerInput input);
@@ -46,7 +48,7 @@ namespace USerialization
         {
             if (_instances.TryGetValue(type, out var instance))
             {
-                serializationMethods = new SerializationMethods(instance.Write, instance.Read);
+                serializationMethods = new SerializationMethods(instance.Write, instance.Read, instance.DataType);
                 return true;
             }
 

@@ -1,11 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Tests
 {
     public class ClassSerializationTests
     {
+        public enum TestEnum
+        {
+            One,
+            Two,
+            Three
+        }
+
         [Serializable]
         public class SimpleClass
         {
@@ -15,12 +24,14 @@ namespace Tests
             public string StringValue;
             public string[] Strings;
             public SimpleClass Reference;
+            public TestEnum EnumValue;
+            public TestEnum[] EnumArray;
         }
 
         [Test]
         public void SimpleClassSerialization()
         {
-            TestUtils.SerializeDeserializeTest(new SimpleClass()
+            var initial = new SimpleClass()
             {
                 IntValue = 123,
                 FloatValue = 11.1f,
@@ -31,15 +42,23 @@ namespace Tests
                     "one",
                     "two",
                     "three"
+                },
+                EnumValue = TestEnum.One,
+                EnumArray = new TestEnum[]
+                {
+                    TestEnum.One,
+                    TestEnum.Two
                 }
-            });
+            };
+            var result = TestUtils.SerializeDeserializeTest(initial);
+            Debug.Assert(JsonUtility.ToJson(initial) == JsonUtility.ToJson(result));
         }
 
 
         [Test]
         public void NestedClassSerialization()
         {
-            TestUtils.SerializeDeserializeTest(new SimpleClass()
+            var initial = new SimpleClass()
             {
                 IntValue = 123,
                 FloatValue = 11.1f,
@@ -53,9 +72,19 @@ namespace Tests
                         "one",
                         "two",
                         "three"
+                    },
+                    EnumValue = TestEnum.One,
+                    EnumArray = new TestEnum[]
+                    {
+                        TestEnum.One,
+                        TestEnum.Two
                     }
                 }
-            });
+            };
+
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            Debug.Assert(JsonUtility.ToJson(initial) == JsonUtility.ToJson(result));
         }
 
         [Test]
@@ -78,13 +107,25 @@ namespace Tests
                     "one",
                     "two",
                     "three"
+                },
+                EnumValue = TestEnum.One,
+                EnumArray = new TestEnum[]
+                {
+                    TestEnum.One,
+                    TestEnum.Two
                 }
             };
-            TestUtils.SerializeDeserializeTest(new SimpleClass[]
+            var initial = new SimpleClass[]
             {
                 a,
                 b
-            });
+            };
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            //Debug.Log(UnitySerializeArray(initial));
+            //Debug.Log(UnitySerializeArray(result));
+
+            Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
         }
 
         [Test]
@@ -100,13 +141,26 @@ namespace Tests
             {
                 IntValue = 222,
                 FloatValue = 11.1f,
-                BoolValue = true
+                BoolValue = true,
+                EnumValue = TestEnum.One,
+                EnumArray = new TestEnum[]
+                {
+                    TestEnum.One,
+                    TestEnum.Two
+                }
             };
-            TestUtils.SerializeDeserializeTest(new List<SimpleClass>
+
+            var initial = new List<SimpleClass>
             {
                 a,
                 b
-            });
+            };
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            //Debug.Log(UnitySerializeArray(initial));
+            //Debug.Log(UnitySerializeArray(result));
+
+            Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
         }
     }
 }

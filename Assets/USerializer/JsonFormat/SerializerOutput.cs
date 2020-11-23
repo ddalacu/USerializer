@@ -1,124 +1,228 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Reflection;
-using System.Text;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace USerialization
 {
-
-    public readonly struct ValueArrayBlock : IDisposable
-    {
-        private readonly SerializerOutput _output;
-
-        public ValueArrayBlock(SerializerOutput output, int count, int elementSize)
-        {
-            _output = output;
-
-            _output.Write('[');
-        }
-
-        public void Dispose()
-        {
-            _output.Write(']');
-        }
-
-        public void WriteSeparator()
-        {
-            _output.Write(',');
-        }
-    }
-
-    public readonly struct ReferenceArrayBlock : IDisposable
-    {
-        private readonly SerializerOutput _output;
-
-        public ReferenceArrayBlock(SerializerOutput output, int count)
-        {
-            _output = output;
-
-            _output.Write('[');
-        }
-
-        public void Dispose()
-        {
-            _output.Write(']');
-        }
-
-        public void WriteSeparator()
-        {
-            _output.Write(',');
-        }
-    }
-
     public static class Shared
     {
         public static unsafe void WriteObject(SerializerOutput output, FieldData[] fields, byte* address)
         {
-            var length = fields.Length;
-
-            output.Write('{');
-
-            for (var index = 0; index < length; index++)
+            var fieldsCount = fields.Length;
+           
+            var track = output.BeginSizeTrack();
             {
-                var fieldData = fields[index];
+                if (fieldsCount > 255)
+                    throw new Exception();
 
-                output.Write('\"');
-                output.Write(fieldData.FieldInfo.Name);
-                output.Write('\"');
-                output.Write(':');
+                output.WriteByte((byte)fieldsCount);
 
-                fieldData.SerializationMethods.Serialize(address + fieldData.Offset, output);
+                for (var index = 0; index < fieldsCount; index++)
+                {
+                    var fieldData = fields[index];
 
-                if (index < length - 1)
-                    output.Write(',');
+                    output.WriteString(fieldData.FieldInfo.Name);
+
+                    output.WriteByte((byte)fieldData.SerializationMethods.DataType);
+
+                    fieldData.SerializationMethods.Serialize(address + fieldData.Offset, output);
+                }
             }
-
-            output.Write('}');
+            output.WriteSizeTrack(track);
         }
 
     }
 
+    public enum SizeTracker : long
+    {
+
+    }
+
+
     public class SerializerOutput
     {
-        private StringBuilder _stringWriter;
+        private byte[] _buffer;
+        private long _position;
+        private long _length;
+
+        public long Position => _position;
+        public long Length => _length;
 
         public SerializerOutput(int capacity)
         {
-            _stringWriter = new StringBuilder(capacity);
+            _buffer = new byte[capacity];
+            _position = 0;
+            _length = 0;
         }
 
-        public void Null()
+        public unsafe void EnsureSize(long size)
         {
-            _stringWriter.Append("null");
+            var capacity = _buffer.Length;
+
+            if (size > capacity)
+            {
+                var newCapacity = size;
+
+                var doubledCapacity = capacity * 2;
+                if (newCapacity < doubledCapacity)
+                {
+                    newCapacity = doubledCapacity;
+                }
+
+                if ((uint)doubledCapacity > (Int32.MaxValue / 2))
+                {
+                    newCapacity = size > (Int32.MaxValue / 2) ? size : (Int32.MaxValue / 2);
+                }
+
+                var newBuffer = new byte[newCapacity];
+
+                fixed (byte* newBufferPtr = newBuffer)
+                {
+                    fixed (byte* bufferPtr = _buffer)
+                    {
+                        UnsafeUtility.MemCpy(newBufferPtr, bufferPtr, _length);
+                    }
+                }
+
+                _buffer = newBuffer;
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            else
+            {
+                if (size < 0)
+                {
+                    throw new Exception("Capacity cannot be negative");
+                }
+            }
+#endif
+
+            if (_length < size)
+            {
+                _length = size;
+            }
         }
 
-        public string GetData()
+
+        public SizeTracker BeginSizeTrack()
         {
-            return _stringWriter.ToString();
+            EnsureSize(_position + 4);
+            _position += 4;
+            return (SizeTracker)Position;
         }
 
-        public void WriteString(string value)
+        public void WriteSizeTrack(SizeTracker tracker)
         {
-            _stringWriter.Append('\"');
-            _stringWriter.Append(value);
-            _stringWriter.Append('\"');
+            var length = Position - (long)tracker;
+
+            if (length > Int32.MaxValue)
+                throw new Exception();
+
+            var oldPos = _position;
+
+            _position = (long)tracker - 4;
+
+            var len = (int)length;
+            WriteInt(len);
+
+            _position = oldPos;
         }
 
-        public void Write(string value)
+        public void WriteInt(int value)
         {
-            _stringWriter.Append(value);
+            EnsureSize(_position + 4);
+            _buffer[_position++] = (byte)value;
+            _buffer[_position++] = (byte)(value >> 8);
+            _buffer[_position++] = (byte)(value >> 16);
+            _buffer[_position++] = (byte)(value >> 24);
         }
 
-        public void Write(char value)
+        public unsafe void WriteString(string value)
         {
-            _stringWriter.Append(value);
+            if (value == null)
+            {
+                WriteNull();
+                return;
+            }
+
+            var length = value.Length * sizeof(char);
+
+            EnsureSize(_position + 4 + length);
+
+            _buffer[_position++] = (byte)length;
+            _buffer[_position++] = (byte)(length >> 8);
+            _buffer[_position++] = (byte)(length >> 16);
+            _buffer[_position++] = (byte)(length >> 24);
+
+            if (length > 0)
+            {
+                fixed (void* textPtr = value)
+                {
+                    fixed (byte* bufferPtr = _buffer)
+                    {
+                        UnsafeUtility.MemCpy(bufferPtr + _position, textPtr, length);
+                    }
+                }
+
+                _position += length;
+            }
+        }
+
+        public void WriteNull()
+        {
+            WriteInt(-1);
+        }
+
+        public byte[] GetData()
+        {
+            return _buffer;
+        }
+
+        public unsafe void WriteBytes(byte[] bytes)
+        {
+            EnsureSize(_position + bytes.Length);
+
+            fixed (void* ptr = bytes)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+                    UnsafeUtility.MemCpy(bufferPtr + _position, ptr, bytes.Length);
+                }
+            }
+        }
+
+        public unsafe void WriteBytes(byte* bytes, int length)
+        {
+            if (length > 0)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+                    UnsafeUtility.MemCpy(bufferPtr + _position, bytes, length);
+                }
+                _position += length;
+            }
+        }
+
+        public void WriteByte(byte data)
+        {
+            EnsureSize(_position + 1);
+            _buffer[_position++] = data;
         }
 
         public void Clear()
         {
-            _stringWriter.Length = 0;
+            _position = 0;
+            _length = 0;
+        }
+
+        public unsafe void WriteFloat(float value)
+        {
+            EnsureSize(_position + 4);
+            //write the value
+            uint tmpValue = *(uint*)&value;
+            _buffer[_position++] = (byte)tmpValue;
+            _buffer[_position++] = (byte)(tmpValue >> 8);
+            _buffer[_position++] = (byte)(tmpValue >> 16);
+            _buffer[_position++] = (byte)(tmpValue >> 24);
         }
     }
 

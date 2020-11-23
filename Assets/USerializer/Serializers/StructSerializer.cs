@@ -41,7 +41,7 @@ namespace USerialization
             var writer = GetWriter(typeData);
             var reader = GetReader(typeData);
 
-            serializationMethods = new SerializationMethods(writer, reader);
+            serializationMethods = new SerializationMethods(writer, reader, DataType.VariableSize);
             return true;
         }
 
@@ -58,36 +58,51 @@ namespace USerialization
         {
             return delegate (void* address, SerializerInput input)
             {
-                if (input.BeginReadObject(out var iterator))
+                if (input.BeginReadSize(out var end))
                 {
+                    var fieldCount = input.ReadByte();
+
                     var fieldDatas = typeData.Fields;
                     var fieldsLength = fieldDatas.Length;
 
                     var objectAddress = (byte*)address;
 
-                    var fieldIndex = 0;
-                    while (iterator.Next(ref fieldIndex, out var field))
+                    for (var i = 0; i < fieldCount; i++)
                     {
+                        var field = input.ReadString();
+
+                        var type = (DataType)input.ReadByte();
+
+                        var deserialized = false;
+
                         for (var index = 0; index < fieldsLength; index++)
                         {
                             var fieldData = fieldDatas[index];
 
-                            if (field == fieldData.FieldInfo.Name)
+                            if (field == fieldData.FieldInfo.Name && 
+                                type == fieldData.SerializationMethods.DataType)
                             {
                                 var fieldDataOffset = objectAddress + fieldData.Offset;
                                 fieldData.SerializationMethods.Deserialize(fieldDataOffset, input);
+                                deserialized = true;
                                 break;
                             }
                         }
 
-                        //input.CloseField();
+                        if (deserialized == false)
+                        {
+                            input.SkipData(type);
+                            //skip field
+                            Debug.Log("Skipping field!");
+                        }
+
                     }
 
-                    input.CloseObject();
+                    input.EndObject(end);
                 }
                 else
                 {
-                    Debug.LogError("Changed type?");
+                    Debug.LogError("Changed from nullable?");
                 }
             };
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace Tests
 {
@@ -31,7 +32,7 @@ namespace Tests
         [Test]
         public unsafe void SimpleStructSerialization()
         {
-            var simpleStruct = new SimpleStruct()
+            var initial = new SimpleStruct()
             {
                 IntValue = 123,
                 FloatValue = 11.1f,
@@ -45,14 +46,16 @@ namespace Tests
                 }
             };
 
-            TestUtils.SerializeDeserializeTest(simpleStruct);
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            Debug.Assert(JsonUtility.ToJson(initial) == JsonUtility.ToJson(result));
         }
 
 
         [Test]
         public void NestedStructSerialization()
         {
-            TestUtils.SerializeDeserializeTest(new SimpleStruct()
+            var initial = new SimpleStruct()
             {
                 IntValue = 123,
                 FloatValue = 11.1f,
@@ -68,7 +71,10 @@ namespace Tests
                         "three"
                     }
                 }
-            });
+            };
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            Debug.Assert(JsonUtility.ToJson(initial) == JsonUtility.ToJson(result));
         }
 
         [Test]
@@ -92,11 +98,18 @@ namespace Tests
                     "three"
                 }
             };
-            TestUtils.SerializeDeserializeTest(new SimpleStruct[]
+            var initial = new SimpleStruct[]
             {
                 a,
                 b
-            });
+            };
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            //Debug.Log(TestUtils.UnitySerializeArray(initial));
+            //Debug.Log(TestUtils.UnitySerializeArray(result));
+
+
+            Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
         }
 
         [Test]
@@ -114,11 +127,18 @@ namespace Tests
                 FloatValue = 11.1f,
                 BoolValue = true
             };
-            TestUtils.SerializeDeserializeTest(new List<SimpleStruct>
+            var initial = new List<SimpleStruct>
             {
                 a,
                 b
-            });
+            };
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            //Debug.Log(TestUtils.UnitySerializeArray(initial));
+            //Debug.Log(TestUtils.UnitySerializeArray(result));
+
+
+            Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
         }
     }
 }

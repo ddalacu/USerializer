@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using NUnit.Framework;
 using UnityEngine;
 using USerialization;
 
@@ -6,17 +9,31 @@ namespace Tests
 {
     public class TestUtils
     {
-        public static void SerializeDeserializeTest<T>(T value)
+        private static bool EqualArrays(byte[] a, byte[] b)
+        {
+            if (a.Length != b.Length)
+                return false;
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        public static T SerializeDeserializeTest<T>(T value)
         {
             var output = new SerializerOutput(2048);
             var uSerializer = new USerializer(new UnitySerializationPolicy());
 
             uSerializer.Serialize(output, value);
 
-            var json = output.GetData();
+            var result = output.GetData();
+            var memStream = new MemoryStream(result, 0, (int)output.Length);
 
-
-            uSerializer.TryDeserialize<T>(new SerializerInput(json), out var deserializeResult);
+            uSerializer.TryDeserialize<T>(new SerializerInput(memStream), out var deserializeResult);
 
             output.Clear();
             uSerializer.Serialize(output, deserializeResult);
@@ -24,24 +41,25 @@ namespace Tests
 
 
             var ob = default(T);
-            uSerializer.TryPopulateObject(new SerializerInput(json), ref ob);
+            memStream.Position = 0;
+            uSerializer.TryPopulateObject(new SerializerInput(memStream), ref ob);
 
             output.Clear();
             uSerializer.Serialize(output, deserializeResult);
             var json3 = output.GetData();
 
-            Debug.Log(json);
-            Debug.Log(json2);
-            Debug.Log(json3);
+            //Debug.Log(result);
+            //Debug.Log(json2);
+            //Debug.Log(json3);
 
 
-            if (json == json2)
+            if (EqualArrays(result, json2))
             {
-                Debug.Log(json);
+
             }
             else
             {
-                Debug.Log(json);
+                Debug.Log(result);
                 Debug.Log(json2);
 
                 Debug.Log(JsonUtility.ToJson(value));
@@ -49,7 +67,29 @@ namespace Tests
 
                 Assert.Fail();
             }
+
+            return deserializeResult;
         }
+
+        public static string UnitySerializeArray<T>(IList<T> list)
+        {
+            var builder = new StringBuilder();
+
+            builder.Append('[');
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                builder.Append(JsonUtility.ToJson(list[i]));
+
+                if (i < list.Count - 1)
+                    builder.Append(',');
+            }
+
+            builder.Append(']');
+
+            return builder.ToString();
+        }
+
 
     }
 }

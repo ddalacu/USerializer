@@ -17,10 +17,13 @@ namespace USerialization
         public readonly WriteDelegate Serialize;
         public readonly ReadDelegate Deserialize;
 
-        public SerializationMethods(WriteDelegate serialize, ReadDelegate deserialize)
+        public readonly DataType DataType;
+
+        public SerializationMethods(WriteDelegate serialize, ReadDelegate deserialize, DataType dataType)
         {
             Serialize = serialize;
             Deserialize = deserialize;
+            DataType = dataType;
         }
     }
 

@@ -1,310 +1,146 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.IO;
 using UnityEngine;
 
 namespace USerialization
 {
-    public partial class SerializerInput
+    public enum EndObject : int
     {
-        private Node _current;
 
-        public Node CurrentNode
+    }
+
+    public class SerializerInput
+    {
+        private readonly Stream _stream;
+
+        //private long _position;
+        //public long Positon => _position;
+
+        public SerializerInput(Stream stream)
         {
-            get { return _current; }
-            set { _current = value; }
+            _stream = stream;
         }
 
-        public void MarkAsRead()
+        public bool BeginReadSize(out EndObject endObject)
         {
-            _current = null;
-        }
+            var length = ReadInt();
 
-        public void SkipNode()
-        {
-            MarkAsRead();
-            Debug.Log($"Skipped value ");
-        }
+            Debug.Assert(length >= -1);
 
-        public SerializerInput(string json)
-        {
-            _current = Parse(json);
-        }
-
-        public float ReadFloat()
-        {
-            if (_current.IsNumber())
+            if (length == -1)
             {
-                var ret = _current.AsNumber.Float;
-                MarkAsRead();
-                return ret;
+                endObject = default;
+                return false;
             }
 
-            SkipNode();
-            return 0;
+            endObject = (EndObject)(_stream.Position + length);
+            return true;
         }
 
-        public float[] ReadFloatArray()
+        public void EndObject(EndObject endObject)
         {
-            if (_current.IsNull())
-            {
-                MarkAsRead();
-                return null;
-            }
-
-            if (_current.IsArray())
-            {
-                var jsonNodeAsArray = _current.AsArray;
-                var list = new float[jsonNodeAsArray.Count];
-
-                var index = 0;
-                foreach (var arrayElement in jsonNodeAsArray.ArrayElements)
-                {
-                    if (arrayElement.IsNumber())
-                        list[index] = arrayElement.AsNumber.Float;
-                    index++;
-                }
-
-                MarkAsRead();
-                return list;
-            }
-
-            SkipNode();
-            return null;
+            _stream.Position = (long)endObject;
         }
 
-        public bool ReadBool()
+        public byte ReadByte()
         {
-            if (_current.IsBool())
-            {
-                var ret = _current.AsBool.Value;
-                MarkAsRead();
-                return ret;
-            }
-            SkipNode();
-            return false;
+            return (byte)_stream.ReadByte();
         }
 
-        public bool[] ReadBoolArray()
+        private byte[] _buffer = new byte[32];
+
+        public unsafe float ReadFloat()
         {
-            if (_current.IsNull())
-            {
-                MarkAsRead();
-                return null;
-            }
+            _stream.Read(_buffer, 0, 4);
 
-            if (_current.IsArray())
-            {
-                var jsonNodeAsArray = _current.AsArray;
-                var list = new bool[jsonNodeAsArray.Count];
-
-                var index = 0;
-                foreach (var arrayElement in jsonNodeAsArray.ArrayElements)
-                {
-                    if (arrayElement.IsBool())
-                        list[index] = arrayElement.AsBool.Value;
-                    index++;
-                }
-
-                MarkAsRead();
-                return list;
-            }
-            SkipNode();
-            return null;
+            uint tmpBuffer = (uint)(_buffer[0] | _buffer[1] << 8 | _buffer[2] << 16 | _buffer[3] << 24);
+            //_position += 4;
+            return *((float*)&tmpBuffer);
         }
 
         public int ReadInt()
         {
-            if (_current.IsNumber())
-            {
-                var ret = _current.AsNumber.Int;
-                MarkAsRead();
-                return ret;
-            }
-            SkipNode();
-            return 0;
+            _stream.Read(_buffer, 0, 4);
+
+            var value = _buffer[0] | _buffer[1] << 8 | _buffer[2] << 16 | _buffer[3] << 24;
+            //_position += 4;
+            return value;
         }
 
-        public int[] ReadIntArray()
+        public unsafe string ReadString()
         {
-            if (_current.IsNull())
+            int length = ReadInt();
+
+            if (length == -1)
             {
-                MarkAsRead();
                 return null;
             }
 
-            if (_current.IsArray())
+            if (length == 0)
             {
-                var jsonNodeAsArray = _current.AsArray;
-                var list = new int[jsonNodeAsArray.Count];
+                return string.Empty;
+            }
 
-                var index = 0;
-                foreach (var arrayElement in jsonNodeAsArray.ArrayElements)
+            var ptr = new byte[length];
+            _stream.Read(ptr, 0, length);
+
+            fixed (byte* bufferPtr = ptr)
+            {
+                var str = new string((char*)(bufferPtr), 0, length / sizeof(char));
+                //_position += length;
+                return str;
+            }
+        }
+
+        public void SkipData(DataType dataType)
+        {
+            switch (dataType)
+            {
+                case DataType.Byte:
+                    _stream.Position += 1;
+                    return;
+                case DataType.Boolean:
+                    _stream.Position += 1;
+                    return;
+                case DataType.Int32:
+                    _stream.Position += 4;
+                    break;
+                case DataType.Int64:
+                    _stream.Position += 8;
+                    break;
+                case DataType.Single:
+                    _stream.Position += 4;
+                    break;
+                case DataType.Double:
+                    _stream.Position += 8;
+                    break;
+                case DataType.VariableSize:
                 {
-                    if (arrayElement.IsNumber())
-                        list[index] = arrayElement.AsNumber.Int;
-                    index++;
+                    var size = ReadInt();
+                    Debug.Assert(size >= -1);
+                    if (size > 0)
+                        _stream.Position += size;
+                    break;
                 }
-                MarkAsRead();
-                return list;
-            }
-
-            SkipNode();
-            return null;
-        }
-
-        public string ReadString()
-        {
-            if (_current.IsNull())
-            {
-                MarkAsRead();
-                return null;
-            }
-
-            if (_current.IsString())
-            {
-                var ret = _current.AsString.Value;
-                MarkAsRead();
-                return ret;
-            }
-
-            SkipNode();
-
-            return null;
-        }
-
-        public string[] ReadStringArray()
-        {
-            if (_current.IsNull())
-            {
-                MarkAsRead();
-                return null;
-            }
-
-            if (_current.IsArray())
-            {
-                var jsonNodeAsArray = _current.AsArray;
-                var list = new string[jsonNodeAsArray.Count];
-
-                var index = 0;
-                foreach (var arrayElement in jsonNodeAsArray.ArrayElements)
+                case DataType.String:
                 {
-                    if (arrayElement.IsString())
-                        list[index] = arrayElement.AsString.Value;
-                    index++;
+                    var size = ReadInt();
+                    Debug.Assert(size >= -1);
+                    if (size > 0)
+                        _stream.Position += size;
+                    break;
                 }
-                MarkAsRead();
-                return list;
-            }
-
-            SkipNode();
-            return null;
-        }
-
-        public bool BeginReadArray(out int i, out ArrayElementsEnumerator next)
-        {
-            if (_current.IsArray())
-            {
-                var array = _current.AsArray;
-
-                MarkAsRead();
-
-                var elements = array.ArrayElements;
-                i = elements.Count;
-
-                next = new ArrayElementsEnumerator(elements, this);
-
-                return true;
-            }
-
-            SkipNode();
-            i = 0;
-            next = default;
-            return false;
-        }
-
-        public readonly ref struct ArrayElementsEnumerator
-        {
-            private readonly List<Node> _nodes;
-            private readonly SerializerInput _serializerInput;
-
-            public ArrayElementsEnumerator(List<Node> nodes, SerializerInput serializerInput)
-            {
-                _nodes = nodes;
-                _serializerInput = serializerInput;
-            }
-
-            public bool Next(ref int index)
-            {
-                if (index == _nodes.Count)
-                    return false;
-
-                _serializerInput._current = _nodes[index];
-                index++;
-                return true;
-            }
-        }
-
-        public void EndArray()
-        {
-            Debug.Assert(_current == null);
-            MarkAsRead();
-        }
-
-        public bool BeginReadObject(out ObjectFieldsEnumerator fieldsEnumerator)
-        {
-            if (_current.IsNull())
-            {
-                MarkAsRead();
-                fieldsEnumerator = default;
-                return false;
-            }
-
-            if (_current.IsObject())
-            {
-                var objNode = _current.AsObject;
-
-                MarkAsRead();
-
-                fieldsEnumerator = new ObjectFieldsEnumerator(objNode.ObjectFields, this);
-                return true;
-            }
-
-            SkipNode();
-
-            fieldsEnumerator = default;
-            return false;
-        }
-
-        public readonly ref struct ObjectFieldsEnumerator
-        {
-            private readonly List<KeyValuePair<string, Node>> _nodes;
-            private readonly SerializerInput _serializerInput;
-
-            public ObjectFieldsEnumerator(List<KeyValuePair<string, Node>> nodes, SerializerInput serializerInput)
-            {
-                _nodes = nodes;
-                _serializerInput = serializerInput;
-            }
-
-            public bool Next(ref int index, out string fieldName)
-            {
-                if (index == _nodes.Count)
+                case DataType.Array:
                 {
-                    fieldName = null;
-                    return false;
+                    var size = ReadInt();
+                    Debug.Assert(size >= -1);
+                    if (size > 0)
+                        _stream.Position += size;
+                    break;
                 }
-
-                var arrayNodeObjectField = _nodes[index];
-
-                fieldName = arrayNodeObjectField.Key;
-                _serializerInput._current = arrayNodeObjectField.Value;
-                index++;
-                return true;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(dataType), dataType, null);
             }
-        }
-
-        public void CloseObject()
-        {
-            MarkAsRead();
         }
     }
 }

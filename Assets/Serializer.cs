@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
@@ -309,7 +310,7 @@ public class Serializer : MonoBehaviour
             Debug.Log(data);
             Debug.Log(JsonUtility.ToJson(testClass));
 
-            _uSerializer.DeserializeObject(new SerializerInput(data), testClass);
+            _uSerializer.DeserializeObject(new SerializerInput(new MemoryStream(data)), testClass);
         }
 
 

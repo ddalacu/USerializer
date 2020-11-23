@@ -16,7 +16,7 @@ namespace USerialization
             _serializer = serializer;
         }
 
-        private WriteDelegate GetValueTypeWriter(WriteDelegate elementWriter, Type fieldType, Type elementType)
+        private WriteDelegate GetValueTypeWriter(WriteDelegate elementWriter, Type fieldType, Type elementType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);
             var size = UnsafeUtility.SizeOf(elementType);
@@ -27,31 +27,33 @@ namespace USerialization
 
                 if (list == null)
                 {
-                    output.Null();
+                    output.WriteNull();
                     return;
                 }
 
                 var array = listHelper.GetArray(list, out var count);
 
-                using (var block = new ValueArrayBlock(output, count, size))
+                var sizeTracker = output.BeginSizeTrack();
                 {
-                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var hande);
+                    output.WriteByte((byte)dataType);
+                    output.WriteInt(count);
+
+                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
                     for (var index = 0; index < count; index++)
                     {
                         elementWriter(address, output);
                         address += size;
-
-                        if (index < count - 1)
-                            block.WriteSeparator();
                     }
 
-                    UnsafeUtility.ReleaseGCObject(hande);
+                    UnsafeUtility.ReleaseGCObject(handle);
                 }
+
+                output.WriteSizeTrack(sizeTracker);
             };
         }
 
-        private ReadDelegate GetValueTypeReader(ReadDelegate elementReader, Type fieldType, Type elementType)
+        private ReadDelegate GetValueTypeReader(ReadDelegate elementReader, Type fieldType, Type elementType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);
             var size = UnsafeUtility.SizeOf(elementType);
@@ -60,8 +62,10 @@ namespace USerialization
             {
                 ref var list = ref Unsafe.AsRef<object>(fieldAddress);
 
-                if (input.BeginReadArray(out var count, out var elementEnumerator))
+                if (input.BeginReadSize(out var end))
                 {
+                    var type = (DataType)input.ReadByte();
+                    var count = input.ReadInt();
                     if (list == null)
                         list = FormatterServices.GetUninitializedObject(fieldType);
 
@@ -69,18 +73,20 @@ namespace USerialization
 
                     listHelper.SetArray(list, array, count);
 
-                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-                    var index = 0;
-                    while (elementEnumerator.Next(ref index))
+                    if (type == dataType)
                     {
-                        elementReader(address, input);
-                        address += size;
+                        var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
+
+                        for (int i = 0; i < count; i++)
+                        {
+                            elementReader(address, input);
+                            address += size;
+                        }
+
+                        UnsafeUtility.ReleaseGCObject(handle);
                     }
 
-                    UnsafeUtility.ReleaseGCObject(handle);
-
-                    input.EndArray();
+                    input.EndObject(end);
                 }
                 else
                 {
@@ -89,7 +95,7 @@ namespace USerialization
             };
         }
 
-        private WriteDelegate GetReferenceTypeWriter(WriteDelegate elementWriter, Type fieldType)
+        private WriteDelegate GetReferenceTypeWriter(WriteDelegate elementWriter, Type fieldType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);
 
@@ -99,13 +105,16 @@ namespace USerialization
 
                 if (list == null)
                 {
-                    output.Null();
+                    output.WriteNull();
                     return;
                 }
 
                 var array = listHelper.GetArray<object>(list, out var count);
-                using (var block = new ReferenceArrayBlock(output, count))
+
+                var sizeTracker = output.BeginSizeTrack();
                 {
+                    output.WriteByte((byte)dataType);
+                    output.WriteInt(count);
 
                     var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
@@ -118,21 +127,19 @@ namespace USerialization
                         }
                         else
                         {
-                            output.Null();
+                            output.WriteNull();
                         }
 
                         address += sizeof(void*);
-
-                        if (index < count - 1)
-                            block.WriteSeparator();
                     }
 
                     UnsafeUtility.ReleaseGCObject(handle);
                 }
+                output.WriteSizeTrack(sizeTracker);
             };
         }
 
-        private ReadDelegate GetReferenceTypeReader(ReadDelegate elementReader, Type fieldType, Type elementType)
+        private ReadDelegate GetReferenceTypeReader(ReadDelegate elementReader, Type fieldType, Type elementType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);
 
@@ -140,8 +147,10 @@ namespace USerialization
             {
                 ref var list = ref Unsafe.AsRef<object>(fieldAddress);
 
-                if (input.BeginReadArray(out var count, out var elementEnumerator))
+                if (input.BeginReadSize(out var end))
                 {
+                    var type = (DataType)input.ReadByte();
+                    var count = input.ReadInt();
                     if (list == null)
                         list = FormatterServices.GetUninitializedObject(fieldType);
 
@@ -149,18 +158,20 @@ namespace USerialization
 
                     listHelper.SetArray(list, array, count);
 
-                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-                    var index = 0;
-                    while (elementEnumerator.Next(ref index))
+                    if (type == dataType)
                     {
-                        elementReader(address, input);
-                        address += sizeof(void*);
+                        var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
+
+                        for (var i = 0; i < count; i++)
+                        {
+                            elementReader(address, input);
+                            address += sizeof(void*);
+                        }
+
+                        UnsafeUtility.ReleaseGCObject(handle);
                     }
 
-                    UnsafeUtility.ReleaseGCObject(handle);
-
-                    input.EndArray();
+                    input.EndObject(end);
                 }
                 else
                 {
@@ -195,14 +206,14 @@ namespace USerialization
             if (elementType.IsValueType)
             {
                 serializationMethods = new SerializationMethods(
-                    GetValueTypeWriter(elementSerializationMethods.Serialize, type, elementType),
-                    GetValueTypeReader(elementSerializationMethods.Deserialize, type, elementType));
+                    GetValueTypeWriter(elementSerializationMethods.Serialize, type, elementType, elementSerializationMethods.DataType),
+                    GetValueTypeReader(elementSerializationMethods.Deserialize, type, elementType, elementSerializationMethods.DataType), DataType.Array);
             }
             else
             {
                 serializationMethods = new SerializationMethods(
-                    GetReferenceTypeWriter(elementSerializationMethods.Serialize, type),
-                    GetReferenceTypeReader(elementSerializationMethods.Deserialize, type, elementType));
+                    GetReferenceTypeWriter(elementSerializationMethods.Serialize, type, elementSerializationMethods.DataType),
+                    GetReferenceTypeReader(elementSerializationMethods.Deserialize, type, elementType, elementSerializationMethods.DataType), DataType.Array);
             }
 
             return true;
