@@ -9,14 +9,17 @@ namespace Tests
 {
     public class TestUtils
     {
-        private static bool EqualArrays(byte[] a, byte[] b)
+        public static bool EqualArrays<T>(IList<T> a, IList<T> b)
         {
-            if (a.Length != b.Length)
+            var aLength = a.Count;
+            if (aLength != b.Count)
                 return false;
 
-            for (int i = 0; i < a.Length; i++)
+            var equalityComparer = EqualityComparer<T>.Default;
+
+            for (var i = 0; i < aLength; i++)
             {
-                if (a[i] != b[i])
+                if (equalityComparer.Equals(a[i], b[i]) == false)
                     return false;
             }
 
@@ -53,7 +56,7 @@ namespace Tests
             //Debug.Log(json3);
 
 
-            if (EqualArrays(result, json2))
+            if (EqualArrays(result, json2) && EqualArrays(result, json3))
             {
 
             }

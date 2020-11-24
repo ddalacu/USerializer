@@ -9,6 +9,7 @@ namespace USerialization
     public struct FieldData
     {
         public readonly FieldInfo FieldInfo;
+        public int FieldNameHash;
         public readonly SerializationMethods SerializationMethods;
         public readonly ushort Offset;
 
@@ -17,6 +18,7 @@ namespace USerialization
             FieldInfo = fieldInfo;
             SerializationMethods = serializationMethods;
             Offset = offset;
+            FieldNameHash = fieldInfo.Name.GetInt32Hash();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -41,7 +41,7 @@ namespace USerialization
             var writer = GetWriter(typeData);
             var reader = GetReader(typeData);
 
-            serializationMethods = new SerializationMethods(writer, reader, DataType.VariableSize);
+            serializationMethods = new SerializationMethods(writer, reader, DataType.Object);
             return true;
         }
 
@@ -69,7 +69,7 @@ namespace USerialization
 
                     for (var i = 0; i < fieldCount; i++)
                     {
-                        var field = input.ReadString();
+                        var field = input.ReadInt();
 
                         var type = (DataType)input.ReadByte();
 
@@ -79,7 +79,7 @@ namespace USerialization
                         {
                             var fieldData = fieldDatas[index];
 
-                            if (field == fieldData.FieldInfo.Name && 
+                            if (field == fieldData.FieldNameHash &&
                                 type == fieldData.SerializationMethods.DataType)
                             {
                                 var fieldDataOffset = objectAddress + fieldData.Offset;

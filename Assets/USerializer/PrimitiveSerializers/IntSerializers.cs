@@ -24,5 +24,4 @@ namespace USerialization
             value = input.ReadInt();
         }
     }
-
 }

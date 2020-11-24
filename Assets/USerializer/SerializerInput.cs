@@ -49,6 +49,13 @@ namespace USerialization
 
         private byte[] _buffer = new byte[32];
 
+        public uint ReadUInt()
+        {
+            _stream.Read(_buffer, 0, 4);
+            uint value = (uint)(_buffer[0] | _buffer[1] << 8 | _buffer[2] << 16 | _buffer[3] << 24);
+            return value;
+        }
+
         public unsafe float ReadFloat()
         {
             _stream.Read(_buffer, 0, 4);
@@ -114,7 +121,7 @@ namespace USerialization
                 case DataType.Double:
                     _stream.Position += 8;
                     break;
-                case DataType.VariableSize:
+                case DataType.Object:
                 {
                     var size = ReadInt();
                     Debug.Assert(size >= -1);
@@ -141,6 +148,42 @@ namespace USerialization
                 default:
                     throw new ArgumentOutOfRangeException(nameof(dataType), dataType, null);
             }
+        }
+
+        public ulong ReadUInt64()
+        {
+            _stream.Read(_buffer, 0, 8);
+            var position = 0;
+            uint lo = (uint)(_buffer[position++] | _buffer[position++] << 8 |
+                             _buffer[position++] << 16 | _buffer[position++] << 24);
+            uint hi = (uint)(_buffer[position++] | _buffer[position++] << 8 |
+                             _buffer[position++] << 16 | _buffer[position++] << 24);
+            return ((ulong)hi) << 32 | lo;
+        }
+
+        public long ReadInt64()
+        {
+            _stream.Read(_buffer, 0, 8);
+            var position = 0;
+            uint lo = (uint)(_buffer[position++] | _buffer[position++] << 8 |
+                             _buffer[position++] << 16 | _buffer[position++] << 24);
+            uint hi = (uint)(_buffer[position++] | _buffer[position++] << 8 |
+                             _buffer[position++] << 16 | _buffer[position++] << 24);
+            return (long)(((ulong)hi) << 32 | lo);
+        }
+
+        public short ReadInt16()
+        {
+            _stream.Read(_buffer, 0, 2);
+            var position = 0;
+            return (short)(_buffer[position++] | _buffer[position++] << 8);
+        }
+
+        public ushort ReadUInt16()
+        {
+            _stream.Read(_buffer, 0, 2);
+            var position = 0;
+            return (ushort)(_buffer[position++] | _buffer[position++] << 8);
         }
     }
 }

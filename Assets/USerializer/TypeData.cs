@@ -6,6 +6,23 @@ namespace USerialization
     {
         public Type Type;
         public FieldData[] Fields;
+
+        public void CheckDuplicateHashes()
+        {
+            var fieldsLength = Fields.Length;
+            for (int i = 0; i < fieldsLength; i++)
+            {
+                for (int j = 0; j < fieldsLength; j++)
+                {
+                    if (i == j)
+                        continue;
+
+                    if (Fields[i].FieldNameHash == Fields[j].FieldNameHash)
+                        throw new Exception("Field hash collision!");
+                }
+            }
+        }
+
     }
 
 }

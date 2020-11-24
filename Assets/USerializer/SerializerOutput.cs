@@ -9,7 +9,7 @@ namespace USerialization
         public static unsafe void WriteObject(SerializerOutput output, FieldData[] fields, byte* address)
         {
             var fieldsCount = fields.Length;
-           
+
             var track = output.BeginSizeTrack();
             {
                 if (fieldsCount > 255)
@@ -21,7 +21,7 @@ namespace USerialization
                 {
                     var fieldData = fields[index];
 
-                    output.WriteString(fieldData.FieldInfo.Name);
+                    output.WriteInt(fieldData.FieldNameHash);
 
                     output.WriteByte((byte)fieldData.SerializationMethods.DataType);
 
@@ -55,51 +55,44 @@ namespace USerialization
             _length = 0;
         }
 
-        public unsafe void EnsureSize(long size)
+        public void EnsureSize(long size)//inline this
         {
             var capacity = _buffer.Length;
 
             if (size > capacity)
-            {
-                var newCapacity = size;
-
-                var doubledCapacity = capacity * 2;
-                if (newCapacity < doubledCapacity)
-                {
-                    newCapacity = doubledCapacity;
-                }
-
-                if ((uint)doubledCapacity > (Int32.MaxValue / 2))
-                {
-                    newCapacity = size > (Int32.MaxValue / 2) ? size : (Int32.MaxValue / 2);
-                }
-
-                var newBuffer = new byte[newCapacity];
-
-                fixed (byte* newBufferPtr = newBuffer)
-                {
-                    fixed (byte* bufferPtr = _buffer)
-                    {
-                        UnsafeUtility.MemCpy(newBufferPtr, bufferPtr, _length);
-                    }
-                }
-
-                _buffer = newBuffer;
-            }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            else
-            {
-                if (size < 0)
-                {
-                    throw new Exception("Capacity cannot be negative");
-                }
-            }
-#endif
+                ExpandCapacity(size);
 
             if (_length < size)
-            {
                 _length = size;
+        }
+
+        private unsafe void ExpandCapacity(long size)
+        {
+            var newCapacity = size;
+            var capacity = _buffer.Length;
+
+            var doubledCapacity = capacity * 2;
+            if (newCapacity < doubledCapacity)
+            {
+                newCapacity = doubledCapacity;
             }
+
+            if ((uint) doubledCapacity > (int.MaxValue / 2))
+            {
+                newCapacity = size > (int.MaxValue / 2) ? size : (int.MaxValue / 2);
+            }
+
+            var newBuffer = new byte[newCapacity];
+
+            fixed (byte* newBufferPtr = newBuffer)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+                    UnsafeUtility.MemCpy(newBufferPtr, bufferPtr, _length);
+                }
+            }
+
+            _buffer = newBuffer;
         }
 
 
@@ -107,12 +100,12 @@ namespace USerialization
         {
             EnsureSize(_position + 4);
             _position += 4;
-            return (SizeTracker)Position;
+            return (SizeTracker)_position;
         }
 
         public void WriteSizeTrack(SizeTracker tracker)
         {
-            var length = Position - (long)tracker;
+            var length = _position - (long)tracker;
 
             if (length > Int32.MaxValue)
                 throw new Exception();
@@ -153,18 +146,14 @@ namespace USerialization
             _buffer[_position++] = (byte)(length >> 16);
             _buffer[_position++] = (byte)(length >> 24);
 
-            if (length > 0)
+            fixed (void* textPtr = value)
             {
-                fixed (void* textPtr = value)
+                fixed (byte* bufferPtr = _buffer)
                 {
-                    fixed (byte* bufferPtr = _buffer)
-                    {
-                        UnsafeUtility.MemCpy(bufferPtr + _position, textPtr, length);
-                    }
+                    UnsafeUtility.MemCpy(bufferPtr + _position, textPtr, length);
                 }
-
-                _position += length;
             }
+            _position += length;
         }
 
         public void WriteNull()
@@ -192,14 +181,9 @@ namespace USerialization
 
         public unsafe void WriteBytes(byte* bytes, int length)
         {
-            if (length > 0)
-            {
-                fixed (byte* bufferPtr = _buffer)
-                {
-                    UnsafeUtility.MemCpy(bufferPtr + _position, bytes, length);
-                }
-                _position += length;
-            }
+            fixed (byte* bufferPtr = _buffer)
+                UnsafeUtility.MemCpy(bufferPtr + _position, bytes, length);
+            _position += length;
         }
 
         public void WriteByte(byte data)
@@ -223,6 +207,59 @@ namespace USerialization
             _buffer[_position++] = (byte)(tmpValue >> 8);
             _buffer[_position++] = (byte)(tmpValue >> 16);
             _buffer[_position++] = (byte)(tmpValue >> 24);
+        }
+
+        public void WriteUInt(uint value)
+        {
+            EnsureSize(_position + 4);
+            _buffer[_position++] = (byte)value;
+            _buffer[_position++] = (byte)(value >> 8);
+            _buffer[_position++] = (byte)(value >> 16);
+            _buffer[_position++] = (byte)(value >> 24);
+        }
+
+        public void WriteUInt64(ulong value)
+        {
+            EnsureSize(_position + 8);
+
+            _buffer[_position++] = (byte)value;
+            _buffer[_position++] = (byte)(value >> 8);
+            _buffer[_position++] = (byte)(value >> 16);
+            _buffer[_position++] = (byte)(value >> 24);
+            _buffer[_position++] = (byte)(value >> 32);
+            _buffer[_position++] = (byte)(value >> 40);
+            _buffer[_position++] = (byte)(value >> 48);
+            _buffer[_position++] = (byte)(value >> 56);
+        }
+
+        public void WriteInt64(long value)
+        {
+            EnsureSize(_position + 8);
+
+            _buffer[_position++] = (byte)value;
+            _buffer[_position++] = (byte)(value >> 8);
+            _buffer[_position++] = (byte)(value >> 16);
+            _buffer[_position++] = (byte)(value >> 24);
+            _buffer[_position++] = (byte)(value >> 32);
+            _buffer[_position++] = (byte)(value >> 40);
+            _buffer[_position++] = (byte)(value >> 48);
+            _buffer[_position++] = (byte)(value >> 56);
+        }
+
+        public void WriteInt16(short value)
+        {
+            EnsureSize(_position + 2);
+
+            _buffer[_position++] = (byte)value;
+            _buffer[_position++] = (byte)(value >> 8);
+        }
+
+        public void WriteUInt16(ushort value)
+        {
+            EnsureSize(_position + 2);
+
+            _buffer[_position++] = (byte)value;
+            _buffer[_position++] = (byte)(value >> 8);
         }
     }
 

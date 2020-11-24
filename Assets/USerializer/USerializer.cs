@@ -130,7 +130,7 @@ namespace USerialization
                 _datas.Add(type, typeData);//to prevent recursion when GetFields
 
                 typeData.Fields = GetFields(type).ToArray();
-
+                typeData.CheckDuplicateHashes();
                 _datas.Add(type, typeData);
 
                 //_datas[type] = typeData;//setting correct array

@@ -1,107 +1,288 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
+using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace Tests
 {
     public class PrimitiveSerializationTests
     {
+        public static unsafe T BuildData<T>() where T : unmanaged
+        {
+            var size = sizeof(T);
+
+            var item = new T();
+
+            var addr = (byte*)UnsafeUtility.AddressOf(ref item);
+
+            for (int i = 0; i < size; i++)
+                addr[i] = (byte)Random.Range(0, 255);
+
+            return item;
+        }
+
+        public static List<T> BuildDataList<T>(int count = 100) where T : unmanaged
+        {
+            var list = new List<T>(count);
+            for (int i = 0; i < count; i++)
+                list.Add(BuildData<T>());
+
+            return list;
+        }
+
+        public static T[] BuildDataArray<T>(int count = 100) where T : unmanaged
+        {
+            var array = new T[count];
+            for (int i = 0; i < count; i++)
+                array[i] = BuildData<T>();
+
+            return array;
+        }
 
         [Test]
         public void IntSerialization()
         {
-            TestUtils.SerializeDeserializeTest<int>(123);
+            var input = BuildData<int>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
         }
 
         [Test]
         public void IntArraySerialization()
         {
-            TestUtils.SerializeDeserializeTest(new int[]
-            {
-                1,2,3
-            });
+            var input = BuildDataArray<int>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
         }
 
         [Test]
         public void IntListSerialization()
         {
-            TestUtils.SerializeDeserializeTest(new List<int>
-            {
-                1,2,3
-            });
+            var input = BuildDataList<int>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void UIntSerialization()
+        {
+            var input = BuildData<uint>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
+        }
+
+        [Test]
+        public void UIntArraySerialization()
+        {
+            var input = BuildDataArray<uint>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void UIntListSerialization()
+        {
+            var input = BuildDataList<uint>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+        [Test]
+        public void ShortSerialization()
+        {
+            var input = BuildData<short>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
+        }
+
+        [Test]
+        public void ShortArraySerialization()
+        {
+            var input = BuildDataArray<short>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void ShortListSerialization()
+        {
+            var input = BuildDataList<short>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void UShortSerialization()
+        {
+            var input = BuildData<ushort>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
+        }
+
+        [Test]
+        public void UShortArraySerialization()
+        {
+            var input = BuildDataArray<ushort>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void UShortListSerialization()
+        {
+            var input = BuildDataList<ushort>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void LongSerialization()
+        {
+            var input = BuildData<long>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
+        }
+
+        [Test]
+        public void LongArraySerialization()
+        {
+            var input = BuildDataArray<long>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void LongListSerialization()
+        {
+            var input = BuildDataList<long>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void ULongSerialization()
+        {
+            var input = BuildData<ulong>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
+        }
+
+        [Test]
+        public void ULongArraySerialization()
+        {
+            var input = BuildDataArray<ulong>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void ULongListSerialization()
+        {
+            var input = BuildDataList<ulong>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
         }
 
         [Test]
         public void FloatSerialization()
         {
-            TestUtils.SerializeDeserializeTest<float>(123.133f);
+            var input = BuildData<float>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
         }
 
         [Test]
         public void FloatArraySerialization()
         {
-            TestUtils.SerializeDeserializeTest(new float[]
-            {
-                1.1f,2.2f,3.3f
-            });
+            var input = BuildDataArray<float>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
         }
 
         [Test]
         public void FloatListSerialization()
         {
-            TestUtils.SerializeDeserializeTest(new List<float>
-            {
-                1.1f,2.2f,3.3f
-            });
+            var input = BuildDataList<float>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
         }
 
 
         [Test]
         public void BoolSerialization()
         {
-            TestUtils.SerializeDeserializeTest<bool>(true);
+            var result = TestUtils.SerializeDeserializeTest(true);
+            Debug.Assert(true == result);
         }
 
         [Test]
         public void BoolArraySerialization()
         {
-            TestUtils.SerializeDeserializeTest(new bool[]
-            {
-               true,false,true
-            });
+            var input = new bool[] { false, true, false, false };
+            var result = TestUtils.SerializeDeserializeTest(input);
+
+            Debug.Assert(TestUtils.EqualArrays(input, result));
         }
 
         [Test]
         public void BoolListSerialization()
         {
-            TestUtils.SerializeDeserializeTest(new List<bool>
-            {
-                false,true,false
-            });
+            var input = new List<bool>() { false, true, false, false };
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
         }
 
+        [Test]
+        public void CharSerialization()
+        {
+            var result = TestUtils.SerializeDeserializeTest('a');
+            Debug.Assert('a' == result);
+        }
+
+        [Test]
+        public void CharArraySerialization()
+        {
+            var input = new [] { 'a', 'b', 'c', 'd' };
+            var result = TestUtils.SerializeDeserializeTest(input);
+
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void CharListSerialization()
+        {
+            var input = new List<char>() { 'a', 'b', 'c', 'd' };
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
 
         [Test]
         public void StringSerialization()
         {
-            TestUtils.SerializeDeserializeTest<string>("haolo");
+            var input = "haolo";
+            var result = TestUtils.SerializeDeserializeTest<string>(input);
+            Debug.Assert(input == result);
         }
 
         [Test]
         public void StringArraySerialization()
         {
-            TestUtils.SerializeDeserializeTest(new string[]
+            var input = new string[]
             {
                 "haolo","haolo1","haolo2"
-            });
+            };
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
         }
 
         [Test]
         public void StringListSerialization()
         {
-            TestUtils.SerializeDeserializeTest(new List<string>
+            var input = new List<string>
             {
                 "haolo0","haolo00","haolo000"
-            });
+            };
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
         }
     }
 }

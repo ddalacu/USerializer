@@ -43,7 +43,7 @@ namespace USerialization
             var writer = GetWriter(typeData);
             var reader = GetReader(type, typeData);
 
-            serializationMethods = new SerializationMethods(writer, reader, DataType.VariableSize);
+            serializationMethods = new SerializationMethods(writer, reader, DataType.Object);
 
             return true;
         }
@@ -96,7 +96,7 @@ namespace USerialization
 
                     for (int i = 0; i < fieldsCount; i++)
                     {
-                        var field = input.ReadString();
+                        var field = input.ReadInt();
                         var type = (DataType)input.ReadByte();
 
                         var deserialized = false;
@@ -105,7 +105,7 @@ namespace USerialization
                         {
                             var fieldData = fieldDatas[index];
 
-                            if (field == fieldData.FieldInfo.Name && 
+                            if (field == fieldData.FieldNameHash && 
                                 type == fieldData.SerializationMethods.DataType)
                             {
                                 fieldData.SerializationMethods.Deserialize(objectAddress + fieldData.Offset, input);
@@ -122,7 +122,7 @@ namespace USerialization
                         }
                     }
 
-                    if (callSerializationEvents)
+                    if (callSerializationEvents)//todo move in separate action to get rid of if
                         Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
 
                     input.EndObject(end);
