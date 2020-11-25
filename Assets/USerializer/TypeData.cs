@@ -10,6 +10,8 @@ namespace USerialization
         public void CheckDuplicateHashes()
         {
             var fieldsLength = Fields.Length;
+            if (fieldsLength > 255)
+                throw new Exception();
             for (int i = 0; i < fieldsLength; i++)
             {
                 for (int j = 0; j < fieldsLength; j++)

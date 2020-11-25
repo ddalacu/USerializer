@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.IL2CPP.CompilerServices;
 using UnityEngine;
 
 namespace USerialization
@@ -45,18 +46,40 @@ namespace USerialization
             return true;
         }
 
+        [Il2CppSetOption(Option.NullChecks, false)]
+        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         private static WriteDelegate GetWriter(TypeData typeData)
         {
             return delegate (void* fieldAddress, SerializerOutput output)
             {
-                Shared.WriteObject(output, typeData.Fields, (byte*)fieldAddress);
+                byte* address = (byte*)fieldAddress;
+                var fieldsCount = typeData.Fields.Length;
+
+                var track = output.BeginSizeTrack();
+                {
+                    output.WriteByte((byte)fieldsCount);
+
+                    for (var index = 0; index < fieldsCount; index++)
+                    {
+                        var fieldData = typeData.Fields[index];
+
+                        output.EnsureNext(5);
+                        output.WriteIntUnchecked(fieldData.FieldNameHash);
+                        output.WriteByteUnchecked((byte)fieldData.SerializationMethods.DataType);
+
+                        fieldData.SerializationMethods.Serialize(address + fieldData.Offset, output);
+                    }
+                }
+                output.WriteSizeTrack(track);
             };
         }
 
 
+        [Il2CppSetOption(Option.NullChecks, false)]
+        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         private static ReadDelegate GetReader(TypeData typeData)
         {
-            return delegate (void* address, SerializerInput input)
+            void Reader(void* address, SerializerInput input)
             {
                 if (input.BeginReadSize(out var end))
                 {
@@ -65,13 +88,13 @@ namespace USerialization
                     var fieldDatas = typeData.Fields;
                     var fieldsLength = fieldDatas.Length;
 
-                    var objectAddress = (byte*)address;
+                    var objectAddress = (byte*) address;
 
                     for (var i = 0; i < fieldCount; i++)
                     {
                         var field = input.ReadInt();
 
-                        var type = (DataType)input.ReadByte();
+                        var type = (DataType) input.ReadByte();
 
                         var deserialized = false;
 
@@ -79,8 +102,7 @@ namespace USerialization
                         {
                             var fieldData = fieldDatas[index];
 
-                            if (field == fieldData.FieldNameHash &&
-                                type == fieldData.SerializationMethods.DataType)
+                            if (field == fieldData.FieldNameHash && type == fieldData.SerializationMethods.DataType)
                             {
                                 var fieldDataOffset = objectAddress + fieldData.Offset;
                                 fieldData.SerializationMethods.Deserialize(fieldDataOffset, input);
@@ -95,7 +117,6 @@ namespace USerialization
                             //skip field
                             Debug.Log("Skipping field!");
                         }
-
                     }
 
                     input.EndObject(end);
@@ -104,7 +125,9 @@ namespace USerialization
                 {
                     Debug.LogError("Changed from nullable?");
                 }
-            };
+            }
+
+            return Reader;
         }
     }
 }

@@ -310,7 +310,7 @@ public class Serializer : MonoBehaviour
             Debug.Log(data);
             Debug.Log(JsonUtility.ToJson(testClass));
 
-            _uSerializer.DeserializeObject(new SerializerInput(new MemoryStream(data)), testClass);
+            _uSerializer.DeserializeObject(new SerializerInput(data), testClass);
         }
 
 

@@ -18,7 +18,7 @@ namespace USerialization
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = *(bool*)(fieldAddress);
-            output.WriteByte(value ? (byte) 1 : (byte) 0);
+            output.WriteByte(value ? (byte)1 : (byte)0);
         }
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)

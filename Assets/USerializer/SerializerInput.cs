@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace USerialization
@@ -11,14 +12,16 @@ namespace USerialization
 
     public class SerializerInput
     {
-        private readonly Stream _stream;
+        private readonly byte[] _buffer;
+        private long _position;
 
         //private long _position;
         //public long Positon => _position;
 
-        public SerializerInput(Stream stream)
+        public SerializerInput(byte[] stream)
         {
-            _stream = stream;
+            _buffer = stream;
+            _position = 0;
         }
 
         public bool BeginReadSize(out EndObject endObject)
@@ -33,47 +36,46 @@ namespace USerialization
                 return false;
             }
 
-            endObject = (EndObject)(_stream.Position + length);
+            endObject = (EndObject)(_position + length);
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
-            _stream.Position = (long)endObject;
+            _position = (long)endObject;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ReadByte()
         {
-            return (byte)_stream.ReadByte();
+            return _buffer[_position++];
         }
 
-        private byte[] _buffer = new byte[32];
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint ReadUInt()
         {
-            _stream.Read(_buffer, 0, 4);
-            uint value = (uint)(_buffer[0] | _buffer[1] << 8 | _buffer[2] << 16 | _buffer[3] << 24);
+            uint value = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe float ReadFloat()
         {
-            _stream.Read(_buffer, 0, 4);
-
-            uint tmpBuffer = (uint)(_buffer[0] | _buffer[1] << 8 | _buffer[2] << 16 | _buffer[3] << 24);
+            uint tmpBuffer = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
             //_position += 4;
             return *((float*)&tmpBuffer);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadInt()
         {
-            _stream.Read(_buffer, 0, 4);
-
-            var value = _buffer[0] | _buffer[1] << 8 | _buffer[2] << 16 | _buffer[3] << 24;
+            var value = _buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24;
             //_position += 4;
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe string ReadString()
         {
             int length = ReadInt();
@@ -88,13 +90,13 @@ namespace USerialization
                 return string.Empty;
             }
 
-            var ptr = new byte[length];
-            _stream.Read(ptr, 0, length);
 
-            fixed (byte* bufferPtr = ptr)
+            fixed (byte* bufferPtr = _buffer)
             {
-                var str = new string((char*)(bufferPtr), 0, length / sizeof(char));
-                //_position += length;
+                var str = new string((char*)(bufferPtr + _position), 0, length / sizeof(char));
+
+                _position += length;
+
                 return str;
             }
         }
@@ -104,86 +106,82 @@ namespace USerialization
             switch (dataType)
             {
                 case DataType.Byte:
-                    _stream.Position += 1;
+                    _position += 1;
                     return;
                 case DataType.Boolean:
-                    _stream.Position += 1;
+                    _position += 1;
                     return;
                 case DataType.Int32:
-                    _stream.Position += 4;
+                    _position += 4;
                     break;
                 case DataType.Int64:
-                    _stream.Position += 8;
+                    _position += 8;
                     break;
                 case DataType.Single:
-                    _stream.Position += 4;
+                    _position += 4;
                     break;
                 case DataType.Double:
-                    _stream.Position += 8;
+                    _position += 8;
                     break;
                 case DataType.Object:
-                {
-                    var size = ReadInt();
-                    Debug.Assert(size >= -1);
-                    if (size > 0)
-                        _stream.Position += size;
-                    break;
-                }
+                    {
+                        var size = ReadInt();
+                        Debug.Assert(size >= -1);
+                        if (size > 0)
+                            _position += size;
+                        break;
+                    }
                 case DataType.String:
-                {
-                    var size = ReadInt();
-                    Debug.Assert(size >= -1);
-                    if (size > 0)
-                        _stream.Position += size;
-                    break;
-                }
+                    {
+                        var size = ReadInt();
+                        Debug.Assert(size >= -1);
+                        if (size > 0)
+                            _position += size;
+                        break;
+                    }
                 case DataType.Array:
-                {
-                    var size = ReadInt();
-                    Debug.Assert(size >= -1);
-                    if (size > 0)
-                        _stream.Position += size;
-                    break;
-                }
+                    {
+                        var size = ReadInt();
+                        Debug.Assert(size >= -1);
+                        if (size > 0)
+                            _position += size;
+                        break;
+                    }
                 default:
                     throw new ArgumentOutOfRangeException(nameof(dataType), dataType, null);
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ulong ReadUInt64()
         {
-            _stream.Read(_buffer, 0, 8);
-            var position = 0;
-            uint lo = (uint)(_buffer[position++] | _buffer[position++] << 8 |
-                             _buffer[position++] << 16 | _buffer[position++] << 24);
-            uint hi = (uint)(_buffer[position++] | _buffer[position++] << 8 |
-                             _buffer[position++] << 16 | _buffer[position++] << 24);
+            uint lo = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
+                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
+            uint hi = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
+                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
             return ((ulong)hi) << 32 | lo;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long ReadInt64()
         {
-            _stream.Read(_buffer, 0, 8);
-            var position = 0;
-            uint lo = (uint)(_buffer[position++] | _buffer[position++] << 8 |
-                             _buffer[position++] << 16 | _buffer[position++] << 24);
-            uint hi = (uint)(_buffer[position++] | _buffer[position++] << 8 |
-                             _buffer[position++] << 16 | _buffer[position++] << 24);
+            uint lo = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
+                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
+            uint hi = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
+                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
             return (long)(((ulong)hi) << 32 | lo);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public short ReadInt16()
         {
-            _stream.Read(_buffer, 0, 2);
-            var position = 0;
-            return (short)(_buffer[position++] | _buffer[position++] << 8);
+            return (short)(_buffer[_position++] | _buffer[_position++] << 8);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ushort ReadUInt16()
         {
-            _stream.Read(_buffer, 0, 2);
-            var position = 0;
-            return (ushort)(_buffer[position++] | _buffer[position++] << 8);
+            return (ushort)(_buffer[_position++] | _buffer[_position++] << 8);
         }
     }
 }

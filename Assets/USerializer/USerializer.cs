@@ -89,17 +89,52 @@ namespace USerialization
             return false;
         }
 
+        private class FieldInfoComparer : IEqualityComparer<FieldInfo>
+        {
+            public bool Equals(FieldInfo x, FieldInfo y)
+            {
+                return x.DeclaringType == y.DeclaringType && x.Name == y.Name;
+            }
+
+            public int GetHashCode(FieldInfo obj)
+            {
+                return obj.Name.GetHashCode() ^ obj.DeclaringType.GetHashCode();
+            }
+        }
+
+        public static ICollection<FieldInfo> GetAllFields(Type type, BindingFlags bindingFlags)
+        {
+            FieldInfo[] fieldInfos = type.GetFields(bindingFlags);
+
+            // If this class doesn't have a base, don't waste any time
+            if (type.BaseType == typeof(object))
+            {
+                return fieldInfos;
+            }
+
+            var currentType = type;
+            var fieldComparer = new FieldInfoComparer();
+            var fieldInfoList = new HashSet<FieldInfo>(fieldInfos, fieldComparer);
+
+            while (currentType != typeof(object))
+            {
+                fieldInfos = currentType.GetFields(bindingFlags);
+                fieldInfoList.UnionWith(fieldInfos);
+                currentType = currentType.BaseType;
+            }
+            return fieldInfoList;
+        }
+
         public List<FieldData> GetFields(Type type)//todo use a pooled list for field data
         {
-            var allFields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);//todo get inherited fields too
+            var allFields = GetAllFields(type, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-            var length = allFields.Length;
+            var length = allFields.Count;
+
             var fields = new List<FieldData>(length);
 
-            for (int i = 0; i < length; i++)
+            foreach (var fieldInfo in allFields)
             {
-                var fieldInfo = allFields[i];
-
                 if (_serializationPolicy.ShouldSerialize(fieldInfo) == false)
                     continue;
 
@@ -112,6 +147,7 @@ namespace USerialization
                     fields.Add(new FieldData(fieldInfo, serializationMethods, (ushort)fieldOffset));
                 }
             }
+
 
             return fields;
         }

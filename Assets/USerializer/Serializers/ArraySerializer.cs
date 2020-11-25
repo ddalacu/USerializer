@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
@@ -89,7 +90,7 @@ namespace USerialization
              };
         }
 
-        private ReadDelegate GetValueTypeReader(Type elementType, ReadDelegate elementReader, DataType dataType)
+        private static ReadDelegate GetValueTypeReader(Type elementType, ReadDelegate elementReader, DataType dataType)
         {
             var size = UnsafeUtility.SizeOf(elementType);
 
@@ -169,7 +170,7 @@ namespace USerialization
             };
         }
 
-        private ReadDelegate GetReferenceTypeReader(Type elementType, ReadDelegate elementReader, DataType dataType)
+        private static ReadDelegate GetReferenceTypeReader(Type elementType, ReadDelegate elementReader, DataType dataType)
         {
             return delegate (void* fieldAddress, SerializerInput input)
             {

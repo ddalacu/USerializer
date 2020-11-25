@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
@@ -16,12 +17,12 @@ namespace USerialization
             _serializer = serializer;
         }
 
-        private WriteDelegate GetValueTypeWriter(WriteDelegate elementWriter, Type fieldType, Type elementType, DataType dataType)
+        private static WriteDelegate GetValueTypeWriter(WriteDelegate elementWriter, Type fieldType, Type elementType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);
             var size = UnsafeUtility.SizeOf(elementType);
 
-            return delegate (void* fieldAddress, SerializerOutput output)
+            void ValueTypeWriter(void* fieldAddress, SerializerOutput output)
             {
                 var list = Unsafe.Read<object>(fieldAddress);
 
@@ -50,10 +51,12 @@ namespace USerialization
                 }
 
                 output.WriteSizeTrack(sizeTracker);
-            };
+            }
+
+            return ValueTypeWriter;
         }
 
-        private ReadDelegate GetValueTypeReader(ReadDelegate elementReader, Type fieldType, Type elementType, DataType dataType)
+        private static ReadDelegate GetValueTypeReader(ReadDelegate elementReader, Type fieldType, Type elementType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);
             var size = UnsafeUtility.SizeOf(elementType);
@@ -95,7 +98,7 @@ namespace USerialization
             };
         }
 
-        private WriteDelegate GetReferenceTypeWriter(WriteDelegate elementWriter, Type fieldType, DataType dataType)
+        private static WriteDelegate GetReferenceTypeWriter(WriteDelegate elementWriter, Type fieldType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);
 
@@ -139,7 +142,7 @@ namespace USerialization
             };
         }
 
-        private ReadDelegate GetReferenceTypeReader(ReadDelegate elementReader, Type fieldType, Type elementType, DataType dataType)
+        private static ReadDelegate GetReferenceTypeReader(ReadDelegate elementReader, Type fieldType, Type elementType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);
 

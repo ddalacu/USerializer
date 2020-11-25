@@ -1,69 +1,37 @@
-﻿using System;
+﻿using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
+using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
-    public static class Shared
-    {
-        public static unsafe void WriteObject(SerializerOutput output, FieldData[] fields, byte* address)
-        {
-            var fieldsCount = fields.Length;
 
-            var track = output.BeginSizeTrack();
-            {
-                if (fieldsCount > 255)
-                    throw new Exception();
-
-                output.WriteByte((byte)fieldsCount);
-
-                for (var index = 0; index < fieldsCount; index++)
-                {
-                    var fieldData = fields[index];
-
-                    output.WriteInt(fieldData.FieldNameHash);
-
-                    output.WriteByte((byte)fieldData.SerializationMethods.DataType);
-
-                    fieldData.SerializationMethods.Serialize(address + fieldData.Offset, output);
-                }
-            }
-            output.WriteSizeTrack(track);
-        }
-
-    }
-
-    public enum SizeTracker : long
+    public enum SizeTracker : int
     {
 
     }
 
-
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class SerializerOutput
     {
         private byte[] _buffer;
-        private long _position;
-        private long _length;
+        private int _position;
 
-        public long Position => _position;
-        public long Length => _length;
+        public int Position => _position;
 
         public SerializerOutput(int capacity)
         {
             _buffer = new byte[capacity];
             _position = 0;
-            _length = 0;
         }
 
-        public void EnsureSize(long size)//inline this
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void EnsureNext(int count)//inline this
         {
-            var capacity = _buffer.Length;
+            var size = _position + count;
 
-            if (size > capacity)
+            if (size > _buffer.Length)
                 ExpandCapacity(size);
-
-            if (_length < size)
-                _length = size;
         }
 
         private unsafe void ExpandCapacity(long size)
@@ -77,7 +45,7 @@ namespace USerialization
                 newCapacity = doubledCapacity;
             }
 
-            if ((uint) doubledCapacity > (int.MaxValue / 2))
+            if ((uint)doubledCapacity > (int.MaxValue / 2))
             {
                 newCapacity = size > (int.MaxValue / 2) ? size : (int.MaxValue / 2);
             }
@@ -88,7 +56,7 @@ namespace USerialization
             {
                 fixed (byte* bufferPtr = _buffer)
                 {
-                    UnsafeUtility.MemCpy(newBufferPtr, bufferPtr, _length);
+                    UnsafeUtility.MemCpy(newBufferPtr, bufferPtr, _position);
                 }
             }
 
@@ -96,39 +64,45 @@ namespace USerialization
         }
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SizeTracker BeginSizeTrack()
         {
-            EnsureSize(_position + 4);
+            EnsureNext(4);
             _position += 4;
             return (SizeTracker)_position;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSizeTrack(SizeTracker tracker)
         {
-            var length = _position - (long)tracker;
-
-            if (length > Int32.MaxValue)
-                throw new Exception();
-
-            var oldPos = _position;
-
-            _position = (long)tracker - 4;
-
-            var len = (int)length;
-            WriteInt(len);
-
-            _position = oldPos;
+            var length = _position - (int)tracker;
+            _buffer[(int)tracker - 4] = (byte)length;
+            _buffer[(int)tracker - 3] = (byte)(length >> 8);
+            _buffer[(int)tracker - 2] = (byte)(length >> 16);
+            _buffer[(int)tracker - 1] = (byte)(length >> 24);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteInt(int value)
         {
-            EnsureSize(_position + 4);
+            EnsureNext(4);
             _buffer[_position++] = (byte)value;
             _buffer[_position++] = (byte)(value >> 8);
             _buffer[_position++] = (byte)(value >> 16);
             _buffer[_position++] = (byte)(value >> 24);
         }
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteIntUnchecked(int value)
+        {
+            _buffer[_position++] = (byte)value;
+            _buffer[_position++] = (byte)(value >> 8);
+            _buffer[_position++] = (byte)(value >> 16);
+            _buffer[_position++] = (byte)(value >> 24);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteString(string value)
         {
             if (value == null)
@@ -139,7 +113,7 @@ namespace USerialization
 
             var length = value.Length * sizeof(char);
 
-            EnsureSize(_position + 4 + length);
+            EnsureNext(4 + length);
 
             _buffer[_position++] = (byte)length;
             _buffer[_position++] = (byte)(length >> 8);
@@ -156,9 +130,14 @@ namespace USerialization
             _position += length;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteNull()
         {
-            WriteInt(-1);
+            EnsureNext(4);
+            _buffer[_position++] = 255;
+            _buffer[_position++] = 255;
+            _buffer[_position++] = 255;
+            _buffer[_position++] = 255;
         }
 
         public byte[] GetData()
@@ -168,7 +147,7 @@ namespace USerialization
 
         public unsafe void WriteBytes(byte[] bytes)
         {
-            EnsureSize(_position + bytes.Length);
+            EnsureNext(bytes.Length);
 
             fixed (void* ptr = bytes)
             {
@@ -186,21 +165,28 @@ namespace USerialization
             _position += length;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte data)
         {
-            EnsureSize(_position + 1);
+            EnsureNext(1);
+            _buffer[_position++] = data;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteByteUnchecked(byte data)
+        {
             _buffer[_position++] = data;
         }
 
         public void Clear()
         {
             _position = 0;
-            _length = 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteFloat(float value)
         {
-            EnsureSize(_position + 4);
+            EnsureNext(4);
             //write the value
             uint tmpValue = *(uint*)&value;
             _buffer[_position++] = (byte)tmpValue;
@@ -209,18 +195,20 @@ namespace USerialization
             _buffer[_position++] = (byte)(tmpValue >> 24);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUInt(uint value)
         {
-            EnsureSize(_position + 4);
+            EnsureNext(4);
             _buffer[_position++] = (byte)value;
             _buffer[_position++] = (byte)(value >> 8);
             _buffer[_position++] = (byte)(value >> 16);
             _buffer[_position++] = (byte)(value >> 24);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUInt64(ulong value)
         {
-            EnsureSize(_position + 8);
+            EnsureNext(8);
 
             _buffer[_position++] = (byte)value;
             _buffer[_position++] = (byte)(value >> 8);
@@ -232,9 +220,10 @@ namespace USerialization
             _buffer[_position++] = (byte)(value >> 56);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteInt64(long value)
         {
-            EnsureSize(_position + 8);
+            EnsureNext(8);
 
             _buffer[_position++] = (byte)value;
             _buffer[_position++] = (byte)(value >> 8);
@@ -246,17 +235,19 @@ namespace USerialization
             _buffer[_position++] = (byte)(value >> 56);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteInt16(short value)
         {
-            EnsureSize(_position + 2);
+            EnsureNext(2);
 
             _buffer[_position++] = (byte)value;
             _buffer[_position++] = (byte)(value >> 8);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUInt16(ushort value)
         {
-            EnsureSize(_position + 2);
+            EnsureNext(2);
 
             _buffer[_position++] = (byte)value;
             _buffer[_position++] = (byte)(value >> 8);

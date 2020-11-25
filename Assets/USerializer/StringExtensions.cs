@@ -1,29 +1,32 @@
 ﻿
-public static class StringExtensions
+namespace USerialization
 {
-    public static long GetInt64Hash(this string text)
+    public static class StringExtensions
     {
-        unchecked
+        public static long GetInt64Hash(this string text)
         {
-            long hash = 23;
-            var textLength = text.Length;
-            for (var index = 0; index < textLength; index++)
-                hash = hash * 31 + text[index];
+            unchecked
+            {
+                long hash = 23;
+                var textLength = text.Length;
+                for (var index = 0; index < textLength; index++)
+                    hash = hash * 31 + text[index];
 
-            return hash;
+                return hash;
+            }
         }
-    }
 
-    public static int GetInt32Hash(this string text)
-    {
-        unchecked
+        public static int GetInt32Hash(this string text)
         {
-            int hash = 23;
-            var textLength = text.Length;
-            for (var index = 0; index < textLength; index++)
-                hash = hash * 31 + text[index];
+            unchecked
+            {
+                int hash = 23;
+                var textLength = text.Length;
+                for (var index = 0; index < textLength; index++)
+                    hash = hash * 31 + text[index];
 
-            return hash;
+                return hash;
+            }
         }
     }
 }
