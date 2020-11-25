@@ -287,34 +287,6 @@ public class Serializer : MonoBehaviour
 
     private unsafe void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-
-            var output = new SerializerOutput(2048);
-
-
-            //UnitySerialization.Serialize(ToSerialize, output);
-
-            var message = output.GetData();
-
-            Debug.Log(message);
-
-            //UnitySerialization.Deserialize(new SerializerInput(message));
-
-            return;
-
-            var testClass = ToSerialize.GetComponent<TestClass>();
-            _uSerializer.Serialize(output, testClass);
-
-            var data = message;
-            Debug.Log(data);
-            Debug.Log(JsonUtility.ToJson(testClass));
-
-            _uSerializer.DeserializeObject(new SerializerInput(data), testClass);
-        }
-
-
-        return;
 
         Debug.Log(UnityHelpers.GetInstanceId(this));
         Debug.Log(this.GetInstanceID());

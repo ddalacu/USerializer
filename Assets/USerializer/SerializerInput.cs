@@ -1,27 +1,31 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace USerialization
 {
-    public enum EndObject : int
+    public enum EndObject : long
     {
 
     }
 
     public class SerializerInput
     {
-        private readonly byte[] _buffer;
-        private long _position;
+        private readonly Stream _stream;
+        private byte[] _buffer;
+        private int _position;
+        private long _bufferStart;
 
-        //private long _position;
-        //public long Positon => _position;
+        public int Position => _position;
 
-        public SerializerInput(byte[] stream)
+        public SerializerInput(int capacity, Stream stream)
         {
-            _buffer = stream;
-            _position = 0;
+            _stream = stream;
+            _buffer = new byte[capacity];
+            _position = capacity;
+            _bufferStart = 0;
         }
 
         public bool BeginReadSize(out EndObject endObject)
@@ -36,25 +40,37 @@ namespace USerialization
                 return false;
             }
 
-            endObject = (EndObject)(_position + length);
+            endObject = (EndObject)(_bufferStart + _position + length);
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
-            _position = (long)endObject;
+            var currentPosition = _bufferStart + _position;
+
+            var delta = (int)(currentPosition - (long)endObject);
+
+            if (delta > 0)
+            {
+                EnsureNext(delta);
+                _position += delta;
+            }
+
+            Debug.Assert(delta >= 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ReadByte()
         {
+            EnsureNext(1);
             return _buffer[_position++];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint ReadUInt()
         {
+            EnsureNext(4);
             uint value = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
             return value;
         }
@@ -62,6 +78,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe float ReadFloat()
         {
+            EnsureNext(4);
             uint tmpBuffer = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
             //_position += 4;
             return *((float*)&tmpBuffer);
@@ -70,6 +87,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadInt()
         {
+            EnsureNext(4);
             var value = _buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24;
             //_position += 4;
             return value;
@@ -78,7 +96,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe string ReadString()
         {
-            int length = ReadInt();
+            var length = ReadInt();
 
             if (length == -1)
             {
@@ -90,6 +108,7 @@ namespace USerialization
                 return string.Empty;
             }
 
+            EnsureNext(length);
 
             fixed (byte* bufferPtr = _buffer)
             {
@@ -103,58 +122,69 @@ namespace USerialization
 
         public void SkipData(DataType dataType)
         {
+            int toSkip;
             switch (dataType)
             {
                 case DataType.Byte:
-                    _position += 1;
+                    toSkip = sizeof(byte);
                     return;
                 case DataType.Boolean:
-                    _position += 1;
+                    toSkip = sizeof(bool);
                     return;
                 case DataType.Int32:
-                    _position += 4;
+                    toSkip = sizeof(int);
                     break;
                 case DataType.Int64:
-                    _position += 8;
+                    toSkip = sizeof(long);
                     break;
                 case DataType.Single:
-                    _position += 4;
+                    toSkip = sizeof(float);
                     break;
                 case DataType.Double:
-                    _position += 8;
+                    toSkip = sizeof(double);
                     break;
                 case DataType.Object:
-                    {
-                        var size = ReadInt();
-                        Debug.Assert(size >= -1);
-                        if (size > 0)
-                            _position += size;
-                        break;
-                    }
+                    toSkip = ReadInt();
+                    break;
                 case DataType.String:
-                    {
-                        var size = ReadInt();
-                        Debug.Assert(size >= -1);
-                        if (size > 0)
-                            _position += size;
-                        break;
-                    }
+                    toSkip = ReadInt();
+                    break;
                 case DataType.Array:
-                    {
-                        var size = ReadInt();
-                        Debug.Assert(size >= -1);
-                        if (size > 0)
-                            _position += size;
-                        break;
-                    }
+                    toSkip = ReadInt();
+                    break;
+                case DataType.SByte:
+                    toSkip = sizeof(sbyte);
+                    break;
+                case DataType.Char:
+                    toSkip = sizeof(char);
+                    break;
+                case DataType.Int16:
+                    toSkip = sizeof(short);
+                    break;
+                case DataType.UInt16:
+                    toSkip = sizeof(ushort);
+                    break;
+                case DataType.UInt32:
+                    toSkip = sizeof(uint);
+                    break;
+                case DataType.UInt64:
+                    toSkip = sizeof(ulong);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(dataType), dataType, null);
             }
+
+            Debug.Assert(toSkip >= 0);
+
+            EnsureNext(toSkip);
+            _position += toSkip;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ulong ReadUInt64()
         {
+            EnsureNext(8);
+
             uint lo = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
                              _buffer[_position++] << 16 | _buffer[_position++] << 24);
             uint hi = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
@@ -165,6 +195,8 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long ReadInt64()
         {
+            EnsureNext(8);
+
             uint lo = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
                              _buffer[_position++] << 16 | _buffer[_position++] << 24);
             uint hi = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
@@ -175,13 +207,75 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public short ReadInt16()
         {
+            EnsureNext(2);
             return (short)(_buffer[_position++] | _buffer[_position++] << 8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ushort ReadUInt16()
         {
+            EnsureNext(2);
             return (ushort)(_buffer[_position++] | _buffer[_position++] << 8);
+        }
+
+        public unsafe byte[] ReadBytes(int count)
+        {
+            EnsureNext(count);
+
+            var read = new byte[count];
+
+            fixed (byte* readPtr = read)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+                    UnsafeUtility.MemCpy(readPtr, bufferPtr + _position, count);
+                }
+            }
+
+            _position += count;
+            return read;
+        }
+
+
+        public unsafe void EnsureNext(int count)
+        {
+            var end = _position + count;
+
+            var bufferSize = _buffer.Length;
+
+            if (end > bufferSize)
+            {
+                var unusedBytes = bufferSize - _position;
+
+                if (count > bufferSize)
+                {
+                    var newBuffer = new byte[count * 2];
+
+                    //for (int i = 0; i < unusedBytes; i++)
+                    //    newBuffer[i] = _buffer[_position + i];
+
+                    fixed (byte* bufferPtr = _buffer)
+                    fixed (byte* newBufferPtr = newBuffer)
+                        UnsafeUtility.MemCpy(newBufferPtr, bufferPtr + _position, unusedBytes);
+
+                    _buffer = newBuffer;
+                    bufferSize = _buffer.Length;
+                }
+                else
+                {
+                    //for (int i = 0; i < unusedBytes; i++)
+                    //    _buffer[i] = _buffer[_position + i];
+
+                    fixed (byte* bufferPtr = _buffer)
+                        UnsafeUtility.MemCpy(bufferPtr, bufferPtr + _position, unusedBytes);
+                }
+
+                _position = 0;
+
+                var readBytes = _stream.Read(_buffer, unusedBytes, bufferSize - unusedBytes);
+
+                _bufferStart = _stream.Position - (unusedBytes + readBytes);
+            }
         }
     }
 }

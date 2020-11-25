@@ -203,6 +203,8 @@ namespace USerialization
                     var fieldAddress = Unsafe.AsPointer(ref o);
                     serializationMethods.Serialize(fieldAddress, output);
                 }
+
+                output.Flush();
             }
 
             return true;
@@ -216,6 +218,7 @@ namespace USerialization
             {
                 var fieldAddress = Unsafe.AsPointer(ref value);
                 serializationMethods.Serialize(fieldAddress, output);
+                output.Flush();
             }
 
             return true;

@@ -48,43 +48,35 @@ namespace Tests
 
         public static T SerializeDeserializeTest<T>(T value)
         {
-            var output = new SerializerOutput(2048);
-            var uSerializer = new USerializer(new UnitySerializationPolicy());
+            var initialSerialize = new MemoryStream();
+            BinaryUtility.Serialize(value, initialSerialize);
 
-            uSerializer.Serialize(output, value);
+            initialSerialize.Position = 0;
+            BinaryUtility.TryDeserialize<T>(initialSerialize, out var deserialize);
 
-
-            uSerializer.TryDeserialize<T>(new SerializerInput(output.GetData()), out var deserializeResult);
-
-            output.Clear();
-            uSerializer.Serialize(output, deserializeResult);
-            var json2 = output.GetData();
-
+            var secondSerialize = new MemoryStream();
+            BinaryUtility.Serialize(deserialize, secondSerialize);
 
             var ob = default(T);
+            secondSerialize.Position = 0;
+            BinaryUtility.TryPopulateObject(secondSerialize, ref ob);
 
-            uSerializer.TryPopulateObject(new SerializerInput(output.GetData()), ref ob);
+            var reserialize = new MemoryStream();
+            BinaryUtility.Serialize(ob, reserialize);
 
-            output.Clear();
-            uSerializer.Serialize(output, deserializeResult);
+            if (EqualArrays(reserialize.ToArray(), reserialize.ToArray()))
+            {
 
-            //Debug.Log(result);
-            //Debug.Log(json2);
-            //Debug.Log(json3);
+            }
+            else
+            {
+                Debug.Log(JsonUtility.ToJson(value));
+                Debug.Log(JsonUtility.ToJson(ob));
 
-            //if (EqualArrays(output.GetData(), json2, EqualArrays))
-            //{
+                Assert.Fail();
+            }
 
-            //}
-            //else
-            //{
-            //    Debug.Log(JsonUtility.ToJson(value));
-            //    Debug.Log(JsonUtility.ToJson(deserializeResult));
-
-            //    Assert.Fail();
-            //}
-
-            return deserializeResult;
+            return ob;
         }
 
         public static string UnitySerializeArray<T>(IList<T> list)

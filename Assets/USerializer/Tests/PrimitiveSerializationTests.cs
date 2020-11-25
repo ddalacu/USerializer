@@ -111,6 +111,30 @@ namespace Tests
         }
 
         [Test]
+        public void ByteSerialization()
+        {
+            var input = BuildData<byte>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
+        }
+
+        [Test]
+        public void ByteArraySerialization()
+        {
+            var input = BuildDataArray<byte>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void ByteListSerialization()
+        {
+            var input = BuildDataList<byte>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
         public void UShortSerialization()
         {
             var input = BuildData<ushort>();

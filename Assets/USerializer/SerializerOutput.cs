@@ -1,11 +1,13 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.IO;
+using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
+using UnityEngine;
 
 namespace USerialization
 {
 
-    public enum SizeTracker : int
+    public enum SizeTracker : long
     {
 
     }
@@ -14,13 +16,13 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class SerializerOutput
     {
+        private readonly Stream _stream;
         private byte[] _buffer;
         private int _position;
 
-        public int Position => _position;
-
-        public SerializerOutput(int capacity)
+        public SerializerOutput(int capacity, Stream stream)
         {
+            _stream = stream;
             _buffer = new byte[capacity];
             _position = 0;
         }
@@ -31,7 +33,18 @@ namespace USerialization
             var size = _position + count;
 
             if (size > _buffer.Length)
-                ExpandCapacity(size);
+            {
+                Flush();
+
+                if (count > _buffer.Length)
+                    _buffer = new byte[count * 2];
+            }
+        }
+
+        public void Flush()
+        {
+            _stream.Write(_buffer, 0, _position);
+            _position = 0;
         }
 
         private unsafe void ExpandCapacity(long size)
@@ -69,17 +82,38 @@ namespace USerialization
         {
             EnsureNext(4);
             _position += 4;
-            return (SizeTracker)_position;
+
+            return (SizeTracker)(_stream.Position + _position);
         }
+
+        private readonly byte[] _trackBytes = new byte[4];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSizeTrack(SizeTracker tracker)
         {
-            var length = _position - (int)tracker;
-            _buffer[(int)tracker - 4] = (byte)length;
-            _buffer[(int)tracker - 3] = (byte)(length >> 8);
-            _buffer[(int)tracker - 2] = (byte)(length >> 16);
-            _buffer[(int)tracker - 1] = (byte)(length >> 24);
+            var streamPos = _stream.Position;
+            int length = (int)((streamPos + _position) - tracker);
+
+            if ((int)tracker <= _stream.Position)
+            {
+                _trackBytes[0] = (byte)length;
+                _trackBytes[1] = (byte)(length >> 8);
+                _trackBytes[2] = (byte)(length >> 16);
+                _trackBytes[3] = (byte)(length >> 24);
+
+                _stream.Position = (long)tracker - 4;
+                _stream.Write(_trackBytes, 0, 4);
+                _stream.Position = streamPos;
+            }
+            else
+            {
+                var offset = (int)(tracker - _stream.Position);
+
+                _buffer[offset - 4] = (byte)length;
+                _buffer[offset - 3] = (byte)(length >> 8);
+                _buffer[offset - 2] = (byte)(length >> 16);
+                _buffer[offset - 1] = (byte)(length >> 24);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -140,30 +174,19 @@ namespace USerialization
             _buffer[_position++] = 255;
         }
 
-        public byte[] GetData()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteBytesUnchecked(byte[] bytes, int length)//not so safe :|
         {
-            return _buffer;
-        }
-
-        public unsafe void WriteBytes(byte[] bytes)
-        {
-            EnsureNext(bytes.Length);
-
             fixed (void* ptr = bytes)
             {
                 fixed (byte* bufferPtr = _buffer)
                 {
-                    UnsafeUtility.MemCpy(bufferPtr + _position, ptr, bytes.Length);
+                    UnsafeUtility.MemCpy(bufferPtr + _position, ptr, length);
                 }
             }
-        }
-
-        public unsafe void WriteBytes(byte* bytes, int length)
-        {
-            fixed (byte* bufferPtr = _buffer)
-                UnsafeUtility.MemCpy(bufferPtr + _position, bytes, length);
             _position += length;
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte data)
