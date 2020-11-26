@@ -56,6 +56,11 @@ namespace USerialization
             {
                 serializationProvider.Initialize(this);
             }
+
+            foreach (var serializationProvider in Providers)
+            {
+                serializationProvider.Start(this);
+            }
         }
 
         public T GetProvider<T>() where T : ISerializationProvider
@@ -161,13 +166,13 @@ namespace USerialization
 
             if (_serializationPolicy.ShouldSerialize(type))
             {
-                typeData = new TypeData();
-                typeData.Type = type;
-                typeData.Fields = Array.Empty<FieldData>();
+                typeData = new TypeData(type, Array.Empty<FieldData>());
                 _datas.Add(type, typeData);//to prevent recursion when GetFields
 
-                typeData.Fields = GetFields(type).ToArray();
-                typeData.Validate();
+                var fieldDatas = GetFields(type).ToArray();
+                TypeData.ValidateFields(fieldDatas);
+
+                typeData = new TypeData(type, fieldDatas);
                 _datas.Add(type, typeData);
 
                 //_datas[type] = typeData;//setting correct array
@@ -202,6 +207,7 @@ namespace USerialization
                 else
                 {
                     var fieldAddress = Unsafe.AsPointer(ref o);
+
                     serializationMethods.Serialize(fieldAddress, output);
                 }
 

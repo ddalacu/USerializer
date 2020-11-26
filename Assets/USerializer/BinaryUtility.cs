@@ -9,6 +9,7 @@ namespace USerialization
     {
         private static USerializer _uSerializer;
 
+
         [RuntimeInitializeOnLoadMethod]
 #if UNITY_EDITOR
         [UnityEditor.InitializeOnLoadMethod]

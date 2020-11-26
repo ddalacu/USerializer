@@ -10,9 +10,6 @@ namespace USerialization
     {
         public Type SerializedType => typeof(sbyte);
 
-        public USerializer Serializer { get; set; }
-
-
         public DataType DataType => DataType.SByte;
 
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
@@ -25,6 +22,11 @@ namespace USerialization
         {
             ref var value = ref Unsafe.AsRef<byte>(fieldAddress);
             value = input.ReadByte();
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+            
         }
     }
 }

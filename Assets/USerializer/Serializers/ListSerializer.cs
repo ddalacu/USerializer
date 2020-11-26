@@ -17,6 +17,11 @@ namespace USerialization
             _serializer = serializer;
         }
 
+        public void Start(USerializer serializer)
+        {
+            
+        }
+
         private static WriteDelegate GetValueTypeWriter(WriteDelegate elementWriter, Type fieldType, Type elementType, DataType dataType)
         {
             var listHelper = ListHelper.Create(fieldType);

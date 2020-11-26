@@ -13,6 +13,11 @@ namespace USerialization
             _serializer = serializer;
         }
 
+        public void Start(USerializer serializer)
+        {
+            
+        }
+
         public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
         {
             if (type.IsArray)
@@ -50,10 +55,12 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         private static WriteDelegate GetWriter(TypeData typeData)
         {
+            var typeDataFields = typeData.Fields;
+
             return delegate (void* fieldAddress, SerializerOutput output)
             {
                 byte* address = (byte*)fieldAddress;
-                var fieldsCount = typeData.Fields.Length;
+                var fieldsCount = typeDataFields.Length;
 
                 var track = output.BeginSizeTrack();
                 {
@@ -61,7 +68,7 @@ namespace USerialization
 
                     for (var index = 0; index < fieldsCount; index++)
                     {
-                        var fieldData = typeData.Fields[index];
+                        var fieldData = typeDataFields[index];
 
                         output.EnsureNext(5);
                         output.WriteIntUnchecked(fieldData.FieldNameHash);
@@ -79,13 +86,14 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         private static ReadDelegate GetReader(TypeData typeData)
         {
+            var fieldDatas = typeData.Fields;
+
             void Reader(void* address, SerializerInput input)
             {
                 if (input.BeginReadSize(out var end))
                 {
                     var fieldCount = input.ReadByte();
 
-                    var fieldDatas = typeData.Fields;
                     var fieldsLength = fieldDatas.Length;
 
                     var objectAddress = (byte*)address;
@@ -119,13 +127,13 @@ namespace USerialization
 
                         if (deserialized == false)
                         {
-                            if (typeData.GetAlternate(type, field, out var alternate))
+                            if (TypeData.GetAlternate(fieldDatas, type, field, out var alternate))
                             {
                                 alternate.SerializationMethods.Deserialize(objectAddress + alternate.Offset, input);
                             }
                             else
                             {
-                                Debug.Log($"Skipping field of type {type}");
+                                //Debug.Log($"Skipping field of type {type}");
                                 input.SkipData(type);
                             }
                         }

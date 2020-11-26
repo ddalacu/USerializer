@@ -20,7 +20,7 @@ namespace USerialization
 
             if (type.IsClass)
             {
-                if (typeof(Object).IsAssignableFrom(type))
+                if (typeof(UnityEngine.Object).IsAssignableFrom(type))
                     return true;
 
                 if (type.GetCustomAttribute<SerializableAttribute>() != null)

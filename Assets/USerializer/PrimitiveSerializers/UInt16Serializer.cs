@@ -9,8 +9,6 @@ namespace USerialization
     {
         public Type SerializedType => typeof(ushort);
 
-        public USerializer Serializer { get; set; }
-
         public DataType DataType => DataType.UInt16;
 
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
@@ -23,6 +21,11 @@ namespace USerialization
         {
             ref var value = ref Unsafe.AsRef<ushort>(fieldAddress);
             value = input.ReadUInt16();
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+            
         }
     }
 }

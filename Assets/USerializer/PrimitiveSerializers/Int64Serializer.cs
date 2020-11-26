@@ -10,8 +10,6 @@ namespace USerialization
     {
         public Type SerializedType => typeof(long);
 
-        public USerializer Serializer { get; set; }
-
         public DataType DataType => DataType.Int64;
 
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
@@ -24,6 +22,11 @@ namespace USerialization
         {
             ref var value = ref Unsafe.AsRef<long>(fieldAddress);
             value = input.ReadInt64();
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+            
         }
     }
 }

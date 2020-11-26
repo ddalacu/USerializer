@@ -18,9 +18,6 @@ namespace USerialization
     {
         public Type SerializedType => typeof(byte);
 
-        public USerializer Serializer { get; set; }
-
-
         public DataType DataType => DataType.Byte;
 
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
@@ -34,6 +31,11 @@ namespace USerialization
             ref var value = ref Unsafe.AsRef<byte>(fieldAddress);
             value = input.ReadByte();
         }
+
+        public void Initialize(USerializer serializer)
+        {
+            
+        }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
@@ -41,7 +43,6 @@ namespace USerialization
     public sealed class ByteArraySerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(byte[]);
-        public USerializer Serializer { get; set; }
 
         public DataType DataType => DataType.Array;
 
@@ -92,6 +93,11 @@ namespace USerialization
                 array = null;
             }
         }
+
+        public void Initialize(USerializer serializer)
+        {
+            
+        }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
@@ -99,8 +105,6 @@ namespace USerialization
     public sealed class ByteListSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(List<byte>);
-        public USerializer Serializer { get; set; }
-
         public DataType DataType => DataType.Array;
 
         private readonly ListHelper<byte> _listHelper;
@@ -157,6 +161,11 @@ namespace USerialization
             {
                 list = null;
             }
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+            
         }
     }
 }

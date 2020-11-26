@@ -1,16 +1,21 @@
 ﻿using System;
-using UnityEngine;
 
 namespace USerialization
 {
-    public class TypeData
+    public readonly struct TypeData
     {
-        public Type Type;
-        public FieldData[] Fields;
+        public readonly Type Type;
+        public readonly FieldData[] Fields;
 
-        public void Validate()
+        public TypeData(Type type, FieldData[] fields)
         {
-            var fieldsLength = Fields.Length;
+            Type = type;
+            Fields = fields;
+        }
+
+        public static void ValidateFields(FieldData[] fields)
+        {
+            var fieldsLength = fields.Length;
             if (fieldsLength > 255)
                 throw new Exception();
             for (int i = 0; i < fieldsLength; i++)
@@ -20,13 +25,13 @@ namespace USerialization
                     if (i == j)
                         continue;
 
-                    if (Fields[i].FieldNameHash == Fields[j].FieldNameHash)
+                    if (fields[i].FieldNameHash == fields[j].FieldNameHash)
                         throw new Exception("Field hash collision!");
                 }
             }
 
             //important
-            Array.Sort(Fields, (a, b) =>
+            Array.Sort(fields, (a, b) =>
             {
                 if (a.FieldNameHash > b.FieldNameHash)
                     return 1;
@@ -36,13 +41,13 @@ namespace USerialization
             });
         }
 
-        public bool GetAlternate(DataType type, int field, out FieldData compatible)
+        public static bool GetAlternate(FieldData[] fields, DataType type, int field, out FieldData compatible)
         {
-            int fieldsLength = Fields.Length;
+            int fieldsLength = fields.Length;
 
             for (var index = 0; index < fieldsLength; index++)
             {
-                var fieldData = Fields[index];
+                var fieldData = fields[index];
 
                 if (type != fieldData.SerializationMethods.DataType)
                     continue;

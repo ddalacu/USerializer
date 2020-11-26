@@ -17,7 +17,6 @@ namespace USerialization
     public sealed class IntSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(int);
-        public USerializer Serializer { get; set; }
 
         public DataType DataType => DataType.Int32;
 
@@ -31,6 +30,11 @@ namespace USerialization
             ref var value = ref Unsafe.AsRef<int>(fieldAddress);
             value = input.ReadInt();
         }
+
+        public void Initialize(USerializer serializer)
+        {
+            
+        }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
@@ -38,7 +42,6 @@ namespace USerialization
     public sealed class IntArraySerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(int[]);
-        public USerializer Serializer { get; set; }
 
         public DataType DataType => DataType.Array;
 
@@ -90,6 +93,11 @@ namespace USerialization
                 array = null;
             }
         }
+
+        public void Initialize(USerializer serializer)
+        {
+            
+        }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
@@ -97,7 +105,6 @@ namespace USerialization
     public sealed class IntListSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(List<int>);
-        public USerializer Serializer { get; set; }
 
         public DataType DataType => DataType.Array;
 
@@ -158,6 +165,11 @@ namespace USerialization
             {
                 list = null;
             }
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+            
         }
     }
 }

@@ -8,13 +8,13 @@ namespace USerialization
     {
         Type SerializedType { get; }
 
-        USerializer Serializer { get; set; }
-
         DataType DataType { get; }
 
         void Write(void* fieldAddress, SerializerOutput output);
 
         void Read(void* fieldAddress, SerializerInput input);
+
+        void Initialize(USerializer serializer);
     }
 
     public unsafe class CustomSerializerProvider : ISerializationProvider
@@ -38,9 +38,16 @@ namespace USerialization
                     }
 
                     var instance = (ICustomSerializer)Activator.CreateInstance(attribute.SerializerType);
-                    instance.Serializer = serializer;
                     _instances.Add(instance.SerializedType, instance);
                 }
+            }
+        }
+
+        public void Start(USerializer serializer)
+        {
+            foreach (var instance in _instances.Values())
+            {
+                instance.Initialize(serializer);
             }
         }
 

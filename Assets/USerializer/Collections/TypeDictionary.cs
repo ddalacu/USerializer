@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
@@ -113,6 +114,16 @@ namespace USerialization
             _rehash = (int)(expandedKeys.Length * 0.75f);
             _keys = expandedKeys;
             _values = expandedValues;
+        }
+
+        public IEnumerable<TValue> Values()
+        {
+            for (var index = 0; index < _keys.Length; index++)
+            {
+                var type = _keys[index];
+                if (type != null)
+                    yield return _values[index];
+            }
         }
 
         public bool TryGetValue(Type key, out TValue value)

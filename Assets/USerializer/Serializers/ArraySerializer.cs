@@ -14,6 +14,11 @@ namespace USerialization
             _serializer = serializer;
         }
 
+        public void Start(USerializer serializer)
+        {
+            
+        }
+
         public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
         {
             if (type.IsArray == false)

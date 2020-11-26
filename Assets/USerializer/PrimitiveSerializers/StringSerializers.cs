@@ -14,7 +14,6 @@ namespace USerialization
     public sealed class StringSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(string);
-        public USerializer Serializer { get; set; }
 
         public DataType DataType => DataType.String;
 
@@ -29,12 +28,16 @@ namespace USerialization
             ref var value = ref Unsafe.AsRef<string>(fieldAddress);
             value = input.ReadString();
         }
+
+        public void Initialize(USerializer serializer)
+        {
+            
+        }
     }
 
     public sealed class StringArraySerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(string[]);
-        public USerializer Serializer { get; set; }
 
         public DataType DataType => DataType.Array;
 
@@ -86,12 +89,16 @@ namespace USerialization
                 array = null;
             }
         }
+
+        public void Initialize(USerializer serializer)
+        {
+            
+        }
     }
 
     public sealed class StringListSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(List<string>);
-        public USerializer Serializer { get; set; }
 
         public DataType DataType => DataType.Array;
 
@@ -153,6 +160,11 @@ namespace USerialization
             {
                 list = null;
             }
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+            
         }
     }
 

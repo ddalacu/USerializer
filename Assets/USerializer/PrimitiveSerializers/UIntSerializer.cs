@@ -10,8 +10,6 @@ namespace USerialization
     {
         public Type SerializedType => typeof(uint);
 
-        public USerializer Serializer { get; set; }
-
         public DataType DataType => DataType.UInt32;
 
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
@@ -24,6 +22,11 @@ namespace USerialization
         {
             ref var value = ref Unsafe.AsRef<uint>(fieldAddress);
             value = input.ReadUInt();
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+            
         }
     }
 }

@@ -10,9 +10,6 @@ namespace USerialization
     {
         public Type SerializedType => typeof(bool);
 
-        public USerializer Serializer { get; set; }
-
-
         public DataType DataType => DataType.Boolean;
 
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
@@ -25,6 +22,11 @@ namespace USerialization
         {
             ref var value = ref Unsafe.AsRef<bool>(fieldAddress);
             value = input.ReadByte() == 1;
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+            
         }
     }
 }

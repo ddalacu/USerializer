@@ -15,6 +15,11 @@ namespace USerialization
             _serializer = serializer;
         }
 
+        public void Start(USerializer serializer)
+        {
+            
+        }
+
         public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
         {
             if (type.IsArray)
@@ -52,11 +57,11 @@ namespace USerialization
         private class ClassWriter
         {
             private readonly bool _callSerializationEvents;
-            private readonly TypeData _typeData;
+            private readonly FieldData[] _fieldDatas;
 
             public ClassWriter(TypeData typeData)
             {
-                _typeData = typeData;
+                _fieldDatas = typeData.Fields;
                 _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
             }
 
@@ -78,7 +83,7 @@ namespace USerialization
                 byte* objectAddress;
                 UnsafeUtility.CopyObjectAddressToPtr(obj, &objectAddress);
 
-                var fieldsCount = _typeData.Fields.Length;
+                var fieldsCount = _fieldDatas.Length;
 
                 var track = output.BeginSizeTrack();
                 {
@@ -86,7 +91,7 @@ namespace USerialization
 
                     for (var index = 0; index < fieldsCount; index++)
                     {
-                        var fieldData = _typeData.Fields[index];
+                        var fieldData = _fieldDatas[index];
 
                         output.EnsureNext(5);
                         output.WriteIntUnchecked(fieldData.FieldNameHash);
@@ -109,12 +114,12 @@ namespace USerialization
         {
             private readonly bool _callSerializationEvents;
             private readonly Type _fieldType;
-            private readonly TypeData _typeData;
+            private readonly FieldData[] _fieldDatas;
 
             public ClassReader(Type fieldType, TypeData typeData)
             {
                 _fieldType = fieldType;
-                _typeData = typeData;
+                _fieldDatas = typeData.Fields;
                 _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
             }
 
@@ -133,8 +138,7 @@ namespace USerialization
                     byte* objectAddress;
                     UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
 
-                    var fieldDatas = _typeData.Fields;
-                    var fieldsLength = fieldDatas.Length;
+                    var fieldsLength = _fieldDatas.Length;
 
                     int searchStart = 0;
 
@@ -147,7 +151,7 @@ namespace USerialization
 
                         for (var searchIndex = searchStart; searchIndex < fieldsLength; searchIndex++)
                         {
-                            var fieldData = fieldDatas[searchIndex];
+                            var fieldData = _fieldDatas[searchIndex];
 
                             if (field == fieldData.FieldNameHash)
                             {
@@ -164,14 +168,14 @@ namespace USerialization
 
                         if (deserialized == false)
                         {
-                            if (_typeData.GetAlternate(type, field, out var alternate))
+                            if (TypeData.GetAlternate(_fieldDatas, type, field, out var alternate))
                             {
                                 alternate.SerializationMethods.Deserialize(objectAddress + alternate.Offset, input);
                                 //Debug.Log("Found alternate");
                             }
                             else
                             {
-                                Debug.Log($"Skipping field of type {type}");
+                                //Debug.Log($"Skipping field of type {type}");
                                 input.SkipData(type);
                             }
                         }
