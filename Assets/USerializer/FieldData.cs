@@ -2,16 +2,20 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace USerialization
 {
     [StructLayout(LayoutKind.Auto)]
-    public struct FieldData
+    public readonly struct FieldData
     {
         public readonly FieldInfo FieldInfo;
-        public int FieldNameHash;
+        public readonly int FieldNameHash;
         public readonly SerializationMethods SerializationMethods;
         public readonly ushort Offset;
+
+        public readonly int[] AlternateHashes;
 
         public FieldData(FieldInfo fieldInfo, SerializationMethods serializationMethods, ushort offset)
         {
@@ -19,6 +23,23 @@ namespace USerialization
             SerializationMethods = serializationMethods;
             Offset = offset;
             FieldNameHash = fieldInfo.Name.GetInt32Hash();
+            //Debug.Log(fieldInfo.Name+"  "+ FieldNameHash);
+
+            var attributes = fieldInfo.GetCustomAttributes(typeof(FormerlySerializedAsAttribute), false) as FormerlySerializedAsAttribute[];
+            if (attributes != null && attributes.Length != 0)
+            {
+               
+                AlternateHashes = new int[attributes.Length];
+                for (var index = 0; index < attributes.Length; index++)
+                {
+                    var formerlySerializedAsAttribute = attributes[index];
+                    AlternateHashes[index] = formerlySerializedAsAttribute.oldName.GetInt32Hash();
+
+                    //Debug.Log(formerlySerializedAsAttribute.oldName + "  " + AlternateHashes[index]);
+                }
+            }
+            else
+                AlternateHashes = null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using NUnit.Framework;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
+using USerialization;
+using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 
 namespace Tests
 {
@@ -265,7 +269,7 @@ namespace Tests
         [Test]
         public void CharArraySerialization()
         {
-            var input = new [] { 'a', 'b', 'c', 'd' };
+            var input = new[] { 'a', 'b', 'c', 'd' };
             var result = TestUtils.SerializeDeserializeTest(input);
 
             Debug.Assert(TestUtils.EqualArrays(input, result));
@@ -308,5 +312,6 @@ namespace Tests
             var result = TestUtils.SerializeDeserializeTest(input);
             Debug.Assert(TestUtils.EqualArrays(input, result));
         }
+
     }
 }

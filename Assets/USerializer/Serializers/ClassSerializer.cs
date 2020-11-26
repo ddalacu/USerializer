@@ -82,7 +82,7 @@ namespace USerialization
 
                 var track = output.BeginSizeTrack();
                 {
-                    output.WriteByte((byte) fieldsCount);
+                    output.WriteByte((byte)fieldsCount);
 
                     for (var index = 0; index < fieldsCount; index++)
                     {
@@ -90,7 +90,7 @@ namespace USerialization
 
                         output.EnsureNext(5);
                         output.WriteIntUnchecked(fieldData.FieldNameHash);
-                        output.WriteByteUnchecked((byte) fieldData.SerializationMethods.DataType);
+                        output.WriteByteUnchecked((byte)fieldData.SerializationMethods.DataType);
 
                         fieldData.SerializationMethods.Serialize(objectAddress + fieldData.Offset, output);
                     }
@@ -136,6 +136,8 @@ namespace USerialization
                     var fieldDatas = _typeData.Fields;
                     var fieldsLength = fieldDatas.Length;
 
+                    int searchStart = 0;
+
                     for (var i = 0; i < fieldsCount; i++)
                     {
                         var field = input.ReadInt();
@@ -143,23 +145,35 @@ namespace USerialization
 
                         var deserialized = false;
 
-                        for (var index = 0; index < fieldsLength; index++)
+                        for (var searchIndex = searchStart; searchIndex < fieldsLength; searchIndex++)
                         {
-                            var fieldData = fieldDatas[index];
+                            var fieldData = fieldDatas[searchIndex];
 
-                            if (field == fieldData.FieldNameHash && type == fieldData.SerializationMethods.DataType)
+                            if (field == fieldData.FieldNameHash)
                             {
-                                fieldData.SerializationMethods.Deserialize(objectAddress + fieldData.Offset, input);
-                                deserialized = true;
+                                if (type == fieldData.SerializationMethods.DataType)
+                                {
+                                    fieldData.SerializationMethods.Deserialize(objectAddress + fieldData.Offset, input);
+                                    deserialized = true;
+                                }
+
+                                searchStart = searchIndex + 1;
                                 break;
                             }
                         }
 
                         if (deserialized == false)
                         {
-                            input.SkipData(type);
-                            //skip field
-                            Debug.Log("Skipping field!");
+                            if (_typeData.GetAlternate(type, field, out var alternate))
+                            {
+                                alternate.SerializationMethods.Deserialize(objectAddress + alternate.Offset, input);
+                                //Debug.Log("Found alternate");
+                            }
+                            else
+                            {
+                                Debug.Log($"Skipping field of type {type}");
+                                input.SkipData(type);
+                            }
                         }
                     }
 
@@ -173,7 +187,6 @@ namespace USerialization
                     instance = null;
                 }
             }
-
         }
 
         private static ReadDelegate GetReader(Type fieldType, TypeData typeData)

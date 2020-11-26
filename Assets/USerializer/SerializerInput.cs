@@ -127,10 +127,10 @@ namespace USerialization
             {
                 case DataType.Byte:
                     toSkip = sizeof(byte);
-                    return;
+                    break;
                 case DataType.Boolean:
                     toSkip = sizeof(bool);
-                    return;
+                    break;
                 case DataType.Int32:
                     toSkip = sizeof(int);
                     break;
@@ -145,12 +145,18 @@ namespace USerialization
                     break;
                 case DataType.Object:
                     toSkip = ReadInt();
+                    if (toSkip == -1)//null
+                        return;
                     break;
                 case DataType.String:
-                    toSkip = ReadInt();
+                    toSkip = ReadInt();//null
+                    if (toSkip == -1)
+                        return;
                     break;
                 case DataType.Array:
-                    toSkip = ReadInt();
+                    toSkip = ReadInt();//null
+                    if (toSkip == -1)
+                        return;
                     break;
                 case DataType.SByte:
                     toSkip = sizeof(sbyte);
@@ -175,7 +181,6 @@ namespace USerialization
             }
 
             Debug.Assert(toSkip >= 0);
-
             EnsureNext(toSkip);
             _position += toSkip;
         }

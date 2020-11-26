@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Tests
 {
@@ -18,10 +19,14 @@ namespace Tests
         [Serializable]
         public class SimpleClass
         {
+            [FormerlySerializedAs("IntValue")]
             public int IntValue;
+
             public float FloatValue;
             public bool BoolValue;
+
             public string StringValue;
+
             public string[] Strings;
             public SimpleClass Reference;
             public TestEnum EnumValue;

@@ -88,34 +88,46 @@ namespace USerialization
                     var fieldDatas = typeData.Fields;
                     var fieldsLength = fieldDatas.Length;
 
-                    var objectAddress = (byte*) address;
+                    var objectAddress = (byte*)address;
 
+                    int searchStart = 0;
                     for (var i = 0; i < fieldCount; i++)
                     {
                         var field = input.ReadInt();
 
-                        var type = (DataType) input.ReadByte();
+                        var type = (DataType)input.ReadByte();
 
                         var deserialized = false;
 
-                        for (var index = 0; index < fieldsLength; index++)
+                        for (var searchIndex = searchStart; searchIndex < fieldsLength; searchIndex++)
                         {
-                            var fieldData = fieldDatas[index];
+                            var fieldData = fieldDatas[searchIndex];
 
-                            if (field == fieldData.FieldNameHash && type == fieldData.SerializationMethods.DataType)
+                            if (field == fieldData.FieldNameHash)
                             {
-                                var fieldDataOffset = objectAddress + fieldData.Offset;
-                                fieldData.SerializationMethods.Deserialize(fieldDataOffset, input);
-                                deserialized = true;
+                                if (type == fieldData.SerializationMethods.DataType)
+                                {
+                                    var fieldDataOffset = objectAddress + fieldData.Offset;
+                                    fieldData.SerializationMethods.Deserialize(fieldDataOffset, input);
+                                    deserialized = true;
+                                }
+
+                                searchStart = searchIndex + 1;
                                 break;
                             }
                         }
 
                         if (deserialized == false)
                         {
-                            input.SkipData(type);
-                            //skip field
-                            Debug.Log("Skipping field!");
+                            if (typeData.GetAlternate(type, field, out var alternate))
+                            {
+                                alternate.SerializationMethods.Deserialize(objectAddress + alternate.Offset, input);
+                            }
+                            else
+                            {
+                                Debug.Log($"Skipping field of type {type}");
+                                input.SkipData(type);
+                            }
                         }
                     }
 

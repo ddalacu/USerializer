@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace USerialization
 {
@@ -166,7 +167,7 @@ namespace USerialization
                 _datas.Add(type, typeData);//to prevent recursion when GetFields
 
                 typeData.Fields = GetFields(type).ToArray();
-                typeData.CheckDuplicateHashes();
+                typeData.Validate();
                 _datas.Add(type, typeData);
 
                 //_datas[type] = typeData;//setting correct array
