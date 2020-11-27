@@ -18,6 +18,17 @@ namespace Tests
     {
         public ChildClass Property { get; set; }
 
+        public ChildStruct ValueProp { get; set; }
+
+        public int Val;
+
+        [Serializable]
+        public struct ChildStruct
+        {
+            public int Val1;
+            public int Val2;
+        }
+
         [Serializable]
         public class ChildClass
         {
@@ -27,16 +38,32 @@ namespace Tests
     }
 
 
-    public class ExampleClassSerializer : ClassWriterBase<ExampleClass>
+    public class ExampleClassSerializer : CustomSerializerBase<ExampleClass>
     {
         public override void LocalInit()
         {
-            AddField(1, (obj, val) =>
+            AddField(3, (ref ExampleClass obj, int val) =>
+            {
+                obj.Val = val;
+            }, (ref ExampleClass obj) =>
+            {
+                return obj.Val;
+            });
+
+            AddField(1, (ref ExampleClass obj, ExampleClass.ChildClass val) =>
             {
                 obj.Property = val;
-            }, (obj) =>
+            }, (ref ExampleClass obj) =>
             {
                 return obj.Property;
+            });
+
+            AddField(2, (ref ExampleClass obj, ExampleClass.ChildStruct val) =>
+            {
+                obj.ValueProp = val;
+            }, (ref ExampleClass obj) =>
+            {
+                return obj.ValueProp;
             });
         }
     }
@@ -282,6 +309,15 @@ namespace Tests
             Debug.Assert(class2.IntValue2 == 0);
         }
 
+
+        [Serializable]
+        public class NestedCustom
+        {
+            public ExampleClass WithValue = new ExampleClass();
+            public ExampleClass NullValue;
+            public int Val;
+        }
+
         [Test]
         public void CustomSerializers()
         {
@@ -291,7 +327,13 @@ namespace Tests
                 {
                     ValueOne = 1,
                     ValueTwo = 2
-                }
+                },
+                ValueProp = new ExampleClass.ChildStruct()
+                {
+                    Val1 = 1234,
+                    Val2 = -1234
+                },
+                Val = -112
             };
 
             var memStream = new MemoryStream();
@@ -299,11 +341,35 @@ namespace Tests
 
 
             Debug.Log(JsonUtility.ToJson(exampleClass.Property));
+            Debug.Log(JsonUtility.ToJson(exampleClass.ValueProp));
+            Debug.Log(exampleClass.Val);
 
             memStream.Position = 0;
             var deser = BinaryUtility.TryDeserialize(memStream, out ExampleClass result);
             Debug.Assert(deser);
+
             Debug.Log(JsonUtility.ToJson(result.Property));
+            Debug.Log(JsonUtility.ToJson(result.ValueProp));
+            Debug.Log(result.Val);
+
+            var nested = new NestedCustom()
+            {
+                Val = 112,
+                WithValue =new ExampleClass()
+                {
+                    Val = 999
+                }
+            };
+
+            memStream = new MemoryStream();
+            BinaryUtility.Serialize(nested, memStream);
+
+            memStream.Position = 0;
+            deser = BinaryUtility.TryDeserialize(memStream, out NestedCustom nestedResult);
+            Debug.Assert(deser);
+
+            Debug.Log(JsonUtility.ToJson(nested));
+            Debug.Log(JsonUtility.ToJson(nestedResult));
 
         }
 
