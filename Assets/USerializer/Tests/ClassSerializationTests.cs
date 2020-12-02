@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using NUnit.Framework;
 using Tests;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using USerialization;
@@ -42,29 +43,9 @@ namespace Tests
     {
         public override void LocalInit()
         {
-            AddField(3, (ref ExampleClass obj, int val) =>
-            {
-                obj.Val = val;
-            }, (ref ExampleClass obj) =>
-            {
-                return obj.Val;
-            });
-
-            AddField(1, (ref ExampleClass obj, ExampleClass.ChildClass val) =>
-            {
-                obj.Property = val;
-            }, (ref ExampleClass obj) =>
-            {
-                return obj.Property;
-            });
-
-            AddField(2, (ref ExampleClass obj, ExampleClass.ChildStruct val) =>
-            {
-                obj.ValueProp = val;
-            }, (ref ExampleClass obj) =>
-            {
-                return obj.ValueProp;
-            });
+            AddField(1, (ref ExampleClass obj, int val) => obj.Val = val, (ref ExampleClass obj) => obj.Val);
+            AddField(2, (ref ExampleClass obj, ExampleClass.ChildClass val) => obj.Property = val, (ref ExampleClass obj) => obj.Property);
+            AddField(3, (ref ExampleClass obj, ExampleClass.ChildStruct val) => obj.ValueProp = val, (ref ExampleClass obj) => obj.ValueProp);
         }
     }
 
@@ -340,22 +321,19 @@ namespace Tests
             BinaryUtility.Serialize(exampleClass, memStream);
 
 
-            Debug.Log(JsonUtility.ToJson(exampleClass.Property));
-            Debug.Log(JsonUtility.ToJson(exampleClass.ValueProp));
-            Debug.Log(exampleClass.Val);
 
             memStream.Position = 0;
             var deser = BinaryUtility.TryDeserialize(memStream, out ExampleClass result);
             Debug.Assert(deser);
 
-            Debug.Log(JsonUtility.ToJson(result.Property));
-            Debug.Log(JsonUtility.ToJson(result.ValueProp));
-            Debug.Log(result.Val);
+            Debug.Assert(JsonUtility.ToJson(exampleClass.Property) == JsonUtility.ToJson(result.Property));
+            Debug.Assert(JsonUtility.ToJson(exampleClass.ValueProp) == JsonUtility.ToJson(result.ValueProp));
+            Debug.Assert(exampleClass.Val == result.Val);
 
             var nested = new NestedCustom()
             {
                 Val = 112,
-                WithValue =new ExampleClass()
+                WithValue = new ExampleClass()
                 {
                     Val = 999
                 }
@@ -368,9 +346,15 @@ namespace Tests
             deser = BinaryUtility.TryDeserialize(memStream, out NestedCustom nestedResult);
             Debug.Assert(deser);
 
-            Debug.Log(JsonUtility.ToJson(nested));
-            Debug.Log(JsonUtility.ToJson(nestedResult));
+            Debug.Assert(JsonUtility.ToJson(nested) == JsonUtility.ToJson(nestedResult));
+        }
 
+        [Test]
+        public void GenerateComps()
+        {
+            var go = new GameObject();
+            var serializedValue = EditorJsonUtility.ToJson(go.AddComponent<BoxCollider2D>(), true);
+            Debug.Log(serializedValue);
         }
 
     }

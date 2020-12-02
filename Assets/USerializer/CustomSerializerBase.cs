@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace USerialization
 {
@@ -28,7 +29,7 @@ namespace USerialization
 
     public abstract class CustomSerializerBase<T> : ICustomSerializer
     {
-        public Type SerializedType => typeof(T);
+        public Type SerializedType => _type;
 
         public DataType DataType => DataType.Object;
 
@@ -42,9 +43,12 @@ namespace USerialization
 
         private USerializer _serializer;
 
+        private Type _type;
+
         protected CustomSerializerBase()
         {
-            _isReferenceType = typeof(T).IsValueType == false;
+            _type = typeof(T);
+            _isReferenceType = _type.IsValueType == false;
         }
 
         public void Initialize(USerializer serializer)
@@ -53,7 +57,7 @@ namespace USerialization
             LocalInit();
         }
 
-        public unsafe void AddField<TMember>(int hash, SetDelegate<TMember> set, GetDelegate<TMember> get)
+        protected unsafe void AddField<TMember>(int hash, SetDelegate<TMember> set, GetDelegate<TMember> get)
         {
             _serializer.TryGetSerializationMethods(typeof(TMember), out var methods);
 
@@ -91,6 +95,9 @@ namespace USerialization
             }
 
             _fields.Add(toAdd);
+
+            if (_fields.Count > 255)
+                throw new Exception("Too many fields!");
         }
 
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
@@ -122,9 +129,12 @@ namespace USerialization
 
             if (input.BeginReadSize(out var end))
             {
-                if (_isReferenceType &&
-                    Unsafe.Read<object>(fieldAddress) == null)
-                    instance = (T)Activator.CreateInstance(typeof(T));
+                if (_isReferenceType)
+                {
+                    ref var objectInstance = ref Unsafe.AsRef<object>(fieldAddress);
+                    if (objectInstance == null)
+                        objectInstance = Activator.CreateInstance(_type);
+                }
 
                 var fieldsCount = input.ReadByte();
                 var fieldsLength = _fields.Count;
