@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
 using UnityEngine;
@@ -17,7 +18,7 @@ namespace USerialization
 
         public void Start(USerializer serializer)
         {
-            
+
         }
 
         public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
@@ -116,8 +117,13 @@ namespace USerialization
             private readonly Type _fieldType;
             private readonly FieldData[] _fieldDatas;
 
+            private bool _haveCtor;
+
             public ClassReader(Type fieldType, TypeData typeData)
             {
+                var ctor = fieldType.GetConstructor(Type.EmptyTypes);
+                _haveCtor = ctor != null;
+
                 _fieldType = fieldType;
                 _fieldDatas = typeData.Fields;
                 _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
@@ -133,7 +139,13 @@ namespace USerialization
                 {
                     var fieldsCount = input.ReadByte();
 
-                    if (instance == null) instance = Activator.CreateInstance(_fieldType);
+                    if (instance == null)
+                    {
+                        if (_haveCtor)
+                            instance = Activator.CreateInstance(_fieldType);
+                        else
+                            instance = FormatterServices.GetUninitializedObject(_fieldType);
+                    }
 
                     byte* objectAddress;
                     UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);

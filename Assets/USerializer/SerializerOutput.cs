@@ -12,6 +12,11 @@ namespace USerialization
 
     }
 
+    public enum LateWrite : long
+    {
+
+    }
+
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class SerializerOutput
@@ -41,6 +46,9 @@ namespace USerialization
             }
         }
 
+        /// <summary>
+        /// Makes sure all date in buffer is written to the stream
+        /// </summary>
         public void Flush()
         {
             _stream.Write(_buffer, 0, _position);
@@ -82,9 +90,9 @@ namespace USerialization
         {
             EnsureNext(4);
             _position += 4;
-
             return (SizeTracker)(_stream.Position + _position);
         }
+
 
         private readonly byte[] _trackBytes = new byte[4];
 
@@ -115,6 +123,43 @@ namespace USerialization
                 _buffer[offset - 1] = (byte)(length >> 24);
             }
         }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LateWrite BeginLateWriteInt()
+        {
+            EnsureNext(4);
+            _position += 4;
+            return (LateWrite)(_stream.Position + _position);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void EndLateWriteInt(LateWrite lateWrite, int value)
+        {
+            var streamPos = _stream.Position;
+
+            if ((int)lateWrite <= _stream.Position)
+            {
+                _trackBytes[0] = (byte)value;
+                _trackBytes[1] = (byte)(value >> 8);
+                _trackBytes[2] = (byte)(value >> 16);
+                _trackBytes[3] = (byte)(value >> 24);
+
+                _stream.Position = (long)lateWrite - 4;
+                _stream.Write(_trackBytes, 0, 4);
+                _stream.Position = streamPos;
+            }
+            else
+            {
+                var offset = (int)(lateWrite - _stream.Position);
+
+                _buffer[offset - 4] = (byte)value;
+                _buffer[offset - 3] = (byte)(value >> 8);
+                _buffer[offset - 2] = (byte)(value >> 16);
+                _buffer[offset - 1] = (byte)(value >> 24);
+            }
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteInt(int value)
@@ -172,6 +217,20 @@ namespace USerialization
             _buffer[_position++] = 255;
             _buffer[_position++] = 255;
             _buffer[_position++] = 255;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteBytes(byte[] bytes, int length)//not so safe :|
+        {
+            EnsureNext(length);
+            fixed (void* ptr = bytes)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+                    UnsafeUtility.MemCpy(bufferPtr + _position, ptr, length);
+                }
+            }
+            _position += length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

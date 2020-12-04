@@ -140,5 +140,24 @@ namespace Tests
 
             Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
         }
+
+        [Serializable]
+        public class ClassWithDateTime
+        {
+            public DateTime Time;
+        }
+
+        [Test]
+        public void DateTimeSerialization()
+        {
+            var initial = new ClassWithDateTime()
+            {
+                Time = DateTime.Now
+            };
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            Debug.Assert(result.Time == initial.Time);
+        }
+
     }
 }

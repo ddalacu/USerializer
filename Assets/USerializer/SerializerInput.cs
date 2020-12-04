@@ -44,6 +44,23 @@ namespace USerialization
             return true;
         }
 
+        public bool BeginReadSize(out EndObject endObject, out int length)
+        {
+            length = ReadInt();
+
+            Debug.Assert(length >= -1);
+
+            if (length == -1)
+            {
+                endObject = default;
+                return false;
+            }
+
+            endObject = (EndObject)(_bufferStart + _position + length);
+            return true;
+        }
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
@@ -51,13 +68,18 @@ namespace USerialization
 
             var delta = (int)(currentPosition - (long)endObject);
 
-            if (delta > 0)
+            if (delta == 0)
+                return;
+
+            if (delta < 0)
             {
                 EnsureNext(delta);
                 _position += delta;
             }
-
-            Debug.Assert(delta >= 0);
+            else
+            {
+                throw new NotImplementedException("You can't go back atm, if you need this feature ask!");
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

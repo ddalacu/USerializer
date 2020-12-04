@@ -51,8 +51,12 @@ namespace Tests
             var initialSerialize = new MemoryStream();
             BinaryUtility.Serialize(value, initialSerialize);
 
+            var initial = initialSerialize.Position;
+
             initialSerialize.Position = 0;
             BinaryUtility.TryDeserialize<T>(initialSerialize, out var deserialize);
+
+            Debug.Assert(initial == initialSerialize.Position);
 
             var secondSerialize = new MemoryStream();
             BinaryUtility.Serialize(deserialize, secondSerialize);
