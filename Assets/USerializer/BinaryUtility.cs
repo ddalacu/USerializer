@@ -16,7 +16,8 @@ namespace USerialization
 #endif
         private static void AutoInitialize()
         {
-            _uSerializer = new USerializer(new UnitySerializationPolicy());
+            var providers = ProvidersUtils.GetDefaultProviders();
+            _uSerializer = new USerializer(new UnitySerializationPolicy(), providers);
         }
 
         public static bool Serialize([NotNull] object obj, [NotNull] Stream stream, int bufferSize = 4096 * 2)

@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
 using UnityEngine;
+using UnsafeUtils;
 using USerialization;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
@@ -18,11 +19,55 @@ public class Serializer : MonoBehaviour
 
     public GameObject ToSerialize;
 
+    private static int pp;
+
+    public static void Method()
+    {
+        pp++;
+    }
+    public static void Method2(int a)
+    {
+        pp++;
+    }
+
+    private FunctionPtr _ptr;
+    private FunctionPtr<int> _ptr2;
+
+    private Action _action;
+
     private void Awake()
     {
-        _uSerializer = new USerializer(new UnitySerializationPolicy());
+        _action = Method;
+
+        _ptr = new FunctionPtr(Method);
+
+        _ptr2 = new FunctionPtr<int>(Method2);
+
+        //FunctionPointerCallers.Call(_ptr2, 123);
+
+
+        int iterations = 100000;
+
+        enabled = false;
 
         var watch = Stopwatch.StartNew();
+        for (var i = 0; i < iterations; i++)
+            _action();
+        watch.Stop();
+        Debug.Log($"Action {watch.Elapsed.TotalMilliseconds}");
+
+
+        watch = Stopwatch.StartNew();
+       // for (var i = 0; i < iterations; i++)
+        //    FunctionPointerCallers.Call(_ptr);
+        watch.Stop();
+        Debug.Log($"Function pointer {watch.Elapsed.TotalMilliseconds}");
+
+        var providers = ProvidersUtils.GetDefaultProviders();
+
+        _uSerializer = new USerializer(new UnitySerializationPolicy(), providers);
+
+        watch = Stopwatch.StartNew();
         _uSerializer.PreCacheLayout(typeof(TestClass));
         watch.Stop();
         Debug.Log($"Cache {watch.Elapsed.TotalMilliseconds}");
@@ -285,9 +330,17 @@ public class Serializer : MonoBehaviour
     }
 
 
+    [SerializeField]
+    private GameObject _prefab;
+
     private unsafe void Update()
     {
+        var prefabInstance = Instantiate(_prefab);
 
+        Debug.Log(prefabInstance);
+
+        DestroyImmediate(prefabInstance);
+        return;
         Debug.Log(UnityHelpers.GetInstanceId(this));
         Debug.Log(this.GetInstanceID());
 
@@ -324,7 +377,6 @@ public class Serializer : MonoBehaviour
         UnsafeSetNoPin3(instance, 99999);
 
 
-        return;
         fixed (byte* objAddress = &GetPinnableReference(instance))
         {
             Debug.Log(new IntPtr(objAddress));

@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace USerialization
 {
@@ -32,40 +31,27 @@ namespace USerialization
     {
         private readonly ISerializationPolicy _serializationPolicy;
 
-        private TypeDictionary<TypeData> _datas = new TypeDictionary<TypeData>(1024);
+        private readonly TypeDictionary<TypeData> _datas = new TypeDictionary<TypeData>(1024);
 
-        private static readonly ISerializationProvider[] Providers = {
-            new CustomSerializerProvider(),
-            new EnumSerializer(),
-
-            //new ComponentProvider(),
-            //new GameObjectSerializer(),
-
-            new ClassSerializer(),
-            new StructSerializer(),
-            new ArraySerializer(),
-            new ListSerializer(),
-        };
+        private readonly ISerializationProvider[] _providers;
 
         private TypeDictionary<SerializationMethods> _methods = new TypeDictionary<SerializationMethods>(1024);
 
-        public USerializer(ISerializationPolicy serializationPolicy)
+        public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers)
         {
             _serializationPolicy = serializationPolicy;
-            foreach (var serializationProvider in Providers)
-            {
-                serializationProvider.Initialize(this);
-            }
+            _providers = providers;
 
-            foreach (var serializationProvider in Providers)
-            {
+            foreach (var serializationProvider in _providers)
+                serializationProvider.Initialize(this);
+
+            foreach (var serializationProvider in _providers)
                 serializationProvider.Start(this);
-            }
         }
 
         public T GetProvider<T>() where T : ISerializationProvider
         {
-            foreach (var serializationProvider in Providers)
+            foreach (var serializationProvider in _providers)
             {
                 if (serializationProvider is T instance)
                     return instance;
@@ -81,7 +67,7 @@ namespace USerialization
                 return methods.Serialize != null;
             }
 
-            foreach (var provider in Providers)
+            foreach (var provider in _providers)
             {
                 if (provider.TryGetSerializationMethods(type, out methods) == false)
                     continue;
@@ -93,19 +79,6 @@ namespace USerialization
             methods = default;
             _methods.Add(type, methods);
             return false;
-        }
-
-        private class FieldInfoComparer : IEqualityComparer<FieldInfo>
-        {
-            public bool Equals(FieldInfo x, FieldInfo y)
-            {
-                return x.DeclaringType == y.DeclaringType && x.Name == y.Name;
-            }
-
-            public int GetHashCode(FieldInfo obj)
-            {
-                return obj.Name.GetHashCode() ^ obj.DeclaringType.GetHashCode();
-            }
         }
 
         public static ICollection<FieldInfo> GetAllFields(Type type, BindingFlags bindingFlags)

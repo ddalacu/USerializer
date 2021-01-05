@@ -18,9 +18,9 @@ namespace USerialization
             var fieldsLength = fields.Length;
             if (fieldsLength > 255)
                 throw new Exception();
-            for (int i = 0; i < fieldsLength; i++)
+            for (var i = 0; i < fieldsLength; i++)
             {
-                for (int j = 0; j < fieldsLength; j++)
+                for (var j = 0; j < fieldsLength; j++)
                 {
                     if (i == j)
                         continue;

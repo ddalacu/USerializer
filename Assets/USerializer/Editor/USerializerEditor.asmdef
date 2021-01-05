@@ -1,0 +1,17 @@
+{
+    "name": "USerializerEditor",
+    "references": [
+        "GUID:9821686adcb1b04439d7182d6d5f8c41"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

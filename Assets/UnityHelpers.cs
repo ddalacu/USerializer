@@ -19,7 +19,6 @@ public static class UnityHelpers
             UnsafeUtility.GetFieldOffset(typeof(Object).GetField("m_CachedPtr",
                 BindingFlags.Instance | BindingFlags.NonPublic));
 
-        Debug.Log(_cachedPtrOffset);
     }
 
 

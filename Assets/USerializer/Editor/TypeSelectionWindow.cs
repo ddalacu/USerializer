@@ -63,7 +63,7 @@ public class TypeSelectionWindow : EditorWindow
 
         root.Build();
 
-        var v = new Tree(_loaded.Q<ListView>(), _loaded.Q<HistoryElement>(), root);
+        var v = new TreeView(_loaded.Q<ListView>(), _loaded.Q<HistoryElement>(), root);
         v.Clicked += (item) =>
         {
             TypeSelected?.Invoke(((TypeNavType)item).Type);

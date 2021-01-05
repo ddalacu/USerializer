@@ -13,7 +13,7 @@ public interface IObject
     Texture Image { get; }
 }
 
-public class Tree
+public class TreeView
 {
     private readonly ListView _listView;
     private readonly HistoryElement _historyElement;
@@ -25,7 +25,7 @@ public class Tree
 
     public Action<IObject> Clicked;
 
-    public Tree(ListView listView, HistoryElement historyElement, IObject root)
+    public TreeView(ListView listView, HistoryElement historyElement, IObject root)
     {
         _listView = listView;
         _historyElement = historyElement;
@@ -36,7 +36,7 @@ public class Tree
         listView.makeItem = MakeListItem;
         listView.bindItem = BindListItem;
 
-        listView.onSelectionChanged += SelectionChange;
+        listView.onSelectionChange += SelectionChange;
 
         _historyElement.LastChanged += LastChanged;
 

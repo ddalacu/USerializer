@@ -87,7 +87,6 @@ namespace USerialization
             Unsafe.Write(listAddress + _sizeFieldOffset, array.Length);
         }
 
-
         public unsafe void SetArray(object list, Array array, int count)
         {
             byte* listAddress;
@@ -96,7 +95,6 @@ namespace USerialization
             Unsafe.Write(listAddress + _itemsFieldOffset, array);
             Unsafe.Write(listAddress + _sizeFieldOffset, count);
         }
-
 
         public unsafe Array GetArray(object list, out int count)
         {

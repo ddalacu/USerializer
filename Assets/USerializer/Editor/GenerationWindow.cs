@@ -28,6 +28,13 @@ public class GenerationWindow : EditorWindow
 
     private Label _generatedLabel;
     private Button _saveButton;
+    public static string FullNameNiceFormat(Type type)
+    {
+        string name = type.FullName;
+        name = name.Replace('+', '.');
+        name = name.Replace('\'', '.');
+        return name;
+    }
 
     private void OnEnable()
     {
@@ -48,7 +55,7 @@ public class GenerationWindow : EditorWindow
             window.SetTypes(TypeCache.GetTypesDerivedFrom<Object>());
             window.TypeSelected += (type) =>
             {
-                selectTypeButton.text = type.FullNameNiceFormat();
+                selectTypeButton.text = FullNameNiceFormat(type);
                 SetType(type);
             };
         };

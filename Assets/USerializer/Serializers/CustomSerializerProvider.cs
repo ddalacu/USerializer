@@ -21,6 +21,7 @@ namespace USerialization
     {
         private TypeDictionary<ICustomSerializer> _instances;
 
+
         public void Initialize(USerializer serializer)
         {
             _instances = new TypeDictionary<ICustomSerializer>(512);
