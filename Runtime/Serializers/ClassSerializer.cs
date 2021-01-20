@@ -58,11 +58,11 @@ namespace USerialization
         private class ClassWriter
         {
             private readonly bool _callSerializationEvents;
-            private readonly FieldData[] _fieldDatas;
+            private readonly TypeData _typeData;
 
             public ClassWriter(TypeData typeData)
             {
-                _fieldDatas = typeData.Fields;
+                _typeData = typeData;
                 _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
             }
 
@@ -84,7 +84,8 @@ namespace USerialization
                 byte* objectAddress;
                 UnsafeUtility.CopyObjectAddressToPtr(obj, &objectAddress);
 
-                var fieldsCount = _fieldDatas.Length;
+                var fieldDatas = _typeData.Fields;
+                var fieldsCount = fieldDatas.Length;
 
                 var track = output.BeginSizeTrack();
                 {
@@ -92,7 +93,7 @@ namespace USerialization
 
                     for (var index = 0; index < fieldsCount; index++)
                     {
-                        var fieldData = _fieldDatas[index];
+                        var fieldData = fieldDatas[index];
 
                         output.EnsureNext(5);
                         output.WriteIntUnchecked(fieldData.FieldNameHash);
@@ -115,7 +116,7 @@ namespace USerialization
         {
             private readonly bool _callSerializationEvents;
             private readonly Type _fieldType;
-            private readonly FieldData[] _fieldDatas;
+            private readonly TypeData _typeData;
 
             private bool _haveCtor;
 
@@ -128,7 +129,7 @@ namespace USerialization
                 _haveCtor = ctor != null;
 
                 _fieldType = fieldType;
-                _fieldDatas = typeData.Fields;
+                _typeData = typeData;
                 _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
             }
 
@@ -153,7 +154,8 @@ namespace USerialization
                     byte* objectAddress;
                     UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
 
-                    var fieldsLength = _fieldDatas.Length;
+                    var fieldDatas = _typeData.Fields;
+                    var fieldsLength = fieldDatas.Length;
 
                     int searchStart = 0;
 
@@ -166,7 +168,7 @@ namespace USerialization
 
                         for (var searchIndex = searchStart; searchIndex < fieldsLength; searchIndex++)
                         {
-                            var fieldData = _fieldDatas[searchIndex];
+                            var fieldData = fieldDatas[searchIndex];
 
                             if (field == fieldData.FieldNameHash)
                             {
@@ -183,7 +185,7 @@ namespace USerialization
 
                         if (deserialized == false)
                         {
-                            if (TypeData.GetAlternate(_fieldDatas, type, field, out var alternate))
+                            if (TypeData.GetAlternate(fieldDatas, type, field, out var alternate))
                             {
                                 alternate.SerializationMethods.Deserialize(objectAddress + alternate.Offset, input);
                                 //Debug.Log("Found alternate");

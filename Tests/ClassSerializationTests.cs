@@ -304,6 +304,46 @@ namespace Tests
             public int Val;
         }
 
+        [Serializable]
+        public class A
+        {
+            public B Ref;
+            public int Value = 0;
+        }
+
+        [Serializable]
+        public class B
+        {
+            public A Ref;
+            public int Value = 0;
+        }
+
+        [Test]
+        public void CiyclicTypeDependency()
+        {
+            //make sure when we have cyclical type dependencies it all works
+
+            var inst = new A()
+            {
+                Value = 1,
+                Ref = new B()
+                {
+                    Value = 2,
+                    Ref = new A()
+                    {
+                        Value = 3
+                    }
+                }
+            };
+
+            var stream = new MemoryStream();
+            BinaryUtility.Serialize(inst, stream);
+            stream.Position = 0;
+            BinaryUtility.TryDeserialize(stream, out A class2);
+
+            Debug.Assert(JsonUtility.ToJson(inst) == JsonUtility.ToJson(class2));
+        }
+
         [Test]
         public void CustomSerializers()
         {

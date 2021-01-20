@@ -91,7 +91,7 @@ namespace USerialization
         public bool GetTypeData(Type type, out TypeData typeData)
         {
             if (_datas.TryGetValue(type, out typeData))
-                return typeData.Fields != null;
+                return typeData != null;
 
             if (_serializationPolicy.ShouldSerialize(type) == false)
             {
@@ -99,12 +99,14 @@ namespace USerialization
                 return false;
             }
 
-            typeData = new TypeData(type, Array.Empty<FieldData>());
+            typeData = new TypeData(type);
             _datas.Add(type, typeData); //to prevent recursion when GetFields
 
             var fieldDatas = GetFields(type);
 
-            typeData = new TypeData(type, fieldDatas);
+            TypeData.OrderFields(fieldDatas);
+            typeData.Fields = fieldDatas;
+
             _datas.Add(type, typeData);
 
             return true;

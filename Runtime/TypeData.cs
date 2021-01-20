@@ -2,17 +2,14 @@
 
 namespace USerialization
 {
-    public readonly struct TypeData
+    public class TypeData
     {
         public readonly Type Type;
-        public readonly FieldData[] Fields;
+        public FieldData[] Fields;
 
-        public TypeData(Type type, FieldData[] fields)
+        public TypeData(Type type)
         {
             Type = type;
-
-            OrderFields(fields);
-            Fields = fields;
         }
 
         public static void OrderFields(FieldData[] fields)
