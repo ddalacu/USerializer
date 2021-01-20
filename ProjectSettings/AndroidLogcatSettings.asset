@@ -1,10 +1,10 @@
 {
-    "m_SelectedDeviceId": "310012a0b0586300",
+    "m_SelectedDeviceId": "0123456789ABCDEF",
     "m_SelectedPackage": {
-        "deviceId": "",
-        "name": "",
-        "processId": 0,
-        "exited": false
+        "deviceId": "0123456789ABCDEF",
+        "name": "com.test.USerializer",
+        "processId": 13297,
+        "exited": true
     },
     "m_SelectedPriority": 0,
     "m_KnownPackagesForSerialization": [
@@ -31,6 +31,12 @@
             "name": "com.vphone.launcher",
             "processId": 2068,
             "exited": false
+        },
+        {
+            "deviceId": "0123456789ABCDEF",
+            "name": "com.test.USerializer",
+            "processId": 13297,
+            "exited": true
         }
     ],
     "m_Tags": {
@@ -66,7 +72,7 @@
         ]
     },
     "m_MemoryViewerState": {
-        "MemoryWindowHeight": 300.0,
+        "MemoryWindowHeight": 303.0,
         "MemoryWindowWidth": 170.0,
         "MemoryTypeEnabled": [
             true,

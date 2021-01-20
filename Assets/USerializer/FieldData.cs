@@ -16,25 +16,27 @@ namespace USerialization
 
         public readonly int[] AlternateHashes;
 
+        private static Type _formerlySerializedAsType;
+
         public FieldData(FieldInfo fieldInfo, SerializationMethods serializationMethods, ushort offset)
         {
             FieldInfo = fieldInfo;
             SerializationMethods = serializationMethods;
             Offset = offset;
             FieldNameHash = fieldInfo.Name.GetInt32Hash();
-            //Debug.Log(fieldInfo.Name+"  "+ FieldNameHash);
 
-            var attributes = fieldInfo.GetCustomAttributes(typeof(FormerlySerializedAsAttribute), false) as FormerlySerializedAsAttribute[];
-            if (attributes != null && attributes.Length != 0)
+            if (_formerlySerializedAsType == null)
+                _formerlySerializedAsType = typeof(FormerlySerializedAsAttribute);
+
+            var attributes = (FormerlySerializedAsAttribute[])fieldInfo.GetCustomAttributes(_formerlySerializedAsType, false);
+
+            if (attributes.Length != 0)
             {
-               
                 AlternateHashes = new int[attributes.Length];
                 for (var index = 0; index < attributes.Length; index++)
                 {
                     var formerlySerializedAsAttribute = attributes[index];
                     AlternateHashes[index] = formerlySerializedAsAttribute.oldName.GetInt32Hash();
-
-                    //Debug.Log(formerlySerializedAsAttribute.oldName + "  " + AlternateHashes[index]);
                 }
             }
             else

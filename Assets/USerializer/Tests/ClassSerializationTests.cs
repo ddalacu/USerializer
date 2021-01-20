@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using NUnit.Framework;
 using Tests;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using USerialization;
@@ -74,6 +72,8 @@ namespace Tests
             public SimpleClass Reference;
             public TestEnum EnumValue;
             public TestEnum[] EnumArray;
+
+            public Dictionary<int, int> IntDictionary = new Dictionary<int, int>();
         }
 
         [Test]
@@ -96,6 +96,11 @@ namespace Tests
                 {
                     TestEnum.One,
                     TestEnum.Two
+                },
+                IntDictionary = new Dictionary<int, int>()
+                {
+                    {1,2 },
+                    {2,2 }
                 }
             };
             var result = TestUtils.SerializeDeserializeTest(initial);
@@ -347,14 +352,6 @@ namespace Tests
             Debug.Assert(deser);
 
             Debug.Assert(JsonUtility.ToJson(nested) == JsonUtility.ToJson(nestedResult));
-        }
-
-        [Test]
-        public void GenerateComps()
-        {
-            var go = new GameObject();
-            var serializedValue = EditorJsonUtility.ToJson(go.AddComponent<BoxCollider2D>(), true);
-            Debug.Log(serializedValue);
         }
 
     }

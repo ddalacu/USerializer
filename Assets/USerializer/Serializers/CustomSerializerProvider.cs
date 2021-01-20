@@ -26,13 +26,17 @@ namespace USerialization
         {
             _instances = new TypeDictionary<ICustomSerializer>(512);
 
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            var customSerializerType = typeof(ICustomSerializer);
+
+            foreach (var assembly in assemblies)
             {
                 var serializers = assembly.GetCustomAttributes<CustomSerializerAttribute>();
 
                 foreach (var attribute in serializers)
                 {
-                    if (typeof(ICustomSerializer).IsAssignableFrom(attribute.SerializerType) == false)
+                    if (customSerializerType.IsAssignableFrom(attribute.SerializerType) == false)
                     {
                         Debug.LogError($"{attribute.SerializerType} does not inherit ICustomSerializer");
                         continue;

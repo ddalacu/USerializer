@@ -12,6 +12,7 @@
                 new StructSerializer(),
                 new ArraySerializer(),
                 new ListSerializer(),
+                //new DictionarySerializer()
             };
 
             if (additionalProviders == null) 

@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace USerialization
 {
+    /// <summary>
+    /// Took
+    /// </summary>
     public static class PrimeHelpers
     {
 

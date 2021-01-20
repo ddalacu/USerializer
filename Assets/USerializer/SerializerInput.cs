@@ -18,6 +18,8 @@ namespace USerialization
         private int _position;
         private long _bufferStart;
 
+        public Stream Stream => _stream;
+
         public int Position => _position;
 
         public SerializerInput(int capacity, Stream stream)
@@ -25,6 +27,16 @@ namespace USerialization
             _stream = stream;
             _buffer = new byte[capacity];
             _position = capacity;
+            _bufferStart = 0;
+        }
+
+        public void FinishRead()
+        {
+            var currentPosition = _bufferStart + _position;
+
+            _stream.Position = currentPosition;
+
+            _position = _buffer.Length;
             _bufferStart = 0;
         }
 
@@ -78,7 +90,8 @@ namespace USerialization
             }
             else
             {
-                throw new NotImplementedException("You can't go back atm, if you need this feature ask!");
+                throw new NotImplementedException("Something went wrong!");
+                //throw new NotImplementedException("You can't go back atm, if you need this feature ask!");
             }
         }
 

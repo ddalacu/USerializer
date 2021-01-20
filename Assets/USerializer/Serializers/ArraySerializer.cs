@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {

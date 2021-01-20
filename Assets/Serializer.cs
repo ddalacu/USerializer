@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
@@ -68,7 +66,7 @@ public class Serializer : MonoBehaviour
         _uSerializer = new USerializer(new UnitySerializationPolicy(), providers);
 
         watch = Stopwatch.StartNew();
-        _uSerializer.PreCacheLayout(typeof(TestClass));
+        _uSerializer.PreCacheType(typeof(TestClass));
         watch.Stop();
         Debug.Log($"Cache {watch.Elapsed.TotalMilliseconds}");
 

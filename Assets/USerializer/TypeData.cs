@@ -10,10 +10,12 @@ namespace USerialization
         public TypeData(Type type, FieldData[] fields)
         {
             Type = type;
+
+            OrderFields(fields);
             Fields = fields;
         }
 
-        public static void ValidateFields(FieldData[] fields)
+        public static void OrderFields(FieldData[] fields)
         {
             var fieldsLength = fields.Length;
             if (fieldsLength > 255)

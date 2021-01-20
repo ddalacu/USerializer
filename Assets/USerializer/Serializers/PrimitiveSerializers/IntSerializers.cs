@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
-using UnityEngine;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(IntSerializer))]

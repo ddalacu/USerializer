@@ -121,6 +121,9 @@ namespace USerialization
 
             public ClassReader(Type fieldType, TypeData typeData)
             {
+                if (fieldType.IsValueType)
+                    throw new ArgumentException(nameof(fieldType));
+
                 var ctor = fieldType.GetConstructor(Type.EmptyTypes);
                 _haveCtor = ctor != null;
 
@@ -195,7 +198,7 @@ namespace USerialization
 
                     input.EndObject(end);
 
-                    if (_callSerializationEvents) //todo move in separate action to get rid of if
+                    if (_callSerializationEvents)
                         Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
                 }
                 else

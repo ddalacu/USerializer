@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
-using UnityEngine;
 
 namespace USerialization
 {
@@ -55,34 +54,34 @@ namespace USerialization
             _position = 0;
         }
 
-        private unsafe void ExpandCapacity(long size)
-        {
-            var newCapacity = size;
-            var capacity = _buffer.Length;
+        //private unsafe void ExpandCapacity(long size)
+        //{
+        //    var newCapacity = size;
+        //    var capacity = _buffer.Length;
 
-            var doubledCapacity = capacity * 2;
-            if (newCapacity < doubledCapacity)
-            {
-                newCapacity = doubledCapacity;
-            }
+        //    var doubledCapacity = capacity * 2;
+        //    if (newCapacity < doubledCapacity)
+        //    {
+        //        newCapacity = doubledCapacity;
+        //    }
 
-            if ((uint)doubledCapacity > (int.MaxValue / 2))
-            {
-                newCapacity = size > (int.MaxValue / 2) ? size : (int.MaxValue / 2);
-            }
+        //    if ((uint)doubledCapacity > (int.MaxValue / 2))
+        //    {
+        //        newCapacity = size > (int.MaxValue / 2) ? size : (int.MaxValue / 2);
+        //    }
 
-            var newBuffer = new byte[newCapacity];
+        //    var newBuffer = new byte[newCapacity];
 
-            fixed (byte* newBufferPtr = newBuffer)
-            {
-                fixed (byte* bufferPtr = _buffer)
-                {
-                    UnsafeUtility.MemCpy(newBufferPtr, bufferPtr, _position);
-                }
-            }
+        //    fixed (byte* newBufferPtr = newBuffer)
+        //    {
+        //        fixed (byte* bufferPtr = _buffer)
+        //        {
+        //            UnsafeUtility.MemCpy(newBufferPtr, bufferPtr, _position);
+        //        }
+        //    }
 
-            _buffer = newBuffer;
-        }
+        //    _buffer = newBuffer;
+        //}
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

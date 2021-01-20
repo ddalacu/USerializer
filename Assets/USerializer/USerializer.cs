@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
@@ -12,20 +12,6 @@ namespace USerialization
 
     public unsafe delegate void ReadDelegate(void* fieldAddress, SerializerInput input);
 
-    public readonly struct SerializationMethods
-    {
-        public readonly WriteDelegate Serialize;
-        public readonly ReadDelegate Deserialize;
-
-        public readonly DataType DataType;
-
-        public SerializationMethods(WriteDelegate serialize, ReadDelegate deserialize, DataType dataType)
-        {
-            Serialize = serialize;
-            Deserialize = deserialize;
-            DataType = dataType;
-        }
-    }
 
     public class USerializer
     {
@@ -35,7 +21,7 @@ namespace USerialization
 
         private readonly ISerializationProvider[] _providers;
 
-        private TypeDictionary<SerializationMethods> _methods = new TypeDictionary<SerializationMethods>(1024);
+        private readonly TypeDictionary<SerializationMethods> _methods = new TypeDictionary<SerializationMethods>(1024);
 
         public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers)
         {
@@ -47,17 +33,6 @@ namespace USerialization
 
             foreach (var serializationProvider in _providers)
                 serializationProvider.Start(this);
-        }
-
-        public T GetProvider<T>() where T : ISerializationProvider
-        {
-            foreach (var serializationProvider in _providers)
-            {
-                if (serializationProvider is T instance)
-                    return instance;
-            }
-
-            return default;
         }
 
         public bool TryGetSerializationMethods(Type type, out SerializationMethods methods)
@@ -81,52 +56,33 @@ namespace USerialization
             return false;
         }
 
-        public static ICollection<FieldInfo> GetAllFields(Type type, BindingFlags bindingFlags)
+        public FieldData[] GetFields(Type type)
         {
-            FieldInfo[] fieldInfos = type.GetFields(bindingFlags);
-
-            // If this class doesn't have a base, don't waste any time
-            if (type.BaseType == typeof(object))
-            {
-                return fieldInfos;
-            }
-
-            var currentType = type;
-            var fieldComparer = new FieldInfoComparer();
-            var fieldInfoList = new HashSet<FieldInfo>(fieldInfos, fieldComparer);
-
-            while (currentType != typeof(object))
-            {
-                fieldInfos = currentType.GetFields(bindingFlags);
-                fieldInfoList.UnionWith(fieldInfos);
-                currentType = currentType.BaseType;
-            }
-            return fieldInfoList;
-        }
-
-        public List<FieldData> GetFields(Type type)//todo use a pooled list for field data
-        {
-            var allFields = GetAllFields(type, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var allFields = TypeUtils.GetAllFields(type, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
             var length = allFields.Count;
 
-            var fields = new List<FieldData>(length);
+            var fields = new FieldData[length];
+            var index = 0;
 
             foreach (var fieldInfo in allFields)
             {
                 if (_serializationPolicy.ShouldSerialize(fieldInfo) == false)
                     continue;
 
-                if (TryGetSerializationMethods(fieldInfo.FieldType, out var serializationMethods))
-                {
-                    var fieldOffset = UnsafeUtility.GetFieldOffset(fieldInfo);
-                    if (fieldOffset > short.MaxValue)
-                        throw new Exception("Wot?");
+                if (TryGetSerializationMethods(fieldInfo.FieldType, out var serializationMethods) == false)
+                    continue;
 
-                    fields.Add(new FieldData(fieldInfo, serializationMethods, (ushort)fieldOffset));
-                }
+                var fieldOffset = UnsafeUtility.GetFieldOffset(fieldInfo);
+                if (fieldOffset > short.MaxValue)
+                    throw new Exception("Field offset way to big!");
+
+                fields[index] = new FieldData(fieldInfo, serializationMethods, (ushort)fieldOffset);
+                index++;
             }
 
+            if (index != fields.Length)
+                Array.Resize(ref fields, index);
 
             return fields;
         }
@@ -137,35 +93,41 @@ namespace USerialization
             if (_datas.TryGetValue(type, out typeData))
                 return typeData.Fields != null;
 
-            if (_serializationPolicy.ShouldSerialize(type))
+            if (_serializationPolicy.ShouldSerialize(type) == false)
             {
-                typeData = new TypeData(type, Array.Empty<FieldData>());
-                _datas.Add(type, typeData);//to prevent recursion when GetFields
-
-                var fieldDatas = GetFields(type).ToArray();
-                TypeData.ValidateFields(fieldDatas);
-
-                typeData = new TypeData(type, fieldDatas);
-                _datas.Add(type, typeData);
-
-                //_datas[type] = typeData;//setting correct array
-
-                return true;
+                _datas.Add(type, default);
+                return false;
             }
 
-            _datas.Add(type, default);
+            typeData = new TypeData(type, Array.Empty<FieldData>());
+            _datas.Add(type, typeData); //to prevent recursion when GetFields
 
-            return false;
+            var fieldDatas = GetFields(type);
+
+            typeData = new TypeData(type, fieldDatas);
+            _datas.Add(type, typeData);
+
+            return true;
         }
 
-        public bool PreCacheLayout(Type type)
+        /// <summary>
+        /// Forces caching type data required for serializing a type, use this so you don't get the penality when encountering a type first time
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns>tells if type can be serialized</returns>
+        public bool PreCacheType([NotNull] Type type)
         {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
             return TryGetSerializationMethods(type, out _);
         }
 
-
-        public unsafe bool Serialize(SerializerOutput output, object o)
+        public unsafe bool Serialize([NotNull] SerializerOutput output, object o)
         {
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
+
             var type = o.GetType();
 
             if (TryGetSerializationMethods(type, out var serializationMethods))
@@ -190,8 +152,11 @@ namespace USerialization
             return true;
         }
 
-        public unsafe bool SerializeTyped<T>(SerializerOutput output, T value) where T : struct
+        public unsafe bool SerializeTyped<T>([NotNull] SerializerOutput output, T value) where T : struct
         {
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
+
             var type = value.GetType();
 
             if (TryGetSerializationMethods(type, out var serializationMethods))
@@ -205,12 +170,16 @@ namespace USerialization
         }
 
 
-        public unsafe bool TryDeserialize<T>(SerializerInput input, out T result)
+        public unsafe bool TryDeserialize<T>([NotNull] SerializerInput input, out T result)
         {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
             if (TryGetSerializationMethods(typeof(T), out var serializationMethods))
             {
                 result = default;
                 serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
+                input.FinishRead();
                 return true;
             }
 
@@ -218,38 +187,51 @@ namespace USerialization
             return false;
         }
 
-        public bool TryPopulateObject<T>(SerializerInput input, ref T result)
+        public bool TryPopulateObject<T>([NotNull] SerializerInput input, ref T result)
         {
             return TryPopulateObject(input, typeof(T), ref result);
         }
 
-        public unsafe bool TryPopulateObject<T>(SerializerInput input, Type type, ref T result)
+        public unsafe bool TryPopulateObject<T>([NotNull] SerializerInput input, Type type, ref T result)
         {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
             if (typeof(T).IsAssignableFrom(type) == false)
             {
                 Debug.LogError($"You are try to use a serializer:{type}  on a non compatible type {typeof(T)}");
                 return false;
             }
 
-            if (TryGetSerializationMethods(type, out var serializationMethods))
+            if (TryGetSerializationMethods(type, out var serializationMethods) == false)
             {
-                serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
-                return true;
+                Debug.LogError($"Could not find serialization data for {type}");
+                return false;
             }
 
-            return false;
+            serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
+            input.FinishRead();
+            return true;
+
         }
 
-        public unsafe bool DeserializeObject(SerializerInput input, object obj)
+        public unsafe bool TryPopulateObject([NotNull] SerializerInput input, object obj)
         {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
             var type = obj.GetType();
-            if (TryGetSerializationMethods(type, out var serializationMethods))
+
+            if (TryGetSerializationMethods(type, out var serializationMethods) == false)
             {
-                serializationMethods.Deserialize(Unsafe.AsPointer(ref obj), input);
-                return true;
+                Debug.LogError($"Could not find serialization data for {type}");
+                return false;
             }
 
-            return false;
+            serializationMethods.Deserialize(Unsafe.AsPointer(ref obj), input);
+            input.FinishRead();
+            return true;
+
         }
 
     }
