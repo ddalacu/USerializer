@@ -78,12 +78,12 @@ namespace USerialization
         {
             var currentPosition = _bufferStart + _position;
 
-            var delta = (int)(currentPosition - (long)endObject);
+            var delta = (int)((long)endObject - currentPosition);
 
             if (delta == 0)
                 return;
 
-            if (delta < 0)
+            if (delta > 0)
             {
                 EnsureNext(delta);
                 _position += delta;
