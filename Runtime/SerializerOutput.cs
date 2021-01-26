@@ -24,6 +24,8 @@ namespace USerialization
         private byte[] _buffer;
         private int _position;
 
+        public Stream Stream => _stream;
+
         public SerializerOutput(int capacity, Stream stream)
         {
             _stream = stream;

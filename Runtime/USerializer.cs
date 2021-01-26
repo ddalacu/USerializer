@@ -144,11 +144,8 @@ namespace USerialization
                 else
                 {
                     var fieldAddress = Unsafe.AsPointer(ref o);
-
                     serializationMethods.Serialize(fieldAddress, output);
                 }
-
-                output.Flush();
             }
 
             return true;
@@ -165,7 +162,6 @@ namespace USerialization
             {
                 var fieldAddress = Unsafe.AsPointer(ref value);
                 serializationMethods.Serialize(fieldAddress, output);
-                output.Flush();
             }
 
             return true;
@@ -181,7 +177,6 @@ namespace USerialization
             {
                 result = default;
                 serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
-                input.FinishRead();
                 return true;
             }
 
@@ -212,9 +207,7 @@ namespace USerialization
             }
 
             serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
-            input.FinishRead();
             return true;
-
         }
 
         public unsafe bool TryPopulateObject([NotNull] SerializerInput input, object obj)
@@ -231,9 +224,7 @@ namespace USerialization
             }
 
             serializationMethods.Deserialize(Unsafe.AsPointer(ref obj), input);
-            input.FinishRead();
             return true;
-
         }
 
     }

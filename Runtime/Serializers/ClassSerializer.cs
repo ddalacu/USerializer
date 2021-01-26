@@ -7,6 +7,13 @@ using UnityEngine;
 
 namespace USerialization
 {
+    public interface ICustomSerializationReceiver
+    {
+        void OnAfterSerialize(USerializer uSerializer, SerializerOutput serializerOutput);
+        void OnAfterDeserialize(USerializer uSerializer, SerializerInput serializerInput);
+
+    }
+
     public unsafe class ClassSerializer : ISerializationProvider
     {
         private USerializer _serializer;
@@ -47,8 +54,8 @@ namespace USerialization
                 return false;
             }
 
-            var writer = GetWriter(typeData);
-            var reader = GetReader(type, typeData);
+            var writer = GetWriter(typeData, _serializer);
+            var reader = GetReader(type, typeData, _serializer);
 
             serializationMethods = new SerializationMethods(writer, reader, DataType.Object);
 
@@ -57,13 +64,17 @@ namespace USerialization
 
         private class ClassWriter
         {
+            private readonly bool _callCustomSerializationEvents;
             private readonly bool _callSerializationEvents;
             private readonly TypeData _typeData;
+            private readonly USerializer _uSerializer;
 
-            public ClassWriter(TypeData typeData)
+            public ClassWriter(TypeData typeData, USerializer uSerializer)
             {
                 _typeData = typeData;
+                _uSerializer = uSerializer;
                 _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
+                _callCustomSerializationEvents = typeof(ICustomSerializationReceiver).IsAssignableFrom(typeData.Type);
             }
 
             [Il2CppSetOption(Option.NullChecks, false)]
@@ -80,6 +91,7 @@ namespace USerialization
 
                 if (_callSerializationEvents)
                     Unsafe.As<ISerializationCallbackReceiver>(obj).OnBeforeSerialize();
+                
 
                 byte* objectAddress;
                 UnsafeUtility.CopyObjectAddressToPtr(obj, &objectAddress);
@@ -102,25 +114,29 @@ namespace USerialization
                         fieldData.SerializationMethods.Serialize(objectAddress + fieldData.Offset, output);
                     }
                 }
+                if (_callCustomSerializationEvents)
+                    Unsafe.As<ICustomSerializationReceiver>(obj).OnAfterSerialize(_uSerializer, output);
                 output.WriteSizeTrack(track);
             }
 
         }
 
-        private static WriteDelegate GetWriter(TypeData typeData)
+        private static WriteDelegate GetWriter(TypeData typeData, USerializer uSerializer)
         {
-            return new ClassWriter(typeData).Writer;
+            return new ClassWriter(typeData, uSerializer).Writer;
         }
 
         private class ClassReader
         {
             private readonly bool _callSerializationEvents;
+            private readonly bool _callCustomSerializationEvents;
             private readonly Type _fieldType;
             private readonly TypeData _typeData;
+            private readonly USerializer _uSerializer;
 
             private bool _haveCtor;
 
-            public ClassReader(Type fieldType, TypeData typeData)
+            public ClassReader(Type fieldType, TypeData typeData, USerializer uSerializer)
             {
                 if (fieldType.IsValueType)
                     throw new ArgumentException(nameof(fieldType));
@@ -130,7 +146,9 @@ namespace USerialization
 
                 _fieldType = fieldType;
                 _typeData = typeData;
+                _uSerializer = uSerializer;
                 _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
+                _callCustomSerializationEvents = typeof(ICustomSerializationReceiver).IsAssignableFrom(typeData.Type);
             }
 
             [Il2CppSetOption(Option.NullChecks, false)]
@@ -198,10 +216,12 @@ namespace USerialization
                         }
                     }
 
-                    input.EndObject(end);
-
                     if (_callSerializationEvents)
                         Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
+                    if (_callCustomSerializationEvents)
+                        Unsafe.As<ICustomSerializationReceiver>(instance).OnAfterDeserialize(_uSerializer, input);
+                    
+                    input.EndObject(end);
                 }
                 else
                 {
@@ -210,9 +230,9 @@ namespace USerialization
             }
         }
 
-        private static ReadDelegate GetReader(Type fieldType, TypeData typeData)
+        private static ReadDelegate GetReader(Type fieldType, TypeData typeData, USerializer uSerializer)
         {
-            return new ClassReader(fieldType, typeData).Reader;
+            return new ClassReader(fieldType, typeData, uSerializer).Reader;
         }
     }
 }

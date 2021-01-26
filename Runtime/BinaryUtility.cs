@@ -33,7 +33,10 @@ namespace USerialization
                 throw new ArgumentNullException(nameof(stream));
 
             var output = new SerializerOutput(bufferSize, stream);
-            return _uSerializer.Serialize(output, obj);
+            var serialize = _uSerializer.Serialize(output, obj);
+            output.Flush();
+
+            return serialize;
         }
 
         /// <summary>
@@ -49,7 +52,10 @@ namespace USerialization
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            return _uSerializer.TryDeserialize<T>(new SerializerInput(bufferSize, stream), out result);
+            var serializerInput = new SerializerInput(bufferSize, stream);
+            var tryDeserialize = _uSerializer.TryDeserialize<T>(serializerInput, out result);
+            serializerInput.FinishRead();
+            return tryDeserialize;
         }
 
         /// <summary>
@@ -65,7 +71,10 @@ namespace USerialization
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            return _uSerializer.TryPopulateObject(new SerializerInput(bufferSize, stream), ref ob);
+            var serializerInput = new SerializerInput(bufferSize, stream);
+            var tryPopulateObject = _uSerializer.TryPopulateObject(serializerInput, ref ob);
+            serializerInput.FinishRead();
+            return tryPopulateObject;
         }
     }
 }

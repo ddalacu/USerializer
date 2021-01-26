@@ -16,28 +16,31 @@ namespace USerialization
         private readonly Stream _stream;
         private byte[] _buffer;
         private int _position;
-        private long _bufferStart;
+        //private long _bufferStart;
 
         public Stream Stream => _stream;
 
         public int Position => _position;
 
+        private int _availBytes;
+
         public SerializerInput(int capacity, Stream stream)
         {
             _stream = stream;
             _buffer = new byte[capacity];
+
             _position = capacity;
-            _bufferStart = 0;
+            _availBytes = capacity;
         }
 
         public void FinishRead()
         {
-            var currentPosition = _bufferStart + _position;
+            var unusedBytes = _availBytes - _position;
 
-            _stream.Position = currentPosition;
+            _stream.Position = _stream.Position - unusedBytes;
 
             _position = _buffer.Length;
-            _bufferStart = 0;
+            _availBytes = _buffer.Length;
         }
 
         public bool BeginReadSize(out EndObject endObject)
@@ -52,7 +55,9 @@ namespace USerialization
                 return false;
             }
 
-            endObject = (EndObject)(_bufferStart + _position + length);
+            var unusedBytes = _availBytes - _position;
+            var streamPos = _stream.Position - unusedBytes;
+            endObject = (EndObject)(streamPos + length);
             return true;
         }
 
@@ -68,7 +73,10 @@ namespace USerialization
                 return false;
             }
 
-            endObject = (EndObject)(_bufferStart + _position + length);
+            var unusedBytes = _availBytes - _position;
+            var streamPos = _stream.Position - unusedBytes;
+
+            endObject = (EndObject)(streamPos + length);
             return true;
         }
 
@@ -76,21 +84,20 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
-            var currentPosition = _bufferStart + _position;
+            var unusedBytes = _availBytes - _position;
+            var streamPos = _stream.Position - unusedBytes;
 
-            var delta = (int)(currentPosition - (long)endObject);
+            var delta = (int)((long)endObject - streamPos);
 
-            if (delta == 0)
-                return;
-
-            if (delta < 0)
+            if (delta > 0)
             {
                 EnsureNext(delta);
                 _position += delta;
             }
             else
             {
-                throw new NotImplementedException("Something went wrong!");
+                if (delta < 0)
+                    throw new NotImplementedException("Something went wrong!" + delta);
                 //throw new NotImplementedException("You can't go back atm, if you need this feature ask!");
             }
         }
@@ -281,18 +288,21 @@ namespace USerialization
         {
             var end = _position + count;
 
-            var bufferSize = _buffer.Length;
-
-            if (end > bufferSize)
+            if (end > _availBytes)
             {
-                var unusedBytes = bufferSize - _position;
+                var bufferSize = _buffer.Length;
+
+                if (_availBytes < bufferSize)
+                {
+                    Debug.Assert(Stream.Position== Stream.Length);
+                    throw new Exception("Trying to read pass the stream!"); //read out of stream
+                }
+
+                var unusedBytes = _availBytes - _position;
 
                 if (count > bufferSize)
                 {
                     var newBuffer = new byte[count * 2];
-
-                    //for (int i = 0; i < unusedBytes; i++)
-                    //    newBuffer[i] = _buffer[_position + i];
 
                     fixed (byte* bufferPtr = _buffer)
                     fixed (byte* newBufferPtr = newBuffer)
@@ -303,18 +313,12 @@ namespace USerialization
                 }
                 else
                 {
-                    //for (int i = 0; i < unusedBytes; i++)
-                    //    _buffer[i] = _buffer[_position + i];
-
                     fixed (byte* bufferPtr = _buffer)
                         UnsafeUtility.MemCpy(bufferPtr, bufferPtr + _position, unusedBytes);
                 }
 
                 _position = 0;
-
-                var readBytes = _stream.Read(_buffer, unusedBytes, bufferSize - unusedBytes);
-
-                _bufferStart = _stream.Position - (unusedBytes + readBytes);
+                _availBytes = unusedBytes + _stream.Read(_buffer, unusedBytes, bufferSize - unusedBytes);
             }
         }
     }

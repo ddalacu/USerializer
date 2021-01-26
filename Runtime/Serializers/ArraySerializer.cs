@@ -15,7 +15,7 @@ namespace USerialization
 
         public void Start(USerializer serializer)
         {
-            
+
         }
 
         public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
@@ -107,7 +107,9 @@ namespace USerialization
                     var type = (DataType)input.ReadByte();
 
                     var count = input.ReadInt();
-                    array = Array.CreateInstance(elementType, count);
+
+                    if (array == null || array.Length != count)
+                        array = Array.CreateInstance(elementType, count);
 
                     if (type == dataType)
                     {
@@ -184,7 +186,9 @@ namespace USerialization
                 {
                     var type = (DataType)input.ReadByte();
                     var count = input.ReadInt();
-                    array = (object[])Array.CreateInstance(elementType, count);
+
+                    if (array == null || array.Length != count)
+                        array = (object[])Array.CreateInstance(elementType, count);
 
                     if (type == dataType)
                     {

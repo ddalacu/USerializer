@@ -74,12 +74,25 @@ namespace USerialization
                 {
                     var type = (DataType)input.ReadByte();
                     var count = input.ReadInt();
+
+                    Array array;
+
                     if (list == null)
+                    {
                         list = FormatterServices.GetUninitializedObject(fieldType);
+                        array = Array.CreateInstance(elementType, count);
+                        listHelper.SetArray(list, array, count);
+                    }
+                    else
+                    {
+                        array = listHelper.GetArray(list, out var currentCount);
 
-                    var array = Array.CreateInstance(elementType, count);
-
-                    listHelper.SetArray(list, array, count);
+                        if (currentCount != count)
+                        {
+                            array = Array.CreateInstance(elementType, count);
+                            listHelper.SetArray(list, array, count);
+                        }
+                    }
 
                     if (type == dataType)
                     {
@@ -159,12 +172,24 @@ namespace USerialization
                 {
                     var type = (DataType)input.ReadByte();
                     var count = input.ReadInt();
+                    Array array;
+
                     if (list == null)
+                    {
                         list = FormatterServices.GetUninitializedObject(fieldType);
+                        array = Array.CreateInstance(elementType, count);
+                        listHelper.SetArray(list, array, count);
+                    }
+                    else
+                    {
+                        array = listHelper.GetArray(list, out var currentCount);
 
-                    var array = Array.CreateInstance(elementType, count);
-
-                    listHelper.SetArray(list, array, count);
+                        if (currentCount != count)
+                        {
+                            array = Array.CreateInstance(elementType, count);
+                            listHelper.SetArray(list, array, count);
+                        }
+                    }
 
                     if (type == dataType)
                     {
