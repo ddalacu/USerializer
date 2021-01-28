@@ -36,7 +36,11 @@ public class TreeView
         listView.makeItem = MakeListItem;
         listView.bindItem = BindListItem;
 
+#if UNITY_2019_1_OR_NEWER
+        listView.onSelectionChanged += SelectionChange;
+#else
         listView.onSelectionChange += SelectionChange;
+#endif
 
         _historyElement.LastChanged += LastChanged;
 
