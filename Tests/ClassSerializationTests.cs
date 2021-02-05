@@ -175,10 +175,7 @@ namespace Tests
             };
             var result = TestUtils.SerializeDeserializeTest(initial);
 
-            //Debug.Log(UnitySerializeArray(initial));
-            //Debug.Log(UnitySerializeArray(result));
-
-            Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
+            Debug.Assert(TestUtils.CompareSerializedContents(initial, result));
         }
 
         [Test]
@@ -210,10 +207,7 @@ namespace Tests
             };
             var result = TestUtils.SerializeDeserializeTest(initial);
 
-            //Debug.Log(UnitySerializeArray(initial));
-            //Debug.Log(UnitySerializeArray(result));
-
-            Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
+            Debug.Assert(TestUtils.CompareSerializedContents(initial, result));
         }
 
         [Serializable]
@@ -319,7 +313,7 @@ namespace Tests
         }
 
         [Test]
-        public void CiyclicTypeDependency()
+        public void CyclicTypeDependency()
         {
             //make sure when we have cyclical type dependencies it all works
 
@@ -339,9 +333,12 @@ namespace Tests
             var stream = new MemoryStream();
             BinaryUtility.Serialize(inst, stream);
             stream.Position = 0;
-            BinaryUtility.TryDeserialize(stream, out A class2);
+            BinaryUtility.TryDeserialize(stream, out A result);
 
-            Debug.Assert(JsonUtility.ToJson(inst) == JsonUtility.ToJson(class2));
+            Debug.Assert(result.Value==inst.Value);
+            Debug.Assert(result.Ref.Value==inst.Ref.Value);
+            Debug.Assert(result.Ref.Ref.Value == inst.Ref.Ref.Value);
+            Debug.Assert(result.Ref.Ref.Ref == null);
         }
 
         [Test]

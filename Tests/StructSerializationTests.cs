@@ -109,7 +109,7 @@ namespace Tests
             //Debug.Log(TestUtils.UnitySerializeArray(result));
 
 
-            Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
+            Debug.Assert(TestUtils.CompareSerializedContents(initial, result));
         }
 
         [Test]
@@ -134,11 +134,7 @@ namespace Tests
             };
             var result = TestUtils.SerializeDeserializeTest(initial);
 
-            //Debug.Log(TestUtils.UnitySerializeArray(initial));
-            //Debug.Log(TestUtils.UnitySerializeArray(result));
-
-
-            Debug.Assert(TestUtils.UnitySerializeArray(initial) == TestUtils.UnitySerializeArray(result));
+            Debug.Assert(TestUtils.CompareSerializedContents(initial, result));
         }
 
         [Serializable]

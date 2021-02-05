@@ -76,30 +76,27 @@ namespace Tests
             {
                 Debug.Log(JsonUtility.ToJson(value));
                 Debug.Log(JsonUtility.ToJson(ob));
-
                 Assert.Fail();
             }
 
             return ob;
         }
 
-        public static string UnitySerializeArray<T>(IList<T> list)
+        public static bool CompareSerializedContents<T>(IList<T> a,IList<T> b)
         {
-            var builder = new StringBuilder();
+            if (a.Count != b.Count)
+                return false;
 
-            builder.Append('[');
-
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < a.Count; i++)
             {
-                builder.Append(JsonUtility.ToJson(list[i]));
+                var elementA = a[i];
+                var elementB = b[i];
 
-                if (i < list.Count - 1)
-                    builder.Append(',');
+                if (JsonUtility.ToJson(elementA) != JsonUtility.ToJson(elementB))
+                    return false;
             }
 
-            builder.Append(']');
-
-            return builder.ToString();
+            return true;
         }
 
 
