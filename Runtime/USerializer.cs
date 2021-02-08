@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace USerialization
 {
@@ -129,6 +130,7 @@ namespace USerialization
         {
             if (output == null)
                 throw new ArgumentNullException(nameof(output));
+            Profiler.BeginSample("USerializer.Serialize");
 
             var type = o.GetType();
 
@@ -146,9 +148,13 @@ namespace USerialization
                     var fieldAddress = Unsafe.AsPointer(ref o);
                     serializationMethods.Serialize(fieldAddress, output);
                 }
+
+                Profiler.EndSample();
+                return true;
             }
 
-            return true;
+            Profiler.EndSample();
+            return false;
         }
 
         public unsafe bool SerializeTyped<T>([NotNull] SerializerOutput output, T value) where T : struct
@@ -156,14 +162,17 @@ namespace USerialization
             if (output == null)
                 throw new ArgumentNullException(nameof(output));
 
+            Profiler.BeginSample("USerializer.SerializeTyped");
             var type = value.GetType();
 
             if (TryGetSerializationMethods(type, out var serializationMethods))
             {
                 var fieldAddress = Unsafe.AsPointer(ref value);
                 serializationMethods.Serialize(fieldAddress, output);
+                Profiler.EndSample();
+                return true;
             }
-
+            Profiler.EndSample();
             return true;
         }
 
@@ -173,13 +182,16 @@ namespace USerialization
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
+            Profiler.BeginSample("USerializer.TryDeserialize");
+
             if (TryGetSerializationMethods(typeof(T), out var serializationMethods))
             {
                 result = default;
                 serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
+                Profiler.EndSample();
                 return true;
             }
-
+            Profiler.EndSample();
             result = default;
             return false;
         }
@@ -200,13 +212,17 @@ namespace USerialization
                 return false;
             }
 
+            Profiler.BeginSample("USerializer.TryPopulateObject");
+
             if (TryGetSerializationMethods(type, out var serializationMethods) == false)
             {
+                Profiler.EndSample();
                 Debug.LogError($"Could not find serialization data for {type}");
                 return false;
             }
 
             serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
+            Profiler.EndSample();
             return true;
         }
 
@@ -217,13 +233,17 @@ namespace USerialization
 
             var type = obj.GetType();
 
+            Profiler.BeginSample("USerializer.TryPopulateObject");
+
             if (TryGetSerializationMethods(type, out var serializationMethods) == false)
             {
+                Profiler.EndSample();
                 Debug.LogError($"Could not find serialization data for {type}");
                 return false;
             }
 
             serializationMethods.Deserialize(Unsafe.AsPointer(ref obj), input);
+            Profiler.EndSample();
             return true;
         }
 

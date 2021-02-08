@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.IL2CPP.CompilerServices;
+using UnityEngine;
 
 namespace USerialization
 {
@@ -41,8 +41,9 @@ namespace USerialization
 
                 var sizeTracker = output.BeginSizeTrack();
                 {
-                    output.WriteByte((byte)dataType);
-                    output.WriteInt(count);
+                    output.EnsureNext(6);
+                    output.WriteByteUnchecked((byte)dataType);
+                    output.Write7BitEncodedIntUnchecked(count);
 
                     var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
@@ -73,7 +74,7 @@ namespace USerialization
                 if (input.BeginReadSize(out var end))
                 {
                     var type = (DataType)input.ReadByte();
-                    var count = input.ReadInt();
+                    var count = input.Read7BitEncodedInt();
 
                     Array array;
 
@@ -130,27 +131,19 @@ namespace USerialization
                     return;
                 }
 
-                var array = listHelper.GetArray<object>(list, out var count);
-
+                var array = listHelper.GetArray(list, out var count);
+                
                 var sizeTracker = output.BeginSizeTrack();
                 {
-                    output.WriteByte((byte)dataType);
-                    output.WriteInt(count);
+                    output.EnsureNext(6);
+                    output.WriteByteUnchecked((byte)dataType);
+                    output.Write7BitEncodedIntUnchecked(count);
 
                     var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
                     for (var index = 0; index < count; index++)
-                    {
-                        var o = array[index];
-                        if (o != null)
-                        {
-                            elementWriter(address, output);
-                        }
-                        else
-                        {
-                            output.WriteNull();
-                        }
-
+                    { 
+                        elementWriter(address, output); 
                         address += sizeof(void*);
                     }
 
@@ -171,7 +164,7 @@ namespace USerialization
                 if (input.BeginReadSize(out var end))
                 {
                     var type = (DataType)input.ReadByte();
-                    var count = input.ReadInt();
+                    var count = input.Read7BitEncodedInt();
                     Array array;
 
                     if (list == null)

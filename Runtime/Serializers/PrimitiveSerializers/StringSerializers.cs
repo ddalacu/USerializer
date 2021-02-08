@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using UnityEngine;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(StringSerializer))]
@@ -50,10 +49,9 @@ namespace USerialization
                 {
                     var count = array.Length;
 
-                    output.EnsureNext(5);
-
+                    output.EnsureNext(6);
                     output.WriteByteUnchecked((byte)DataType.String);
-                    output.WriteIntUnchecked(count);
+                    output.Write7BitEncodedIntUnchecked(count);
 
                     for (var i = 0; i < count; i++)
                         output.WriteString(array[i]);
@@ -73,7 +71,7 @@ namespace USerialization
             {
                 var type = (DataType)input.ReadByte();
 
-                var count = input.ReadInt();
+                var count = input.Read7BitEncodedInt();
                 array = new string[count];
 
                 if (type == DataType.String)
@@ -118,10 +116,9 @@ namespace USerialization
                 {
                     var count = list.Count;
 
-                    output.EnsureNext(5);
-
+                    output.EnsureNext(6);
                     output.WriteByteUnchecked((byte)DataType.String);
-                    output.WriteIntUnchecked(count);
+                    output.Write7BitEncodedIntUnchecked(count);
 
                     for (var i = 0; i < count; i++)
                         output.WriteString(list[i]);
@@ -142,7 +139,8 @@ namespace USerialization
             {
                 var type = (DataType)input.ReadByte();
 
-                var count = input.ReadInt();
+                var count = input.Read7BitEncodedInt();
+
                 list = new List<string>();
                 var array = new string[count];
 

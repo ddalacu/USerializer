@@ -16,7 +16,6 @@ namespace USerialization
         private readonly Stream _stream;
         private byte[] _buffer;
         private int _position;
-        //private long _bufferStart;
 
         public Stream Stream => _stream;
 
@@ -135,20 +134,36 @@ namespace USerialization
             return value;
         }
 
+        public int Read7BitEncodedInt()
+        {
+            int count = 0;
+            int shift = 0;
+            byte b;
+            do
+            {
+                if (shift == 5 * 7)  // 5 bytes max
+                    throw new FormatException("WTF");
+
+                EnsureNext(1);
+                b = _buffer[_position++];
+
+                count |= (b & 0x7F) << shift;
+                shift += 7;
+            } while ((b & 0x80) != 0);
+
+            return count;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe string ReadString()
         {
             var length = ReadInt();
 
             if (length == -1)
-            {
                 return null;
-            }
 
             if (length == 0)
-            {
                 return string.Empty;
-            }
 
             EnsureNext(length);
 
@@ -294,7 +309,7 @@ namespace USerialization
 
                 if (_availBytes < bufferSize)
                 {
-                    Debug.Assert(Stream.Position== Stream.Length);
+                    Debug.Assert(Stream.Position == Stream.Length);
                     throw new Exception("Trying to read pass the stream!"); //read out of stream
                 }
 

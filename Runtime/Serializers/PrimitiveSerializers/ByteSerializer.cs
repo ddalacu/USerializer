@@ -34,7 +34,7 @@ namespace USerialization
 
         public void Initialize(USerializer serializer)
         {
-            
+
         }
     }
 
@@ -55,9 +55,11 @@ namespace USerialization
                 {
                     var count = array.Length;
 
-                    output.EnsureNext(5 + (count * sizeof(byte)));
+                    output.EnsureNext(6 + (count * sizeof(byte)));
+
                     output.WriteByteUnchecked((byte)DataType.Byte);
-                    output.WriteIntUnchecked(count);
+                    output.Write7BitEncodedIntUnchecked(count);
+
                     output.WriteBytesUnchecked(array, count);
                 }
                 output.WriteSizeTrack(sizeTracker);
@@ -75,7 +77,7 @@ namespace USerialization
             {
                 var type = (DataType)input.ReadByte();
 
-                var count = input.ReadInt();
+                var count = input.Read7BitEncodedInt();
 
                 if (type == DataType.Byte)
                 {
@@ -96,7 +98,7 @@ namespace USerialization
 
         public void Initialize(USerializer serializer)
         {
-            
+
         }
     }
 
@@ -127,9 +129,10 @@ namespace USerialization
             {
                 var array = _listHelper.GetArray(list, out var count);
 
-                output.EnsureNext(5 + (count * sizeof(byte)));
+                output.EnsureNext(6 + (count * sizeof(byte)));
+
                 output.WriteByteUnchecked((byte)DataType.Byte);
-                output.WriteIntUnchecked(count);
+                output.Write7BitEncodedIntUnchecked(count);
                 output.WriteBytesUnchecked(array, count);
             }
             output.WriteSizeTrack(sizeTracker);
@@ -143,7 +146,7 @@ namespace USerialization
             {
                 var type = (DataType)input.ReadByte();
 
-                var count = input.ReadInt();
+                var count = input.Read7BitEncodedInt();
                 list = new List<byte>();
 
                 if (type == DataType.Byte)
@@ -165,7 +168,7 @@ namespace USerialization
 
         public void Initialize(USerializer serializer)
         {
-            
+
         }
     }
 }

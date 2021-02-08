@@ -1,7 +1,10 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
+using UnityEngine;
 
 namespace USerialization
 {
@@ -56,36 +59,6 @@ namespace USerialization
             _position = 0;
         }
 
-        //private unsafe void ExpandCapacity(long size)
-        //{
-        //    var newCapacity = size;
-        //    var capacity = _buffer.Length;
-
-        //    var doubledCapacity = capacity * 2;
-        //    if (newCapacity < doubledCapacity)
-        //    {
-        //        newCapacity = doubledCapacity;
-        //    }
-
-        //    if ((uint)doubledCapacity > (int.MaxValue / 2))
-        //    {
-        //        newCapacity = size > (int.MaxValue / 2) ? size : (int.MaxValue / 2);
-        //    }
-
-        //    var newBuffer = new byte[newCapacity];
-
-        //    fixed (byte* newBufferPtr = newBuffer)
-        //    {
-        //        fixed (byte* bufferPtr = _buffer)
-        //        {
-        //            UnsafeUtility.MemCpy(newBufferPtr, bufferPtr, _position);
-        //        }
-        //    }
-
-        //    _buffer = newBuffer;
-        //}
-
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SizeTracker BeginSizeTrack()
         {
@@ -103,7 +76,7 @@ namespace USerialization
             var streamPos = _stream.Position;
             int length = (int)((streamPos + _position) - tracker);
 
-            if ((int)tracker <= _stream.Position)
+            if ((int)tracker <= streamPos)
             {
                 _trackBytes[0] = (byte)length;
                 _trackBytes[1] = (byte)(length >> 8);
@@ -116,7 +89,7 @@ namespace USerialization
             }
             else
             {
-                var offset = (int)(tracker - _stream.Position);
+                var offset = (int)(tracker - streamPos);
 
                 _buffer[offset - 4] = (byte)length;
                 _buffer[offset - 3] = (byte)(length >> 8);
@@ -139,7 +112,7 @@ namespace USerialization
         {
             var streamPos = _stream.Position;
 
-            if ((int)lateWrite <= _stream.Position)
+            if ((int)lateWrite <= streamPos)
             {
                 _trackBytes[0] = (byte)value;
                 _trackBytes[1] = (byte)(value >> 8);
@@ -152,7 +125,7 @@ namespace USerialization
             }
             else
             {
-                var offset = (int)(lateWrite - _stream.Position);
+                var offset = (int)(lateWrite - streamPos);
 
                 _buffer[offset - 4] = (byte)value;
                 _buffer[offset - 3] = (byte)(value >> 8);
@@ -172,6 +145,34 @@ namespace USerialization
             _buffer[_position++] = (byte)(value >> 24);
         }
 
+        public void Write7BitEncodedInt(int value)
+        {
+            EnsureNext(5);
+
+            // Write out an int 7 bits at a time.  The high bit of the byte,
+            // when on, tells reader to continue reading more bytes.
+            uint v = (uint)value;   // support negative numbers
+            while (v >= 0x80)
+            {
+                _buffer[_position++] = (byte)(v | 0x80);
+                v >>= 7;
+            }
+
+            _buffer[_position++] = (byte)v;
+        }
+
+        public void Write7BitEncodedIntUnchecked(int value)
+        {
+            uint v = (uint)value;
+            while (v >= 0x80)
+            {
+                _buffer[_position++] = (byte)(v | 0x80);
+                v >>= 7;
+            }
+
+            _buffer[_position++] = (byte)v;
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteIntUnchecked(int value)
@@ -181,6 +182,7 @@ namespace USerialization
             _buffer[_position++] = (byte)(value >> 16);
             _buffer[_position++] = (byte)(value >> 24);
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteString(string value)

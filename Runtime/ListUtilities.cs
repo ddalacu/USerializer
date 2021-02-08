@@ -50,9 +50,7 @@ namespace USerialization
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
             count = *(int*)(listAddress + _sizeFieldOffset);
-            var array = Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
-
-            return array;
+            return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
         }
     }
 
@@ -96,24 +94,24 @@ namespace USerialization
             Unsafe.Write(listAddress + _sizeFieldOffset, count);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Array GetArray(object list, out int count)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
 
             count = *(int*)(listAddress + _sizeFieldOffset);
-            var array = Unsafe.Read<Array>(listAddress + _itemsFieldOffset);
-            return array;
+            return Unsafe.Read<Array>(listAddress + _itemsFieldOffset);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T[] GetArray<T>(object list, out int count)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
 
             count = *(int*)(listAddress + _sizeFieldOffset);
-            var array = Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
-            return array;
+            return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
         }
     }
 
