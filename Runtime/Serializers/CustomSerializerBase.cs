@@ -115,7 +115,8 @@ namespace USerialization
 
                 for (var i = 0; i < _fields.Count; i++)
                 {
-                    output.WriteInt(_fields[i].Hash);
+					output.EnsureNext(5);
+                    output.WriteIntUnchecked(_fields[i].Hash);
                     output.WriteByteUnchecked((byte)_fields[i].DataType);
                     _fields[i].FieldWriteDelegate(fieldAddress, output);
                 }
