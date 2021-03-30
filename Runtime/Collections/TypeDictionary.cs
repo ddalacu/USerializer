@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
+using UnityEngine;
 
 namespace USerialization
 {
@@ -40,12 +41,9 @@ namespace USerialization
 
         public bool Add(Type key, TValue value)
         {
-            if (key == null)
-                throw new ArgumentOutOfRangeException(nameof(key));
-
-            var capacity = _keys.Length;
             var hash = RuntimeHelpers.GetHashCode(key);
-            int position = ((hash * 31) & 0x7FFFFFFF) % capacity;
+            var capacity = _keys.Length;
+            int position = (hash & 0x7FFFFFFF) % capacity;
 
             assign:
             var sampledKey = _keys[position];
@@ -92,7 +90,7 @@ namespace USerialization
                 {
                     var hash = RuntimeHelpers.GetHashCode(existingKey);
 
-                    int newPosition = ((hash * 31) & 0x7FFFFFFF) % newCapacity;
+                    int newPosition = (hash& 0x7FFFFFFF) % newCapacity;
                     while (expandedKeys[newPosition] != null)
                     {
                         newPosition++;
@@ -128,12 +126,9 @@ namespace USerialization
 
         public bool TryGetValue(Type key, out TValue value)
         {
-            if (key == null)
-                throw new ArgumentOutOfRangeException(nameof(key));
-
-            var capacity = _keys.Length;
             var hash = RuntimeHelpers.GetHashCode(key);
-            int position = ((hash * 31) & 0x7FFFFFFF) % capacity;
+            var capacity = _keys.Length;
+            int position = (hash & 0x7FFFFFFF) % capacity;
 
             assign:
             var sampledKey = _keys[position];
@@ -158,12 +153,9 @@ namespace USerialization
 
         public bool ContainsKey(Type key)
         {
-            if (key == null)
-                return false;
-
-            var capacity = _keys.Length;
             var hash = RuntimeHelpers.GetHashCode(key);
-            int position = ((hash * 31) & 0x7FFFFFFF) % capacity;
+            var capacity = _keys.Length;
+            int position = (hash& 0x7FFFFFFF) % capacity;
 
             assign:
             var sampledKey = _keys[position];
@@ -193,4 +185,5 @@ namespace USerialization
         }
 
     }
+
 }
