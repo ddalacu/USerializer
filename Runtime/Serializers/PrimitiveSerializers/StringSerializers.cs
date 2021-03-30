@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(StringSerializer))]
@@ -10,19 +11,19 @@ using USerialization;
 
 namespace USerialization
 {
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class StringSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(string);
 
-        public DataType DataType => DataType.String;
-
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var obj = Unsafe.Read<string>(fieldAddress);
             output.WriteString(obj);
         }
 
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
+        public static unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var value = ref Unsafe.AsRef<string>(fieldAddress);
             value = input.ReadString();
@@ -32,15 +33,20 @@ namespace USerialization
         {
             
         }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.String);
+        }
     }
 
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class StringArraySerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(string[]);
 
-        public DataType DataType => DataType.Array;
-
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<string[]>(fieldAddress);
             if (array != null)
@@ -63,7 +69,7 @@ namespace USerialization
                 output.WriteNull();
             }
         }
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
+        public static unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var array = ref Unsafe.AsRef<string[]>(fieldAddress);
 
@@ -92,22 +98,27 @@ namespace USerialization
         {
             
         }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Array);
+        }
     }
 
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class StringListSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(List<string>);
 
-        public DataType DataType => DataType.Array;
+        private static readonly ListHelper<string> _listHelper;
 
-        private readonly ListHelper<string> _listHelper;
-
-        public StringListSerializer()
+        static StringListSerializer()
         {
             _listHelper = ListHelper<string>.Create();
         }
 
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var list = Unsafe.Read<List<string>>(fieldAddress);
             if (list != null)
@@ -131,7 +142,7 @@ namespace USerialization
             }
         }
 
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
+        public static unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var list = ref Unsafe.AsRef<List<string>>(fieldAddress);
 
@@ -163,6 +174,11 @@ namespace USerialization
         public void Initialize(USerializer serializer)
         {
             
+        }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Array);
         }
     }
 

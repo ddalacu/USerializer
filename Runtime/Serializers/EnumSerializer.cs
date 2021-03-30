@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class EnumSerializer : ISerializationProvider
     {
         private USerializer _serializer;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.IL2CPP.CompilerServices;
 using UnityEngine;
 
 namespace USerialization
@@ -27,11 +28,11 @@ namespace USerialization
         }
     }
 
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public abstract class CustomSerializerBase<T> : ICustomSerializer
     {
         public Type SerializedType => _type;
-
-        public DataType DataType => DataType.Object;
 
         private List<FieldSerializerStruct> _fields = new List<FieldSerializerStruct>();
 
@@ -182,6 +183,11 @@ namespace USerialization
         }
 
         public abstract void LocalInit();
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Object);
+        }
     }
 }
 

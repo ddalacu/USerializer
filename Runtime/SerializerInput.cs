@@ -2,6 +2,7 @@
 using System.IO;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.IL2CPP.CompilerServices;
 using UnityEngine;
 
 namespace USerialization
@@ -11,6 +12,8 @@ namespace USerialization
 
     }
 
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class SerializerInput
     {
         private readonly Stream _stream;

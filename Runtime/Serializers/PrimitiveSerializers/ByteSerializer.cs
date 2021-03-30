@@ -18,8 +18,6 @@ namespace USerialization
     {
         public Type SerializedType => typeof(byte);
 
-        public DataType DataType => DataType.Byte;
-
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = *(byte*)(fieldAddress);
@@ -28,13 +26,18 @@ namespace USerialization
 
         public unsafe void Read(void* fieldAddress, SerializerInput input)
         {
-            ref var value = ref Unsafe.AsRef<byte>(fieldAddress);
-            value = input.ReadByte();
+            var value = (byte*)(fieldAddress);
+            *value = input.ReadByte();
         }
 
         public void Initialize(USerializer serializer)
         {
 
+        }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Byte);
         }
     }
 
@@ -44,9 +47,7 @@ namespace USerialization
     {
         public Type SerializedType => typeof(byte[]);
 
-        public DataType DataType => DataType.Array;
-
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<byte[]>(fieldAddress);
             if (array != null)
@@ -69,7 +70,7 @@ namespace USerialization
                 output.WriteNull();
             }
         }
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
+        public static unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var array = ref Unsafe.AsRef<byte[]>(fieldAddress);
 
@@ -100,6 +101,11 @@ namespace USerialization
         {
 
         }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Array);
+        }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
@@ -107,7 +113,6 @@ namespace USerialization
     public sealed class ByteListSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(List<byte>);
-        public DataType DataType => DataType.Array;
 
         private readonly ListHelper<byte> _listHelper;
 
@@ -169,6 +174,11 @@ namespace USerialization
         public void Initialize(USerializer serializer)
         {
 
+        }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Array);
         }
     }
 }

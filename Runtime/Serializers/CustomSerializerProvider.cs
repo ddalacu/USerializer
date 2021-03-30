@@ -8,13 +8,9 @@ namespace USerialization
     {
         Type SerializedType { get; }
 
-        DataType DataType { get; }
-
-        void Write(void* fieldAddress, SerializerOutput output);
-
-        void Read(void* fieldAddress, SerializerInput input);
-
         void Initialize(USerializer serializer);
+
+        SerializationMethods GetMethods();
     }
 
     public unsafe class CustomSerializerProvider : ISerializationProvider
@@ -60,7 +56,7 @@ namespace USerialization
         {
             if (_instances.TryGetValue(type, out var instance))
             {
-                serializationMethods = new SerializationMethods(instance.Write, instance.Read, instance.DataType);
+                serializationMethods = instance.GetMethods();// new SerializationMethods(instance.Write, instance.Read, instance.DataType);
                 return true;
             }
 

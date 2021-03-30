@@ -17,8 +17,6 @@ namespace USerialization
     {
         public Type SerializedType => typeof(int);
 
-        public DataType DataType => DataType.Int32;
-
         public unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = *(int*)(fieldAddress);
@@ -26,13 +24,18 @@ namespace USerialization
         }
         public unsafe void Read(void* fieldAddress, SerializerInput input)
         {
-            ref var value = ref Unsafe.AsRef<int>(fieldAddress);
-            value = input.ReadInt();
+            var value = (int*)(fieldAddress);
+            *value = input.ReadInt();
         }
 
         public void Initialize(USerializer serializer)
         {
 
+        }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Int32);
         }
     }
 
@@ -42,9 +45,7 @@ namespace USerialization
     {
         public Type SerializedType => typeof(int[]);
 
-        public DataType DataType => DataType.Array;
-
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<int[]>(fieldAddress);
             if (array != null)
@@ -67,7 +68,7 @@ namespace USerialization
                 output.WriteNull();
             }
         }
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
+        public static unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var array = ref Unsafe.AsRef<int[]>(fieldAddress);
 
@@ -96,6 +97,11 @@ namespace USerialization
         {
 
         }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Array);
+        }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
@@ -104,16 +110,14 @@ namespace USerialization
     {
         public Type SerializedType => typeof(List<int>);
 
-        public DataType DataType => DataType.Array;
+        private static readonly ListHelper<int> _listHelper;
 
-        private readonly ListHelper<int> _listHelper;
-
-        public IntListSerializer()
+        static IntListSerializer()
         {
             _listHelper = ListHelper<int>.Create();
         }
 
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var list = Unsafe.Read<List<int>>(fieldAddress);
             if (list == null)
@@ -137,7 +141,7 @@ namespace USerialization
             output.WriteSizeTrack(sizeTracker);
         }
 
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
+        public static unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var list = ref Unsafe.AsRef<List<int>>(fieldAddress);
 
@@ -168,6 +172,11 @@ namespace USerialization
         public void Initialize(USerializer serializer)
         {
 
+        }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Array);
         }
     }
 }

@@ -1,33 +1,38 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using UnityEngine;
+using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(FloatSerializer))]
 
 namespace USerialization
 {
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class FloatSerializer : ICustomSerializer
     {
         public Type SerializedType => typeof(float);
 
-        public DataType DataType => DataType.Single;
-
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = *(float*)(fieldAddress);
             output.WriteFloat(value);
         }
 
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
+        public static unsafe void Read(void* fieldAddress, SerializerInput input)
         {
-            ref var value = ref Unsafe.AsRef<float>(fieldAddress);
-            value = input.ReadFloat();
+            var value = (float*)(fieldAddress);
+            *value = input.ReadFloat();
         }
 
         public void Initialize(USerializer serializer)
         {
             
+        }
+
+        public unsafe SerializationMethods GetMethods()
+        {
+            return new SerializationMethods(Write, Read, DataType.Single);
         }
     }
 
