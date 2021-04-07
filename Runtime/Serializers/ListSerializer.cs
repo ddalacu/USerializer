@@ -22,7 +22,7 @@ namespace USerialization
 
         public void Start(USerializer serializer)
         {
-            
+
         }
 
         private static WriteDelegate GetValueTypeWriter(WriteDelegate elementWriter, Type fieldType, Type elementType, DataType dataType)
@@ -91,10 +91,19 @@ namespace USerialization
                     {
                         array = listHelper.GetArray(list, out var currentCount);
 
-                        if (currentCount != count)
+                        if (currentCount < count)//if we need more elements in the array then we allocate a array
                         {
                             array = Array.CreateInstance(elementType, count);
                             listHelper.SetArray(list, array, count);
+                        }
+                        else
+                        {
+                            if (currentCount != count)//if we need less elements in the array then we clear the items we don't need
+                            {
+                                var remaining = currentCount - count;
+                                Array.Clear(array, count, remaining);
+                                listHelper.SetCount(list, count);
+                            }
                         }
                     }
 
@@ -135,7 +144,7 @@ namespace USerialization
                 }
 
                 var array = listHelper.GetArray(list, out var count);
-                
+
                 var sizeTracker = output.BeginSizeTrack();
                 {
                     output.EnsureNext(6);
@@ -145,8 +154,8 @@ namespace USerialization
                     var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
                     for (var index = 0; index < count; index++)
-                    { 
-                        elementWriter(address, output); 
+                    {
+                        elementWriter(address, output);
                         address += sizeof(void*);
                     }
 
@@ -180,10 +189,19 @@ namespace USerialization
                     {
                         array = listHelper.GetArray(list, out var currentCount);
 
-                        if (currentCount != count)
+                        if (currentCount < count)//if we need more elements in the array then we allocate a array
                         {
                             array = Array.CreateInstance(elementType, count);
                             listHelper.SetArray(list, array, count);
+                        }
+                        else
+                        {
+                            if (currentCount != count)//if we need less elements in the array then we clear the items we don't need
+                            {
+                                var remaining = currentCount - count;
+                                Array.Clear(array, count, remaining);
+                                listHelper.SetCount(list, count);
+                            }
                         }
                     }
 

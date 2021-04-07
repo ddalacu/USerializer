@@ -94,6 +94,13 @@ namespace USerialization
             Unsafe.Write(listAddress + _sizeFieldOffset, count);
         }
 
+        public unsafe void SetCount(object list, int count)
+        {
+            byte* listAddress;
+            UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
+            Unsafe.Write(listAddress + _sizeFieldOffset, count);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Array GetArray(object list, out int count)
         {

@@ -81,7 +81,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6);
                     output.WriteByteUnchecked((byte) dataType);
-                    output.Write7BitEncodedIntUnchecked(array.Length);
+                    output.Write7BitEncodedIntUnchecked(count);
 
                     var address = (byte*) UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 

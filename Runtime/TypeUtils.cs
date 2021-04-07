@@ -26,6 +26,5 @@ namespace USerialization
             }
             return fieldInfoList;
         }
-
     }
 }

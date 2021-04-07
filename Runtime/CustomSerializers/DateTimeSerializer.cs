@@ -5,14 +5,16 @@ using USerialization;
 
 namespace USerialization
 {
-    public class DateTimeSerializer : CustomSerializerBase<DateTime>
+    public sealed class DateTimeSerializer : SurrogateSerializerBase<DateTime, long>
     {
-        public override void LocalInit()
+        public override void CopyToSurrogate(ref DateTime @from, ref long to)
         {
-            AddField(1, (ref DateTime dateTime, long var) =>
-            {
-                dateTime = DateTime.FromBinary(var);
-            }, (ref DateTime dateTime) => dateTime.ToBinary());
+            to = from.ToBinary();
+        }
+
+        public override void CopyFromSurrogate(ref long @from, ref DateTime to)
+        {
+            to = DateTime.FromBinary(from);
         }
     }
 

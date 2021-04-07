@@ -24,6 +24,8 @@ namespace USerialization
 
         private readonly TypeDictionary<SerializationMethods> _methods = new TypeDictionary<SerializationMethods>(1024);
 
+        public ISerializationProvider[] Providers => _providers;
+
         public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers)
         {
             _serializationPolicy = serializationPolicy;
@@ -56,6 +58,38 @@ namespace USerialization
             _methods.Add(type, methods);
             return false;
         }
+
+        public bool TryGetSerializationMethods<T>(out TypedSerializationMethods<T> methods)
+        {
+            var type = typeof(T);
+
+            if (_methods.TryGetValue(type, out var result))
+            {
+                if (result.Serialize != null)
+                {
+                    methods = new TypedSerializationMethods<T>(result);
+                    return true;
+                }
+
+                methods = default;
+                return false;
+            }
+
+            foreach (var provider in _providers)
+            {
+                if (provider.TryGetSerializationMethods(type, out result) == false)
+                    continue;
+
+                _methods.Add(type, result);
+                methods = new TypedSerializationMethods<T>(result);
+                return true;
+            }
+
+            methods = default;
+            _methods.Add(type, result);
+            return false;
+        }
+
 
         public FieldData[] GetFields(Type type)
         {
@@ -247,5 +281,19 @@ namespace USerialization
             return true;
         }
 
+        public bool TryGetProvider<T>(out T result) where T : ISerializationProvider
+        {
+            foreach (var serializationProvider in _providers)
+            {
+                if (serializationProvider is T provider)
+                {
+                    result = provider;
+                    return true;
+                }
+            }
+
+            result = default;
+            return false;
+        }
     }
 }

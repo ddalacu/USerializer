@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace USerialization
 {
-    public unsafe interface ICustomSerializer
+    public interface ICustomSerializer
     {
         Type SerializedType { get; }
 
@@ -13,10 +13,9 @@ namespace USerialization
         SerializationMethods GetMethods();
     }
 
-    public unsafe class CustomSerializerProvider : ISerializationProvider
+    public class CustomSerializerProvider : ISerializationProvider
     {
         private TypeDictionary<ICustomSerializer> _instances;
-
 
         public void Initialize(USerializer serializer)
         {

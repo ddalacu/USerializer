@@ -22,9 +22,17 @@ namespace USerialization
 
         public Stream Stream => _stream;
 
-        public int Position => _position;
-
         private int _availBytes;
+
+        public long StreamPosition
+        {
+            get
+            {
+                var unusedBytes = _availBytes - _position;
+                var streamPos = _stream.Position - unusedBytes;
+                return streamPos;
+            }
+        }
 
         public SerializerInput(int capacity, Stream stream)
         {
@@ -104,10 +112,32 @@ namespace USerialization
             }
         }
 
+        public void SetPosition(long initialPosition)
+        {
+            //var positionInBuffer = _stream.Position - initialPosition;
+
+            //if (positionInBuffer < _availBytes)
+            //{
+            //    _position = (int)positionInBuffer;
+            //}
+            //else
+            {
+                _stream.Position = initialPosition;
+                _availBytes = _buffer.Length;
+                _position = _availBytes;
+            }
+        }
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ReadByte()
         {
             EnsureNext(1);
+            return _buffer[_position++];
+        }
+
+        public byte ReadByteUnchecked()
+        {
             return _buffer[_position++];
         }
 
@@ -123,6 +153,14 @@ namespace USerialization
         public unsafe float ReadFloat()
         {
             EnsureNext(4);
+            uint tmpBuffer = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
+            //_position += 4;
+            return *((float*)&tmpBuffer);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe float ReadFloatUnchecked()
+        {
             uint tmpBuffer = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
             //_position += 4;
             return *((float*)&tmpBuffer);
@@ -339,5 +377,7 @@ namespace USerialization
                 _availBytes = unusedBytes + _stream.Read(_buffer, unusedBytes, bufferSize - unusedBytes);
             }
         }
+
+
     }
 }

@@ -21,10 +21,14 @@ namespace USerialization
     public class SerializerOutput
     {
         private readonly Stream _stream;
+
         private byte[] _buffer;
+
         private int _position;
 
         public Stream Stream => _stream;
+
+        public long StreamPosition => _stream.Position + _position;
 
         public SerializerOutput(int capacity, Stream stream)
         {
@@ -144,13 +148,16 @@ namespace USerialization
 
         public void Write7BitEncodedInt(int value)
         {
-            EnsureNext(5);
+            // EnsureNext(5);
+            EnsureNext(1);
 
             // Write out an int 7 bits at a time.  The high bit of the byte,
             // when on, tells reader to continue reading more bytes.
             uint v = (uint)value;   // support negative numbers
             while (v >= 0x80)
             {
+                EnsureNext(1);
+
                 _buffer[_position++] = (byte)(v | 0x80);
                 v >>= 7;
             }
@@ -269,6 +276,17 @@ namespace USerialization
         public unsafe void WriteFloat(float value)
         {
             EnsureNext(4);
+            //write the value
+            uint tmpValue = *(uint*)&value;
+            _buffer[_position++] = (byte)tmpValue;
+            _buffer[_position++] = (byte)(tmpValue >> 8);
+            _buffer[_position++] = (byte)(tmpValue >> 16);
+            _buffer[_position++] = (byte)(tmpValue >> 24);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteFloatUnchecked(float value)
+        {
             //write the value
             uint tmpValue = *(uint*)&value;
             _buffer[_position++] = (byte)tmpValue;
