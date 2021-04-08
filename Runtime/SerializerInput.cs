@@ -16,13 +16,15 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class SerializerInput
     {
-        private readonly Stream _stream;
+        private Stream _stream;
         private byte[] _buffer;
         private int _position;
 
         public Stream Stream => _stream;
 
         private int _availBytes;
+
+        public byte[] Buffer => _buffer;
 
         public long StreamPosition
         {
@@ -34,13 +36,23 @@ namespace USerialization
             }
         }
 
-        public SerializerInput(int capacity, Stream stream)
+        public SerializerInput(int capacity)
         {
-            _stream = stream;
             _buffer = new byte[capacity];
-
             _position = capacity;
             _availBytes = capacity;
+        }
+
+        public SerializerInput(int capacity, Stream stream) : this(capacity)
+        {
+            _stream = stream;
+        }
+
+        public void SetStream(Stream stream)
+        {
+            _stream = stream;
+            _position = _buffer.Length;
+            _availBytes = _buffer.Length;
         }
 
         public void FinishRead()
@@ -114,13 +126,14 @@ namespace USerialization
 
         public void SetPosition(long initialPosition)
         {
-            //var positionInBuffer = _stream.Position - initialPosition;
+            var positionInBuffer = initialPosition - (_stream.Position - _availBytes);
 
-            //if (positionInBuffer < _availBytes)
-            //{
-            //    _position = (int)positionInBuffer;
-            //}
-            //else
+            if (positionInBuffer >= 0 &&
+                positionInBuffer < _availBytes)
+            {
+                _position = (int)positionInBuffer;
+            }
+            else
             {
                 _stream.Position = initialPosition;
                 _availBytes = _buffer.Length;

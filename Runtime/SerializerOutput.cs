@@ -20,7 +20,7 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class SerializerOutput
     {
-        private readonly Stream _stream;
+        private Stream _stream;
 
         private byte[] _buffer;
 
@@ -28,13 +28,24 @@ namespace USerialization
 
         public Stream Stream => _stream;
 
+        public byte[] Buffer => _buffer;
+
         public long StreamPosition => _stream.Position + _position;
 
-        public SerializerOutput(int capacity, Stream stream)
+        public SerializerOutput(int capacity)
         {
-            _stream = stream;
             _buffer = new byte[capacity];
             _position = 0;
+        }
+
+        public SerializerOutput(int capacity, Stream stream) : this(capacity)
+        {
+            _stream = stream;
+        }
+
+        public void SetStream(Stream stream)
+        {
+            _stream = stream;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

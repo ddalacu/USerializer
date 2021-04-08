@@ -90,6 +90,24 @@ namespace USerialization
             return false;
         }
 
+        public bool TryGetNonCachedSerializationMethods(Type type, out SerializationMethods methods, Func<ISerializationProvider, bool> shouldUse = null)
+        {
+            foreach (var provider in _providers)
+            {
+                if (shouldUse != null
+                && shouldUse(provider) == false)
+                    continue;
+
+                if (provider.TryGetSerializationMethods(type, out methods) == false)
+                    continue;
+
+                return true;
+            }
+
+            methods = default;
+            return false;
+        }
+
 
         public FieldData[] GetFields(Type type)
         {
@@ -280,6 +298,8 @@ namespace USerialization
             Profiler.EndSample();
             return true;
         }
+
+
 
         public bool TryGetProvider<T>(out T result) where T : ISerializationProvider
         {
