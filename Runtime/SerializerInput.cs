@@ -28,6 +28,7 @@ namespace USerialization
 
         public long StreamPosition
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 var unusedBytes = _availBytes - _position;
@@ -77,9 +78,7 @@ namespace USerialization
                 return false;
             }
 
-            var unusedBytes = _availBytes - _position;
-            var streamPos = _stream.Position - unusedBytes;
-            endObject = (EndObject)(streamPos + length);
+            endObject = (EndObject)(StreamPosition + length);
             return true;
         }
 
@@ -95,10 +94,7 @@ namespace USerialization
                 return false;
             }
 
-            var unusedBytes = _availBytes - _position;
-            var streamPos = _stream.Position - unusedBytes;
-
-            endObject = (EndObject)(streamPos + length);
+            endObject = (EndObject)(StreamPosition + length);
             return true;
         }
 
@@ -106,39 +102,26 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
-            var unusedBytes = _availBytes - _position;
-            var streamPos = _stream.Position - unusedBytes;
-
-            var delta = (int)((long)endObject - streamPos);
-
-            if (delta > 0)
-            {
-                EnsureNext(delta);
-                _position += delta;
-            }
-            else
-            {
-                if (delta < 0)
-                    throw new NotImplementedException("Something went wrong!" + delta);
-                //throw new NotImplementedException("You can't go back atm, if you need this feature ask!");
-            }
+            SetPosition((long)endObject);
         }
 
         public void SetPosition(long initialPosition)
         {
-            var positionInBuffer = initialPosition - (_stream.Position - _availBytes);
+            if (_availBytes > _position)//if these are equal then we might have no valid data
+            {
+                var positionInBuffer = initialPosition - (_stream.Position - _availBytes);
 
-            if (positionInBuffer >= 0 &&
-                positionInBuffer < _availBytes)
-            {
-                _position = (int)positionInBuffer;
+                if (positionInBuffer >= 0 &&
+                    positionInBuffer < _availBytes)
+                {
+                    _position = (int)positionInBuffer;
+                    return;
+                }
             }
-            else
-            {
-                _stream.Position = initialPosition;
-                _availBytes = _buffer.Length;
-                _position = _availBytes;
-            }
+
+            _stream.Position = initialPosition;
+            _availBytes = _buffer.Length;
+            _position = _availBytes;
         }
 
 
