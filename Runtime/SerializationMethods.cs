@@ -1,34 +1,45 @@
 ﻿using System.Runtime.CompilerServices;
-using UnityEngine;
 
 namespace USerialization
 {
+    public abstract unsafe class DataSerializer
+    {
+        public readonly DataType DataType;
+
+        protected DataSerializer(DataType dataType)
+        {
+            DataType = dataType;
+        }
+
+        public abstract void WriteDelegate(void* fieldAddress, SerializerOutput output);
+
+        public abstract void ReadDelegate(void* fieldAddress, SerializerInput input);
+    }
+
+
     /// <summary>
     /// Groups together <see cref="WriteDelegate"/> and <see cref="ReadDelegate"/> together
     /// </summary>
     public readonly struct SerializationMethods
     {
-        public readonly WriteDelegate Serialize;
-
-        public readonly ReadDelegate Deserialize;
+        public readonly DataSerializer DataSerializer;
 
         public readonly DataType DataType;
 
-        public SerializationMethods(WriteDelegate serialize, ReadDelegate deserialize, DataType dataType)
+        public SerializationMethods(DataSerializer dataSerializer, DataType dataType)
         {
-            Serialize = serialize;
-            Deserialize = deserialize;
+            DataSerializer = dataSerializer;
             DataType = dataType;
         }
     }
 
     public readonly unsafe struct TypedSerializationMethods<T>
     {
-        private readonly SerializationMethods _methods;
+        private readonly DataSerializer _methods;
 
         public DataType DataType => _methods.DataType;
 
-        public TypedSerializationMethods(SerializationMethods methods)
+        public TypedSerializationMethods(DataSerializer methods)
         {
             _methods = methods;
         }
@@ -37,14 +48,14 @@ namespace USerialization
         public void Serialize(T item, SerializerOutput output)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.Serialize(childAddress, output);
+            _methods.WriteDelegate(childAddress, output);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Serialize(ref T item, SerializerOutput output)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.Serialize(childAddress, output);
+            _methods.WriteDelegate(childAddress, output);
         }
 
 
@@ -53,7 +64,7 @@ namespace USerialization
         {
             T item = default;
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.Deserialize(childAddress, input);
+            _methods.ReadDelegate(childAddress, input);
             return item;
         }
 
@@ -61,7 +72,7 @@ namespace USerialization
         public void Deserialize(ref T item, SerializerInput input)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.Deserialize(childAddress, input);
+            _methods.ReadDelegate(childAddress, input);
         }
     }
 

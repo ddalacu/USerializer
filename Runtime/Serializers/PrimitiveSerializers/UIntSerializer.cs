@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
@@ -9,30 +8,34 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class UIntSerializer : ICustomSerializer
+    public sealed class UIntSerializer : DataSerializer, ICustomSerializer
     {
         public Type SerializedType => typeof(uint);
 
-        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public void Initialize(USerializer serializer)
+        {
+
+        }
+
+        public DataSerializer GetMethods()
+        {
+            return this;
+        }
+
+        public UIntSerializer() : base(DataType.UInt32)
+        {
+        }
+
+        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
             var value = *(uint*)(fieldAddress);
             output.WriteUInt(value);
         }
 
-        public static unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
         {
             var value = (uint*)(fieldAddress);
             *value = input.ReadUInt();
-        }
-
-        public void Initialize(USerializer serializer)
-        {
-            
-        }
-
-        public unsafe SerializationMethods GetMethods()
-        {
-            return new SerializationMethods(Write, Read, DataType.UInt32);
         }
     }
 }

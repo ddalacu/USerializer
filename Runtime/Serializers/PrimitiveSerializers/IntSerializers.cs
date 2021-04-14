@@ -13,39 +13,58 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class IntSerializer : ICustomSerializer
+    public sealed class IntSerializer : DataSerializer, ICustomSerializer
     {
         public Type SerializedType => typeof(int);
-
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
-        {
-            var value = *(int*)(fieldAddress);
-            output.WriteInt(value);
-        }
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
-        {
-            var value = (int*)(fieldAddress);
-            *value = input.ReadInt();
-        }
 
         public void Initialize(USerializer serializer)
         {
 
         }
 
-        public unsafe SerializationMethods GetMethods()
+        public DataSerializer GetMethods()
         {
-            return new SerializationMethods(Write, Read, DataType.Int32);
+            return this;
+        }
+
+        public IntSerializer() : base(DataType.Int32)
+        {
+        }
+
+        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        {
+            var value = *(int*)(fieldAddress);
+            output.WriteInt(value);
+        }
+
+        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
+        {
+            var value = (int*)(fieldAddress);
+            *value = input.ReadInt();
         }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class IntArraySerializer : ICustomSerializer
+    public sealed class IntArraySerializer : DataSerializer, ICustomSerializer
     {
         public Type SerializedType => typeof(int[]);
 
-        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public void Initialize(USerializer serializer)
+        {
+
+        }
+
+        public DataSerializer GetMethods()
+        {
+            return this;
+        }
+
+        public IntArraySerializer() : base(DataType.Array)
+        {
+        }
+
+        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<int[]>(fieldAddress);
             if (array != null)
@@ -68,7 +87,8 @@ namespace USerialization
                 output.WriteNull();
             }
         }
-        public static unsafe void Read(void* fieldAddress, SerializerInput input)
+
+        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
         {
             ref var array = ref Unsafe.AsRef<int[]>(fieldAddress);
 
@@ -92,21 +112,11 @@ namespace USerialization
                 array = null;
             }
         }
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public unsafe SerializationMethods GetMethods()
-        {
-            return new SerializationMethods(Write, Read, DataType.Array);
-        }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class IntListSerializer : ICustomSerializer
+    public sealed class IntListSerializer : DataSerializer, ICustomSerializer
     {
         public Type SerializedType => typeof(List<int>);
 
@@ -117,7 +127,21 @@ namespace USerialization
             _listHelper = ListHelper<int>.Create();
         }
 
-        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public void Initialize(USerializer serializer)
+        {
+
+        }
+
+        public DataSerializer GetMethods()
+        {
+            return this;
+        }
+
+        public IntListSerializer() : base(DataType.Array)
+        {
+        }
+
+        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
             var list = Unsafe.Read<List<int>>(fieldAddress);
             if (list == null)
@@ -141,7 +165,7 @@ namespace USerialization
             output.WriteSizeTrack(sizeTracker);
         }
 
-        public static unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
         {
             ref var list = ref Unsafe.AsRef<List<int>>(fieldAddress);
 
@@ -167,16 +191,6 @@ namespace USerialization
             {
                 list = null;
             }
-        }
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public unsafe SerializationMethods GetMethods()
-        {
-            return new SerializationMethods(Write, Read, DataType.Array);
         }
     }
 }

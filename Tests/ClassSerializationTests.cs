@@ -253,7 +253,9 @@ namespace Tests
         public class SkipFieldClass1
         {
             public int IntValue;
+            public string Asd = "wtf";
             public int IntValue2;
+            public string IntValue1 = "wtt";
             public string Test;
         }
 
@@ -262,7 +264,6 @@ namespace Tests
         {
             public int IntValue;
             public byte IntValue2;
-            public string Test;
         }
 
         [Test]
@@ -279,14 +280,13 @@ namespace Tests
 
             BinaryUtility.Serialize(class1, stream);
 
+            var end = stream.Position;
             stream.Position = 0;
 
             BinaryUtility.TryDeserialize(stream, out SkipFieldClass2 class2);
+            Debug.Assert(stream.Position == end);
 
             Debug.Assert(class1.IntValue == class2.IntValue);
-            Debug.Assert(class1.Test == class2.Test);
-
-            Debug.Assert(class2.IntValue2 == 0);
         }
 
 

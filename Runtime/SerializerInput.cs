@@ -40,8 +40,8 @@ namespace USerialization
         public SerializerInput(int capacity)
         {
             _buffer = new byte[capacity];
-            _position = capacity;
-            _availBytes = capacity;
+            _position = -1;
+            _availBytes = -1;
         }
 
         public SerializerInput(int capacity, Stream stream) : this(capacity)
@@ -52,8 +52,8 @@ namespace USerialization
         public void SetStream(Stream stream)
         {
             _stream = stream;
-            _position = _buffer.Length;
-            _availBytes = _buffer.Length;
+            _position = -1;
+            _availBytes = -1;
         }
 
         public void FinishRead()
@@ -62,8 +62,8 @@ namespace USerialization
 
             _stream.Position = _stream.Position - unusedBytes;
 
-            _position = _buffer.Length;
-            _availBytes = _buffer.Length;
+            _position = -1;
+            _availBytes = -1;
         }
 
         public bool BeginReadSize(out EndObject endObject)
@@ -107,21 +107,37 @@ namespace USerialization
 
         public void SetPosition(long initialPosition)
         {
-            if (_availBytes > _position)//if these are equal then we might have no valid data
+            if (_availBytes >= _position)//if these are equal then we might have no valid data
             {
                 var positionInBuffer = initialPosition - (_stream.Position - _availBytes);
 
                 if (positionInBuffer >= 0 &&
-                    positionInBuffer < _availBytes)
+                    positionInBuffer <= _availBytes)
                 {
                     _position = (int)positionInBuffer;
                     return;
                 }
             }
 
+
+            //Debug.Log($"Buffer range {_stream.Position - _availBytes} to {_stream.Position} jumped to {initialPosition}");
+            //Debug.Log(initialPosition);
+            //Debug.Log(_availBytes > _position);
+
             _stream.Position = initialPosition;
-            _availBytes = _buffer.Length;
-            _position = _availBytes;
+            _position = -1;
+            _availBytes = -1;
+
+            return;
+
+            var leftShifted = initialPosition - _buffer.Length / 2;
+            if (leftShifted < 0)
+                leftShifted = 0;
+
+            var delta = initialPosition - leftShifted;
+            _stream.Position = leftShifted;
+            _position = (int)delta;
+            _availBytes = _stream.Read(_buffer, 0, _buffer.Length);
         }
 
 
@@ -194,7 +210,9 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe string ReadString()
         {
-            var length = ReadInt();
+            var length = Read7BitEncodedInt();
+
+            length -= 1;
 
             if (length == -1)
                 return null;
@@ -202,13 +220,14 @@ namespace USerialization
             if (length == 0)
                 return string.Empty;
 
-            EnsureNext(length);
+            var byteLength = length * sizeof(char);
+            EnsureNext(byteLength);
 
             fixed (byte* bufferPtr = _buffer)
             {
-                var str = new string((char*)(bufferPtr + _position), 0, length / sizeof(char));
+                var str = new string((char*)(bufferPtr + _position), 0, length);
 
-                _position += length;
+                _position += byteLength;
 
                 return str;
             }
@@ -243,10 +262,15 @@ namespace USerialization
                         return;
                     break;
                 case DataType.String:
-                    toSkip = ReadInt();//null
-                    if (toSkip == -1)
-                        return;
-                    break;
+                    {
+                        toSkip = Read7BitEncodedInt(); //null
+                        toSkip -= 1;
+                        if (toSkip == -1)
+                            return;
+
+                        toSkip = toSkip * sizeof(char);
+                        break;
+                    }
                 case DataType.Array:
                     toSkip = ReadInt();//null
                     if (toSkip == -1)
@@ -344,33 +368,41 @@ namespace USerialization
             {
                 var bufferSize = _buffer.Length;
 
-                if (_availBytes < bufferSize)
+                if (_availBytes != -1)
                 {
-                    Debug.Assert(Stream.Position == Stream.Length);
-                    throw new Exception("Trying to read pass the stream!"); //read out of stream
-                }
+                    if (_availBytes < bufferSize)
+                    {
+                        Debug.Assert(Stream.Position == Stream.Length);
+                        throw new Exception("Trying to read pass the stream!"); //read out of stream
+                    }
 
-                var unusedBytes = _availBytes - _position;
+                    var unusedBytes = _availBytes - _position;
 
-                if (count > bufferSize)
-                {
-                    var newBuffer = new byte[count * 2];
+                    if (count > bufferSize)
+                    {
+                        var newBuffer = new byte[count * 2];
 
-                    fixed (byte* bufferPtr = _buffer)
-                    fixed (byte* newBufferPtr = newBuffer)
-                        UnsafeUtility.MemCpy(newBufferPtr, bufferPtr + _position, unusedBytes);
+                        fixed (byte* bufferPtr = _buffer)
+                        fixed (byte* newBufferPtr = newBuffer)
+                            UnsafeUtility.MemCpy(newBufferPtr, bufferPtr + _position, unusedBytes);
 
-                    _buffer = newBuffer;
-                    bufferSize = _buffer.Length;
+                        _buffer = newBuffer;
+                        bufferSize = _buffer.Length;
+                    }
+                    else
+                    {
+                        fixed (byte* bufferPtr = _buffer)
+                            UnsafeUtility.MemCpy(bufferPtr, bufferPtr + _position, unusedBytes);
+                    }
+
+                    _position = 0;
+                    _availBytes = unusedBytes + _stream.Read(_buffer, unusedBytes, bufferSize - unusedBytes);
                 }
                 else
                 {
-                    fixed (byte* bufferPtr = _buffer)
-                        UnsafeUtility.MemCpy(bufferPtr, bufferPtr + _position, unusedBytes);
+                    _position = 0;
+                    _availBytes = _stream.Read(_buffer, 0, bufferSize);
                 }
-
-                _position = 0;
-                _availBytes = unusedBytes + _stream.Read(_buffer, unusedBytes, bufferSize - unusedBytes);
             }
         }
 

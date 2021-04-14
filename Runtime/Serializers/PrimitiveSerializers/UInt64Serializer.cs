@@ -9,30 +9,34 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class UInt64Serializer : ICustomSerializer
+    public sealed class UInt64Serializer : DataSerializer, ICustomSerializer
     {
         public Type SerializedType => typeof(ulong);
 
-        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public void Initialize(USerializer serializer)
+        {
+
+        }
+
+        public DataSerializer GetMethods()
+        {
+            return this;
+        }
+
+        public UInt64Serializer() : base(DataType.UInt64)
+        {
+        }
+
+        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
             var value = *(ulong*)(fieldAddress);
             output.WriteUInt64(value);
         }
 
-        public static unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
         {
             var value = (ulong*)(fieldAddress);
             *value = input.ReadUInt64();
-        }
-
-        public void Initialize(USerializer serializer)
-        {
-            
-        }
-
-        public unsafe SerializationMethods GetMethods()
-        {
-            return new SerializationMethods(Write, Read, DataType.UInt64);
         }
     }
 }

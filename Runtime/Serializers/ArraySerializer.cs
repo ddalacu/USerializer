@@ -21,7 +21,7 @@ namespace USerialization
 
         }
 
-        public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
+        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
         {
             if (type.IsArray == false)
             {
@@ -37,35 +37,37 @@ namespace USerialization
 
             var elementType = type.GetElementType();
 
-            if (_serializer.TryGetSerializationMethods(elementType, out var elementSerializationMethods) == false)
+            if (_serializer.TryGetSerializationMethods(elementType, out var elementSerializer) == false)
             {
                 serializationMethods = default;
                 return false;
             }
 
-            if (elementType.IsValueType)
-            {
-                var writer = GetValueTypeWriter(elementType, elementSerializationMethods.Serialize, elementSerializationMethods.DataType);
-                var reader = GetValueTypeReader(elementType, elementSerializationMethods.Deserialize, elementSerializationMethods.DataType);
-
-                serializationMethods = new SerializationMethods(writer, reader, DataType.Array);
-            }
-            else
-            {
-                var writer = GetReferenceTypeWriter(elementSerializationMethods.Serialize, elementSerializationMethods.DataType);
-                var reader = GetReferenceTypeReader(elementType, elementSerializationMethods.Deserialize, elementSerializationMethods.DataType);
-
-                serializationMethods = new SerializationMethods(writer, reader, DataType.Array);
-            }
-
+            serializationMethods = new ArrayDataSerializer(elementType, elementSerializer);
             return true;
         }
 
-        private static WriteDelegate GetValueTypeWriter(Type elementType, WriteDelegate serializeElement, DataType dataType)
-        {
-            var size = UnsafeUtility.SizeOf(elementType);
 
-            return delegate (void* fieldAddress, SerializerOutput output)
+        [Il2CppSetOption(Option.NullChecks, false)]
+        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        public class ArrayDataSerializer : DataSerializer
+        {
+            private readonly Type _elementType;
+            private readonly DataSerializer _elementSerializer;
+            private readonly int _size;
+
+            public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer) : base(DataType.Array)
+            {
+                if (elementType.IsValueType)
+                    _size = UnsafeUtility.SizeOf(elementType);
+                else
+                    _size = UnsafeUtility.SizeOf(typeof(IntPtr));
+
+                _elementType = elementType;
+                _elementSerializer = elementSerializer;
+            }
+
+            public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
             {
                 var array = Unsafe.Read<Array>(fieldAddress);
 
@@ -80,28 +82,23 @@ namespace USerialization
                 var sizeTracker = output.BeginSizeTrack();
                 {
                     output.EnsureNext(6);
-                    output.WriteByteUnchecked((byte) dataType);
+                    output.WriteByteUnchecked((byte)_elementSerializer.DataType);
                     output.Write7BitEncodedIntUnchecked(count);
 
-                    var address = (byte*) UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
+                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
                     for (var index = 0; index < count; index++)
                     {
-                        serializeElement(address, output);
-                        address += size;
+                        _elementSerializer.WriteDelegate(address, output);
+                        address += _size;
                     }
 
                     UnsafeUtility.ReleaseGCObject(handle);
                 }
                 output.WriteSizeTrack(sizeTracker);
-            };
-        }
+            }
 
-        private static ReadDelegate GetValueTypeReader(Type elementType, ReadDelegate elementReader, DataType dataType)
-        {
-            var size = UnsafeUtility.SizeOf(elementType);
-
-            return delegate (void* fieldAddress, SerializerInput input)
+            public override void ReadDelegate(void* fieldAddress, SerializerInput input)
             {
                 ref var array = ref Unsafe.AsRef<Array>(fieldAddress);
 
@@ -112,16 +109,16 @@ namespace USerialization
                     var count = input.Read7BitEncodedInt();
 
                     if (array == null || array.Length != count)
-                        array = Array.CreateInstance(elementType, count);
+                        array = Array.CreateInstance(_elementType, count);
 
-                    if (type == dataType)
+                    if (type == _elementSerializer.DataType)
                     {
                         var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
                         for (var i = 0; i < count; i++)
                         {
-                            elementReader(address, input);
-                            address += size;
+                            _elementSerializer.ReadDelegate(address, input);
+                            address += _size;
                         }
 
                         UnsafeUtility.ReleaseGCObject(handle);
@@ -133,77 +130,7 @@ namespace USerialization
                 {
                     array = null;
                 }
-            };
-        }
-
-        private static WriteDelegate GetReferenceTypeWriter(WriteDelegate serializeElement, DataType dataType)
-        {
-            return delegate (void* fieldAddress, SerializerOutput output)
-            {
-                var array = Unsafe.Read<object[]>(fieldAddress);
-
-                if (array == null)
-                {
-                    output.WriteNull();
-                    return;
-                }
-
-                var count = array.Length;
-
-                var sizeTracker = output.BeginSizeTrack();
-                {
-                    output.EnsureNext(6);
-                    output.WriteByteUnchecked((byte) dataType);
-                    output.Write7BitEncodedIntUnchecked(count);
-
-                    var address = (byte*) UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-                    for (var index = 0; index < count; index++)
-                    {
-                        serializeElement(address, output);
-                        address += sizeof(void*);
-                    }
-
-                    UnsafeUtility.ReleaseGCObject(handle);
-                }
-                output.WriteSizeTrack(sizeTracker);
-            };
-        }
-
-        private static ReadDelegate GetReferenceTypeReader(Type elementType, ReadDelegate elementReader, DataType dataType)
-        {
-            return delegate (void* fieldAddress, SerializerInput input)
-            {
-                ref var array = ref Unsafe.AsRef<object[]>(fieldAddress);
-
-                if (input.BeginReadSize(out var end))
-                {
-                    var type = (DataType)input.ReadByte();
-                    var count = input.Read7BitEncodedInt();
-
-                    if (array == null || array.Length != count)
-                        array = (object[])Array.CreateInstance(elementType, count);
-
-                    if (type == dataType)
-                    {
-                        var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-                        for (var i = 0; i < count; i++)
-                        {
-                            elementReader(address, input);
-                            address += sizeof(void*);
-                        }
-
-                        UnsafeUtility.ReleaseGCObject(handle);
-                    }
-
-                    input.EndObject(end);
-                }
-                else
-                {
-                    array = null;
-                }
-            };
+            }
         }
 
     }

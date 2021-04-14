@@ -20,7 +20,7 @@ namespace USerialization
             
         }
 
-        public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
+        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
         {
             if (type.IsArray)
             {

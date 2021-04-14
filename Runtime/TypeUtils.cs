@@ -1,30 +1,121 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
+using Unity.Collections;
+using UnityEditor;
 
 namespace USerialization
 {
-    public static class TypeUtils
+    public readonly struct FieldInfoReference
     {
-        public static ICollection<FieldInfo> GetAllFields(Type type, BindingFlags bindingFlags)
+        private readonly RuntimeFieldHandle FieldHandle;
+        private readonly RuntimeTypeHandle TypeHandle;
+
+        public FieldInfoReference(RuntimeFieldHandle fieldHandle, RuntimeTypeHandle typeHandle)
         {
-            var fieldInfos = type.GetFields(bindingFlags);
+            FieldHandle = fieldHandle;
+            TypeHandle = typeHandle;
+        }
 
-            var objectType = typeof(object);
+        public FieldInfo GetFieldInfo()
+        {
+            return FieldInfo.GetFieldFromHandle(FieldHandle, TypeHandle);
+        }
+    }
 
-            if (type.BaseType == objectType)
-                return fieldInfos;
+    public struct TypeFieldsIterator : IDisposable
+    {
+        private readonly Allocator _allocator;
+
+        private NativeArray<FieldInfoReference> _references;
+
+        private NonZeroIntPtrSet _set;
+
+        public bool IsValid => _references.IsCreated;
+
+        public FieldInfo this[int index] => _references[index].GetFieldInfo();
+
+        private static Type _objectType = typeof(object);
+
+        public TypeFieldsIterator(Allocator allocator)
+        {
+            _allocator = allocator;
+            _references = new NativeArray<FieldInfoReference>(8, _allocator);
+            _set = default;
+        }
+
+        public int Fill(Type type, BindingFlags bindingFlags)
+        {
+            if (type == _objectType)
+                return 0;
+
+            if (type.IsInterface)
+                return 0;
+
+            if (type.BaseType == _objectType)
+            {
+                var fields = type.GetFields(bindingFlags);
+                var length = fields.Length;
+
+                if (length > _references.Length)
+                {
+                    _references.Dispose();
+                    _references = new NativeArray<FieldInfoReference>(length, _allocator);
+                }
+
+                for (var index = 0; index < length; index++)
+                    _references[index] = new FieldInfoReference(fields[index].FieldHandle, type.TypeHandle);
+
+                return length;
+            }
+
+            if (_set.IsValid == false)
+                _set = new NonZeroIntPtrSet(16, _allocator);
+            else
+                _set.Clear();
 
             var currentType = type;
-            var fieldInfoList = new HashSet<FieldInfo>(fieldInfos, FieldInfoComparer.DefaultInstance);
 
-            while (currentType != objectType)
+            int size = 0;
+
+            while (currentType != _objectType)
             {
-                fieldInfos = currentType.GetFields(bindingFlags);
-                fieldInfoList.UnionWith(fieldInfos);
+                var fieldInfos = currentType.GetFields(bindingFlags);
+                var declaringTypeHandle = currentType.TypeHandle;
+
+                var fieldInfosLength = fieldInfos.Length;
+
+                for (var index = 0; index < fieldInfosLength; index++)
+                {
+                    var fieldInfo = fieldInfos[index];
+                    if (_set.Insert(fieldInfo.FieldHandle.Value) == false)
+                        continue;
+
+                    if (size == _references.Length)
+                    {
+                        var expanded = new NativeArray<FieldInfoReference>(_references.Length * 2, _allocator);
+                        NativeArray<FieldInfoReference>.Copy(_references, expanded, _references.Length);
+                        _references.Dispose();
+                        _references = expanded;
+                    }
+
+                    _references[size] = new FieldInfoReference(fieldInfo.FieldHandle, declaringTypeHandle);
+                    size++;
+                }
+
                 currentType = currentType.BaseType;
             }
-            return fieldInfoList;
+
+            return size;
+        }
+
+        public void Dispose()
+        {
+            if (_set.IsValid)
+                _set.Dispose();
+
+            _references.Dispose();
         }
     }
 }

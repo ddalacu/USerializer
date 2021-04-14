@@ -13,18 +13,17 @@ namespace USerialization
 
     public unsafe delegate void ReadDelegate(void* fieldAddress, SerializerInput input);
 
-
     public class USerializer
     {
         private readonly ISerializationPolicy _serializationPolicy;
 
-        private readonly TypeDictionary<TypeData> _datas = new TypeDictionary<TypeData>(1024);
-
         private readonly ISerializationProvider[] _providers;
 
-        private readonly TypeDictionary<SerializationMethods> _methods = new TypeDictionary<SerializationMethods>(1024);
+        private readonly TypeDictionary<DataSerializer> _methods = new TypeDictionary<DataSerializer>(1024);
 
         public ISerializationProvider[] Providers => _providers;
+
+        public ISerializationPolicy SerializationPolicy => _serializationPolicy;
 
         public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers)
         {
@@ -38,24 +37,24 @@ namespace USerialization
                 serializationProvider.Start(this);
         }
 
-        public bool TryGetSerializationMethods(Type type, out SerializationMethods methods)
+        public bool TryGetSerializationMethods(Type type, out DataSerializer dataSerializer)
         {
-            if (_methods.TryGetValue(type, out methods))
+            if (_methods.TryGetValue(type, out dataSerializer))
             {
-                return methods.Serialize != null;
+                return dataSerializer != null;
             }
 
             foreach (var provider in _providers)
             {
-                if (provider.TryGetSerializationMethods(type, out methods) == false)
+                if (provider.TryGetSerializationMethods(type, out dataSerializer) == false)
                     continue;
 
-                _methods.Add(type, methods);
+                _methods.Add(type, dataSerializer);
                 return true;
             }
 
-            methods = default;
-            _methods.Add(type, methods);
+            dataSerializer = default;
+            _methods.Add(type, dataSerializer);
             return false;
         }
 
@@ -65,7 +64,7 @@ namespace USerialization
 
             if (_methods.TryGetValue(type, out var result))
             {
-                if (result.Serialize != null)
+                if (result != null)
                 {
                     methods = new TypedSerializationMethods<T>(result);
                     return true;
@@ -90,7 +89,7 @@ namespace USerialization
             return false;
         }
 
-        public bool TryGetNonCachedSerializationMethods(Type type, out SerializationMethods methods, Func<ISerializationProvider, bool> shouldUse = null)
+        public bool TryGetNonCachedSerializationMethods(Type type, out DataSerializer dataSerializer, Func<ISerializationProvider, bool> shouldUse = null)
         {
             foreach (var provider in _providers)
             {
@@ -98,71 +97,14 @@ namespace USerialization
                 && shouldUse(provider) == false)
                     continue;
 
-                if (provider.TryGetSerializationMethods(type, out methods) == false)
+                if (provider.TryGetSerializationMethods(type, out dataSerializer) == false)
                     continue;
 
                 return true;
             }
 
-            methods = default;
+            dataSerializer = default;
             return false;
-        }
-
-
-        public FieldData[] GetFields(Type type)
-        {
-            var allFields = TypeUtils.GetAllFields(type, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-            var length = allFields.Count;
-
-            var fields = new FieldData[length];
-            var index = 0;
-
-            foreach (var fieldInfo in allFields)
-            {
-                if (_serializationPolicy.ShouldSerialize(fieldInfo) == false)
-                    continue;
-
-                if (TryGetSerializationMethods(fieldInfo.FieldType, out var serializationMethods) == false)
-                    continue;
-
-                var fieldOffset = UnsafeUtility.GetFieldOffset(fieldInfo);
-                if (fieldOffset > short.MaxValue)
-                    throw new Exception("Field offset way to big!");
-
-                fields[index] = new FieldData(fieldInfo, serializationMethods, (ushort)fieldOffset);
-                index++;
-            }
-
-            if (index != fields.Length)
-                Array.Resize(ref fields, index);
-
-            return fields;
-        }
-
-
-        public bool GetTypeData(Type type, out TypeData typeData)
-        {
-            if (_datas.TryGetValue(type, out typeData))
-                return typeData != null;
-
-            if (_serializationPolicy.ShouldSerialize(type) == false)
-            {
-                _datas.Add(type, default);
-                return false;
-            }
-
-            typeData = new TypeData(type);
-            _datas.Add(type, typeData); //to prevent recursion when GetFields
-
-            var fieldDatas = GetFields(type);
-
-            TypeData.OrderFields(fieldDatas);
-            typeData.Fields = fieldDatas;
-
-            _datas.Add(type, typeData);
-
-            return true;
         }
 
         /// <summary>
@@ -192,13 +134,13 @@ namespace USerialization
                 {
                     var handle = GCHandle.Alloc(o, GCHandleType.Pinned);//i would have used unsafe utility but that will not skip internal boxed offsets
                     var intPtr = handle.AddrOfPinnedObject();
-                    serializationMethods.Serialize(intPtr.ToPointer(), output);
+                    serializationMethods.WriteDelegate(intPtr.ToPointer(), output);
                     handle.Free();
                 }
                 else
                 {
                     var fieldAddress = Unsafe.AsPointer(ref o);
-                    serializationMethods.Serialize(fieldAddress, output);
+                    serializationMethods.WriteDelegate(fieldAddress, output);
                 }
 
                 Profiler.EndSample();
@@ -220,7 +162,7 @@ namespace USerialization
             if (TryGetSerializationMethods(type, out var serializationMethods))
             {
                 var fieldAddress = Unsafe.AsPointer(ref value);
-                serializationMethods.Serialize(fieldAddress, output);
+                serializationMethods.WriteDelegate(fieldAddress, output);
                 Profiler.EndSample();
                 return true;
             }
@@ -239,7 +181,7 @@ namespace USerialization
             if (TryGetSerializationMethods(typeof(T), out var serializationMethods))
             {
                 result = default;
-                serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
+                serializationMethods.ReadDelegate(Unsafe.AsPointer(ref result), input);
                 Profiler.EndSample();
                 return true;
             }
@@ -273,7 +215,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods.Deserialize(Unsafe.AsPointer(ref result), input);
+            serializationMethods.ReadDelegate(Unsafe.AsPointer(ref result), input);
             Profiler.EndSample();
             return true;
         }
@@ -294,7 +236,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods.Deserialize(Unsafe.AsPointer(ref obj), input);
+            serializationMethods.ReadDelegate(Unsafe.AsPointer(ref obj), input);
             Profiler.EndSample();
             return true;
         }

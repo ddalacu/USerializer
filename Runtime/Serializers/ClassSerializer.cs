@@ -11,9 +11,12 @@ namespace USerialization
     {
         private USerializer _serializer;
 
+        private TypeDataCache _typeDataCache;
+
         public void Initialize(USerializer serializer)
         {
             _serializer = serializer;
+            _typeDataCache = new TypeDataCache(512);
         }
 
         public void Start(USerializer serializer)
@@ -21,7 +24,7 @@ namespace USerialization
 
         }
 
-        public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
+        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
         {
             if (type.IsArray)
             {
@@ -41,34 +44,45 @@ namespace USerialization
                 return false;
             }
 
-            if (_serializer.GetTypeData(type, out var typeData) == false)
+            if (_typeDataCache.GetTypeData(type, _serializer, out var typeData) == false)
             {
                 serializationMethods = default;
                 return false;
             }
 
-            var writer = GetWriter(typeData);
-            var reader = GetReader(type, typeData);
-
-            serializationMethods = new SerializationMethods(writer, reader, DataType.Object);
-
+            serializationMethods = GetSerializationMethods(type, typeData);
             return true;
         }
 
-        private class ClassWriter
+        public DataSerializer GetSerializationMethods(Type type, TypeData typeData)
         {
-            private readonly bool _callSerializationEvents;
-            private readonly TypeData _typeData;
+            if (typeof(ISerializationCallbackReceiver).IsAssignableFrom(type))
+                return new ClassWithEventsDataSerializer(type, typeData);
 
-            public ClassWriter(TypeData typeData)
+            return new ClassDataSerializer(type, typeData);
+        }
+
+        [Il2CppSetOption(Option.NullChecks, false)]
+        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        public class ClassDataSerializer : DataSerializer
+        {
+            private readonly Type _type;
+            private readonly TypeData _typeData;
+            private readonly bool _haveCtor;
+
+            public ClassDataSerializer(Type type, TypeData typeData) : base(DataType.Object)
             {
+                if (type.IsValueType)
+                    throw new ArgumentException(nameof(type));
+
+                _type = type;
                 _typeData = typeData;
-                _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
+
+                var ctor = _type.GetConstructor(Type.EmptyTypes);
+                _haveCtor = ctor != null;
             }
 
-            [Il2CppSetOption(Option.NullChecks, false)]
-            [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-            public void Writer(void* fieldAddress, SerializerOutput output)
+            public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
             {
                 var obj = Unsafe.Read<object>(fieldAddress);
 
@@ -78,130 +92,32 @@ namespace USerialization
                     return;
                 }
 
-                if (_callSerializationEvents)
-                    Unsafe.As<ISerializationCallbackReceiver>(obj).OnBeforeSerialize();
-                
-
                 byte* objectAddress;
                 UnsafeUtility.CopyObjectAddressToPtr(obj, &objectAddress);
 
-                var fieldDatas = _typeData.Fields;
-                var fieldsCount = fieldDatas.Length;
-
                 var track = output.BeginSizeTrack();
-                {
-                    output.WriteByte((byte)fieldsCount);
-
-                    for (var index = 0; index < fieldsCount; index++)
-                    {
-                        var fieldData = fieldDatas[index];
-
-                        output.EnsureNext(5);
-                        output.WriteIntUnchecked(fieldData.FieldNameHash);
-                        output.WriteByteUnchecked((byte)fieldData.SerializationMethods.DataType);
-
-                        fieldData.SerializationMethods.Serialize(objectAddress + fieldData.Offset, output);
-                    }
-                }
-
+                _typeData.Fields.WriteFields(objectAddress, output);
                 output.WriteSizeTrack(track);
             }
 
-        }
-
-        private static WriteDelegate GetWriter(TypeData typeData)
-        {
-            return new ClassWriter(typeData).Writer;
-        }
-
-        private class ClassReader
-        {
-            private readonly bool _callSerializationEvents;
-            private readonly Type _fieldType;
-            private readonly TypeData _typeData;
-
-            private bool _haveCtor;
-
-            public ClassReader(Type fieldType, TypeData typeData)
-            {
-                if (fieldType.IsValueType)
-                    throw new ArgumentException(nameof(fieldType));
-
-                var ctor = fieldType.GetConstructor(Type.EmptyTypes);
-                _haveCtor = ctor != null;
-
-                _fieldType = fieldType;
-                _typeData = typeData;
-                _callSerializationEvents = typeof(ISerializationCallbackReceiver).IsAssignableFrom(typeData.Type);
-            }
-
-            [Il2CppSetOption(Option.NullChecks, false)]
-            [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-            public void Reader(void* fieldAddress, SerializerInput input)
+            public override void ReadDelegate(void* fieldAddress, SerializerInput input)
             {
                 ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
 
                 if (input.BeginReadSize(out var end))
                 {
-                    var fieldsCount = input.ReadByte();
-
                     if (instance == null)
                     {
                         if (_haveCtor)
-                            instance = Activator.CreateInstance(_fieldType);
+                            instance = Activator.CreateInstance(_type);
                         else
-                            instance = FormatterServices.GetUninitializedObject(_fieldType);
+                            instance = FormatterServices.GetUninitializedObject(_type);
                     }
 
                     byte* objectAddress;
                     UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
 
-                    var fieldDatas = _typeData.Fields;
-                    var fieldsLength = fieldDatas.Length;
-
-                    int searchStart = 0;
-
-                    for (var i = 0; i < fieldsCount; i++)
-                    {
-                        var field = input.ReadInt();
-                        var type = (DataType)input.ReadByte();
-
-                        var deserialized = false;
-
-                        for (var searchIndex = searchStart; searchIndex < fieldsLength; searchIndex++)
-                        {
-                            var fieldData = fieldDatas[searchIndex];
-
-                            if (field == fieldData.FieldNameHash)
-                            {
-                                if (type == fieldData.SerializationMethods.DataType)
-                                {
-                                    fieldData.SerializationMethods.Deserialize(objectAddress + fieldData.Offset, input);
-                                    deserialized = true;
-                                }
-
-                                searchStart = searchIndex + 1;
-                                break;
-                            }
-                        }
-
-                        if (deserialized == false)
-                        {
-                            if (TypeData.GetAlternate(fieldDatas, type, field, out var alternate))
-                            {
-                                alternate.SerializationMethods.Deserialize(objectAddress + alternate.Offset, input);
-                                //Debug.Log("Found alternate");
-                            }
-                            else
-                            {
-                                //Debug.Log($"Skipping field of type {type}");
-                                input.SkipData(type);
-                            }
-                        }
-                    }
-
-                    if (_callSerializationEvents)
-                        Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
+                    _typeData.Fields.ReadFields(objectAddress, input);
 
                     input.EndObject(end);
                 }
@@ -212,9 +128,75 @@ namespace USerialization
             }
         }
 
-        private static ReadDelegate GetReader(Type fieldType, TypeData typeData)
+        [Il2CppSetOption(Option.NullChecks, false)]
+        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        public class ClassWithEventsDataSerializer : DataSerializer
         {
-            return new ClassReader(fieldType, typeData).Reader;
+            private readonly Type _type;
+            private readonly TypeData _typeData;
+            private readonly bool _haveCtor;
+
+            public ClassWithEventsDataSerializer(Type type, TypeData typeData) : base(DataType.Object)
+            {
+                if (type.IsValueType)
+                    throw new ArgumentException(nameof(type));
+
+                _type = type;
+                _typeData = typeData;
+
+                var ctor = _type.GetConstructor(Type.EmptyTypes);
+                _haveCtor = ctor != null;
+            }
+
+            public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
+            {
+                var obj = Unsafe.Read<object>(fieldAddress);
+
+                if (obj == null)
+                {
+                    output.WriteNull();
+                    return;
+                }
+
+                Unsafe.As<ISerializationCallbackReceiver>(obj).OnBeforeSerialize();
+
+                byte* objectAddress;
+                UnsafeUtility.CopyObjectAddressToPtr(obj, &objectAddress);
+
+                var track = output.BeginSizeTrack();
+                _typeData.Fields.WriteFields(objectAddress, output);
+                output.WriteSizeTrack(track);
+            }
+
+            public override void ReadDelegate(void* fieldAddress, SerializerInput input)
+            {
+                ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
+
+                if (input.BeginReadSize(out var end))
+                {
+                    if (instance == null)
+                    {
+                        if (_haveCtor)
+                            instance = Activator.CreateInstance(_type);
+                        else
+                            instance = FormatterServices.GetUninitializedObject(_type);
+                    }
+
+                    byte* objectAddress;
+                    UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
+
+                    _typeData.Fields.ReadFields(objectAddress, input);
+
+                    Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
+
+                    input.EndObject(end);
+                }
+                else
+                {
+                    instance = null;
+                }
+            }
         }
+
     }
 }

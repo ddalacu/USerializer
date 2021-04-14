@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
-using UnityEngine;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(ByteSerializer))]
@@ -14,40 +13,58 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class ByteSerializer : ICustomSerializer
+    public sealed class ByteSerializer : DataSerializer, ICustomSerializer
     {
         public Type SerializedType => typeof(byte);
-
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
-        {
-            var value = *(byte*)(fieldAddress);
-            output.WriteByte(value);
-        }
-
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
-        {
-            var value = (byte*)(fieldAddress);
-            *value = input.ReadByte();
-        }
 
         public void Initialize(USerializer serializer)
         {
 
         }
 
-        public unsafe SerializationMethods GetMethods()
+        public DataSerializer GetMethods()
         {
-            return new SerializationMethods(Write, Read, DataType.Byte);
+            return this;
+        }
+
+        public ByteSerializer() : base(DataType.Byte)
+        {
+        }
+
+        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        {
+            var value = *(byte*)(fieldAddress);
+            output.WriteByte(value);
+        }
+
+        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
+        {
+            var value = (byte*)(fieldAddress);
+            *value = input.ReadByte();
         }
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class ByteArraySerializer : ICustomSerializer
+    public sealed class ByteArraySerializer : DataSerializer, ICustomSerializer
     {
         public Type SerializedType => typeof(byte[]);
 
-        public static unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public void Initialize(USerializer serializer)
+        {
+
+        }
+
+        public DataSerializer GetMethods()
+        {
+            return this;
+        }
+
+        public ByteArraySerializer() : base(DataType.Array)
+        {
+        }
+
+        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<byte[]>(fieldAddress);
             if (array != null)
@@ -70,7 +87,8 @@ namespace USerialization
                 output.WriteNull();
             }
         }
-        public static unsafe void Read(void* fieldAddress, SerializerInput input)
+
+        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
         {
             ref var array = ref Unsafe.AsRef<byte[]>(fieldAddress);
 
@@ -96,32 +114,32 @@ namespace USerialization
                 array = null;
             }
         }
+    }
+
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    public sealed class ByteListSerializer : DataSerializer, ICustomSerializer
+    {
+        public Type SerializedType => typeof(List<byte>);
+
+        private readonly ListHelper<byte> _listHelper;
+
+        public ByteListSerializer() : base(DataType.Array)
+        {
+            _listHelper = ListHelper<byte>.Create();
+        }
 
         public void Initialize(USerializer serializer)
         {
 
         }
 
-        public unsafe SerializationMethods GetMethods()
+        public DataSerializer GetMethods()
         {
-            return new SerializationMethods(Write, Read, DataType.Array);
-        }
-    }
-
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class ByteListSerializer : ICustomSerializer
-    {
-        public Type SerializedType => typeof(List<byte>);
-
-        private readonly ListHelper<byte> _listHelper;
-
-        public ByteListSerializer()
-        {
-            _listHelper = ListHelper<byte>.Create();
+            return this;
         }
 
-        public unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
             var list = Unsafe.Read<List<byte>>(fieldAddress);
             if (list == null)
@@ -143,7 +161,7 @@ namespace USerialization
             output.WriteSizeTrack(sizeTracker);
         }
 
-        public unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
         {
             ref var list = ref Unsafe.AsRef<List<byte>>(fieldAddress);
 
@@ -169,16 +187,6 @@ namespace USerialization
             {
                 list = null;
             }
-        }
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public unsafe SerializationMethods GetMethods()
-        {
-            return new SerializationMethods(Write, Read, DataType.Array);
         }
     }
 }

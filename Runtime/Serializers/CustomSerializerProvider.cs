@@ -10,7 +10,7 @@ namespace USerialization
 
         void Initialize(USerializer serializer);
 
-        SerializationMethods GetMethods();
+        DataSerializer GetMethods();
     }
 
     public class CustomSerializerProvider : ISerializationProvider
@@ -38,6 +38,10 @@ namespace USerialization
                     }
 
                     var instance = (ICustomSerializer)Activator.CreateInstance(attribute.SerializerType);
+
+                    if (serializer.SerializationPolicy.ShouldSerialize(instance.SerializedType) == false)
+                        continue;
+
                     _instances.Add(instance.SerializedType, instance);
                 }
             }
@@ -51,7 +55,7 @@ namespace USerialization
             }
         }
 
-        public bool TryGetSerializationMethods(Type type, out SerializationMethods serializationMethods)
+        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
         {
             if (_instances.TryGetValue(type, out var instance))
             {

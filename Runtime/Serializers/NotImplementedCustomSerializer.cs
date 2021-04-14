@@ -6,7 +6,7 @@ namespace USerialization
     /// Simply throws a exception when trying to write or read
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public unsafe class NotImplementedCustomSerializer<T> : ICustomSerializer
+    public unsafe class NotImplementedCustomSerializer<T> : DataSerializer, ICustomSerializer
     {
         public Type SerializedType => typeof(T);
 
@@ -15,19 +15,24 @@ namespace USerialization
 
         }
 
-        public SerializationMethods GetMethods()
+        public DataSerializer GetMethods()
         {
-            return new SerializationMethods(Write, Read, DataType.Object);
+            return this;
         }
 
-        private unsafe void Read(void* fieldaddress, SerializerInput input)
+        public NotImplementedCustomSerializer() : base((DataType)0)
         {
-            throw new NotImplementedException(typeof(T).FullName);
+
         }
 
-        private unsafe void Write(void* fieldaddress, SerializerOutput output)
+        public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
-            throw new NotImplementedException(typeof(T).FullName);
+            throw new NotImplementedException();
+        }
+
+        public override void ReadDelegate(void* fieldAddress, SerializerInput input)
+        {
+            throw new NotImplementedException();
         }
     }
 }

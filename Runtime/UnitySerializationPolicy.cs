@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using Object = System.Object;
@@ -9,12 +10,24 @@ namespace USerialization
     {
         private readonly Type _serializeFieldAttributeType = typeof(SerializeField);
 
-        private readonly Type _nonSerializedAttributeType = typeof(SerializeField);
+        private readonly Type _nonSerializedAttributeType = typeof(NonSerializedAttribute);
 
         private readonly Type _unityObjectType = typeof(UnityEngine.Object);
 
         private readonly Type _serializableAttributeType = typeof(SerializableAttribute);
 
+        public Func<FieldInfo, bool> ShouldSerializeField;
+
+        private HashSet<Type> _unitySerializedTypes = new HashSet<Type>()
+        {
+            typeof(AnimationCurve),
+            typeof(Vector2),
+            typeof(Vector3),
+            typeof(Vector4),
+            typeof(Quaternion),
+            typeof(Color),
+            typeof(Color32),
+        };
 
         public bool ShouldSerialize(Type type)
         {
@@ -37,6 +50,9 @@ namespace USerialization
 
                 if (type.GetCustomAttribute(_serializableAttributeType) != null)
                     return true;
+
+                if (_unitySerializedTypes.Contains(type))
+                    return true;
             }
 
             return false;
@@ -54,6 +70,10 @@ namespace USerialization
                 if (Attribute.IsDefined(fieldInfo, _nonSerializedAttributeType))
                     return false;
             }
+
+            if (ShouldSerializeField != null &&
+                ShouldSerializeField(fieldInfo) == false)
+                return false;
 
             return true;
         }

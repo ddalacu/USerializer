@@ -1,4 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.IL2CPP.CompilerServices;
+using UnityEngine;
 
 namespace USerialization
 {
@@ -12,7 +19,7 @@ namespace USerialization
             Type = type;
         }
 
-        public static void OrderFields(FieldData[] fields)
+        private static void OrderFields(FieldData[] fields)
         {
             var fieldsLength = fields.Length;
             if (fieldsLength > 255)
@@ -69,6 +76,44 @@ namespace USerialization
             compatible = default;
             return false;
         }
+
+        public static FieldData[] GetFields(Type type, USerializer uSerializer)
+        {
+            var bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            using (var fieldsIterator = new TypeFieldsIterator(Allocator.Temp))
+            {
+                var size = fieldsIterator.Fill(type, bindingFlags);
+                var fields = new FieldData[size];
+                var index = 0;
+
+                for (var i = 0; i < size; i++)
+                {
+                    var fieldInfo = fieldsIterator[i];
+
+                    if (uSerializer.SerializationPolicy.ShouldSerialize(fieldInfo) == false)
+                        continue;
+
+                    if (uSerializer.TryGetSerializationMethods(fieldInfo.FieldType, out var serializationMethods) == false)
+                        continue;
+
+                    var fieldOffset = UnsafeUtility.GetFieldOffset(fieldInfo);
+                    if (fieldOffset > short.MaxValue)
+                        throw new Exception("Field offset way to big!");
+
+                    fields[index] = new FieldData(fieldInfo, serializationMethods, (ushort)fieldOffset);
+                    index++;
+                }
+
+                if (index != fields.Length)
+                    Array.Resize(ref fields, index);
+
+                OrderFields(fields);
+
+                return fields;
+            }
+        }
+
     }
 
 }

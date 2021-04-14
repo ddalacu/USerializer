@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
+using UnityEngine;
 
 namespace USerialization
 {
@@ -204,27 +205,30 @@ namespace USerialization
         {
             if (value == null)
             {
-                WriteNull();
+                //Write7BitEncodedInt(0);
+
+                EnsureNext(1);
+                _buffer[_position++] = 0;//instead of calling encode method we write 0 directly
+
                 return;
             }
 
-            var length = value.Length * sizeof(char);
+            var valueLength = value.Length;
 
-            EnsureNext(4 + length);
+            Write7BitEncodedInt(valueLength + 1);
 
-            _buffer[_position++] = (byte)length;
-            _buffer[_position++] = (byte)(length >> 8);
-            _buffer[_position++] = (byte)(length >> 16);
-            _buffer[_position++] = (byte)(length >> 24);
+            var byteLength = valueLength * sizeof(char);
+
+            EnsureNext(byteLength);
 
             fixed (void* textPtr = value)
             {
                 fixed (byte* bufferPtr = _buffer)
                 {
-                    UnsafeUtility.MemCpy(bufferPtr + _position, textPtr, length);
+                    UnsafeUtility.MemCpy(bufferPtr + _position, textPtr, byteLength);
                 }
             }
-            _position += length;
+            _position += byteLength;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
