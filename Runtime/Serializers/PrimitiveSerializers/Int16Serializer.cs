@@ -9,19 +9,9 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class Int16Serializer : DataSerializer, ICustomSerializer
+    public sealed class Int16Serializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(short);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(short);
 
         public Int16Serializer() : base(DataType.Int16)
         {

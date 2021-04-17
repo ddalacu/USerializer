@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace USerialization
 {
-    public unsafe class StructSerializer : ISerializationProvider
+    public unsafe class StructSerializationProvider : ISerializationProvider
     {
         private USerializer _serializer;
 
@@ -21,7 +21,7 @@ namespace USerialization
 
         }
 
-        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
             if (type.IsArray)
             {

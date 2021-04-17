@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace USerialization
 {
-    public unsafe class ClassSerializer : ISerializationProvider
+    public unsafe class ClassSerializationProvider : ISerializationProvider
     {
         private USerializer _serializer;
 
@@ -24,7 +24,7 @@ namespace USerialization
 
         }
 
-        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
             if (type.IsArray)
             {
@@ -64,7 +64,7 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public class ClassDataSerializer : DataSerializer
+        public sealed class ClassDataSerializer : DataSerializer
         {
             private readonly Type _type;
             private readonly TypeData _typeData;
@@ -130,7 +130,7 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public class ClassWithEventsDataSerializer : DataSerializer
+        public sealed class ClassWithEventsDataSerializer : DataSerializer
         {
             private readonly Type _type;
             private readonly TypeData _typeData;

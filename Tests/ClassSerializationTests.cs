@@ -21,6 +21,10 @@ namespace Tests
 
         public int Val;
 
+        public int Val2;
+
+        public int Prop1 { get; set; }
+
         [Serializable]
         public struct ChildStruct
         {
@@ -37,16 +41,20 @@ namespace Tests
     }
 
 
-    public class ExampleClassSerializer : CustomSerializerBase<ExampleClass>
+    public class ExampleClassSerializer : CustomClassSerializer<ExampleClass>
     {
-        public override void LocalInit()
+        public override void LocalInit(ClassMemberAdder<ExampleClass> adder)
         {
-            AddField(1, (ref ExampleClass obj, int val) => obj.Val = val, (ref ExampleClass obj) => obj.Val);
-            AddField(2, (ref ExampleClass obj, ExampleClass.ChildClass val) => obj.Property = val, (ref ExampleClass obj) => obj.Property);
-            AddField(3, (ref ExampleClass obj, ExampleClass.ChildStruct val) => obj.ValueProp = val, (ref ExampleClass obj) => obj.ValueProp);
+            adder.AddField(1, (obj, val) => obj.Val = val, obj => obj.Val);
+
+            adder.AddField(2, nameof(ExampleClass.Val2));
+
+            adder.AddField(3, (obj, val) => obj.Property = val, obj => obj.Property);
+            adder.AddField(4, (obj, val) => obj.ValueProp = val, obj => obj.ValueProp);
+
+            adder.AddBackingField(5, nameof(ExampleClass.Prop1));
         }
     }
-
 
     public class ClassSerializationTests
     {
@@ -335,8 +343,8 @@ namespace Tests
             stream.Position = 0;
             BinaryUtility.TryDeserialize(stream, out A result);
 
-            Debug.Assert(result.Value==inst.Value);
-            Debug.Assert(result.Ref.Value==inst.Ref.Value);
+            Debug.Assert(result.Value == inst.Value);
+            Debug.Assert(result.Ref.Value == inst.Ref.Value);
             Debug.Assert(result.Ref.Ref.Value == inst.Ref.Ref.Value);
             Debug.Assert(result.Ref.Ref.Ref == null);
         }
@@ -356,7 +364,9 @@ namespace Tests
                     Val1 = 1234,
                     Val2 = -1234
                 },
-                Val = -112
+                Val = -112,
+                Val2 = 112,
+                Prop1 = 223
             };
 
             var memStream = new MemoryStream();
@@ -371,6 +381,8 @@ namespace Tests
             Debug.Assert(JsonUtility.ToJson(exampleClass.Property) == JsonUtility.ToJson(result.Property));
             Debug.Assert(JsonUtility.ToJson(exampleClass.ValueProp) == JsonUtility.ToJson(result.ValueProp));
             Debug.Assert(exampleClass.Val == result.Val);
+            Debug.Assert(exampleClass.Val2 == result.Val2);
+            Debug.Assert(exampleClass.Prop1 == result.Prop1);
 
             var nested = new NestedCustom()
             {

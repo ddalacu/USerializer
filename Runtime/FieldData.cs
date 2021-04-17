@@ -112,7 +112,7 @@ namespace USerialization
                     else
                     {
                         //Debug.Log($"Skipping field of type {type}");
-                        input.SkipData(type);
+                        DataTypeLogic.SkipData(type, input);
                     }
                 }
             }

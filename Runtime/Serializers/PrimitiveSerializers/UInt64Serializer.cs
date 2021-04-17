@@ -9,19 +9,9 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class UInt64Serializer : DataSerializer, ICustomSerializer
+    public sealed class UInt64Serializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(ulong);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(ulong);
 
         public UInt64Serializer() : base(DataType.UInt64)
         {

@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.IL2CPP.CompilerServices;
-using UnityEngine;
 
 namespace USerialization
 {
@@ -94,7 +90,7 @@ namespace USerialization
                     if (uSerializer.SerializationPolicy.ShouldSerialize(fieldInfo) == false)
                         continue;
 
-                    if (uSerializer.TryGetSerializationMethods(fieldInfo.FieldType, out var serializationMethods) == false)
+                    if (uSerializer.TryGetDataSerializer(fieldInfo.FieldType, out var serializationMethods) == false)
                         continue;
 
                     var fieldOffset = UnsafeUtility.GetFieldOffset(fieldInfo);

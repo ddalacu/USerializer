@@ -8,8 +8,8 @@
             {
                 new CustomSerializerProvider(),
                 new EnumSerializer(),
-                new ClassSerializer(),
-                new StructSerializer(),
+                new ClassSerializationProvider(),
+                new StructSerializationProvider(),
                 new ArraySerializer(),
                 new ListSerializer(),
                 //new DictionarySerializer()

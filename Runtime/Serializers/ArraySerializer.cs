@@ -21,7 +21,7 @@ namespace USerialization
 
         }
 
-        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
             if (type.IsArray == false)
             {
@@ -37,7 +37,7 @@ namespace USerialization
 
             var elementType = type.GetElementType();
 
-            if (_serializer.TryGetSerializationMethods(elementType, out var elementSerializer) == false)
+            if (_serializer.TryGetDataSerializer(elementType, out var elementSerializer) == false)
             {
                 serializationMethods = default;
                 return false;

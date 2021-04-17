@@ -27,7 +27,7 @@ namespace USerialization
 
             typeData.Fields = TypeData.GetFields(type, uSerializer);
 
-            _datas.Add(type, typeData);
+            //_datas.Add(type, typeData);
 
             return true;
         }

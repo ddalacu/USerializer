@@ -13,19 +13,9 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class StringSerializer : DataSerializer, ICustomSerializer
+    public sealed class StringSerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(string);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(string);
 
         public StringSerializer() : base(DataType.String)
         {
@@ -46,22 +36,13 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class StringArraySerializer : DataSerializer, ICustomSerializer
+    public sealed class StringArraySerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(string[]);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(string[]);
 
         public StringArraySerializer() : base(DataType.Array)
         {
+
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -116,25 +97,15 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class StringListSerializer : DataSerializer, ICustomSerializer
+    public sealed class StringListSerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(List<string>);
+        public override Type SerializedType => typeof(List<string>);
 
         private static readonly ListHelper<string> _listHelper;
 
         static StringListSerializer()
         {
             _listHelper = ListHelper<string>.Create();
-        }
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
         }
 
         public StringListSerializer() : base(DataType.Array)

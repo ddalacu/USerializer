@@ -20,7 +20,7 @@ namespace USerialization
             
         }
 
-        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
             if (type.IsArray)
             {
@@ -33,7 +33,7 @@ namespace USerialization
 
                 var primitiveType = type.GetEnumUnderlyingType();
                 var makeArrayType = primitiveType.MakeArrayType();
-                return _serializer.TryGetSerializationMethods(makeArrayType, out serializationMethods);
+                return _serializer.TryGetDataSerializer(makeArrayType, out serializationMethods);
             }
 
             if (type.IsConstructedGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
@@ -49,7 +49,7 @@ namespace USerialization
                 var primitiveType = type.GetEnumUnderlyingType();
                 var makeListType = typeof(List<>).MakeGenericType(primitiveType);
 
-                return _serializer.TryGetSerializationMethods(makeListType, out serializationMethods);
+                return _serializer.TryGetDataSerializer(makeListType, out serializationMethods);
             }
 
             if (type.IsEnum == false)
@@ -60,7 +60,7 @@ namespace USerialization
 
             var enumType = type.GetEnumUnderlyingType();
 
-            return _serializer.TryGetSerializationMethods(enumType, out serializationMethods);
+            return _serializer.TryGetDataSerializer(enumType, out serializationMethods);
         }
     }
 

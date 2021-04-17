@@ -9,19 +9,9 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class BoolSerializer : DataSerializer, ICustomSerializer
+    public sealed class BoolSerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(bool);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(bool);
 
         public BoolSerializer() : base(DataType.Boolean)
         {

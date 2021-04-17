@@ -4,26 +4,32 @@ using UnityEngine;
 
 namespace USerialization
 {
-    public interface ICustomSerializer
+    public abstract class CustomDataSerializer : DataSerializer
     {
-        Type SerializedType { get; }
+        public abstract Type SerializedType { get; }
 
-        void Initialize(USerializer serializer);
+        public virtual void Initialize(USerializer serializer)
+        {
 
-        DataSerializer GetMethods();
+        }
+
+        protected CustomDataSerializer(DataType dataType) : base(dataType)
+        {
+
+        }
     }
 
     public class CustomSerializerProvider : ISerializationProvider
     {
-        private TypeDictionary<ICustomSerializer> _instances;
+        private TypeDictionary<CustomDataSerializer> _instances;
 
         public void Initialize(USerializer serializer)
         {
-            _instances = new TypeDictionary<ICustomSerializer>(512);
+            _instances = new TypeDictionary<CustomDataSerializer>(512);
 
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
-            var customSerializerType = typeof(ICustomSerializer);
+            var customSerializerType = typeof(CustomDataSerializer);
 
             foreach (var assembly in assemblies)
             {
@@ -37,7 +43,7 @@ namespace USerialization
                         continue;
                     }
 
-                    var instance = (ICustomSerializer)Activator.CreateInstance(attribute.SerializerType);
+                    var instance = (CustomDataSerializer)Activator.CreateInstance(attribute.SerializerType);
 
                     if (serializer.SerializationPolicy.ShouldSerialize(instance.SerializedType) == false)
                         continue;
@@ -55,15 +61,15 @@ namespace USerialization
             }
         }
 
-        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(Type type, out DataSerializer dataSerializer)
         {
             if (_instances.TryGetValue(type, out var instance))
             {
-                serializationMethods = instance.GetMethods();// new SerializationMethods(instance.Write, instance.Read, instance.DataType);
+                dataSerializer = instance;// new SerializationMethods(instance.Write, instance.Read, instance.DataType);
                 return true;
             }
 
-            serializationMethods = default;
+            dataSerializer = default;
             return false;
         }
 

@@ -4,11 +4,17 @@ namespace USerialization
 {
     public abstract unsafe class DataSerializer
     {
-        public readonly DataType DataType;
+        private DataType _dataType;
+
+        public DataType DataType
+        {
+            get => _dataType;
+            protected set => _dataType = value;
+        }
 
         protected DataSerializer(DataType dataType)
         {
-            DataType = dataType;
+            _dataType = dataType;
         }
 
         public abstract void WriteDelegate(void* fieldAddress, SerializerOutput output);
@@ -16,30 +22,13 @@ namespace USerialization
         public abstract void ReadDelegate(void* fieldAddress, SerializerInput input);
     }
 
-
-    /// <summary>
-    /// Groups together <see cref="WriteDelegate"/> and <see cref="ReadDelegate"/> together
-    /// </summary>
-    public readonly struct SerializationMethods
-    {
-        public readonly DataSerializer DataSerializer;
-
-        public readonly DataType DataType;
-
-        public SerializationMethods(DataSerializer dataSerializer, DataType dataType)
-        {
-            DataSerializer = dataSerializer;
-            DataType = dataType;
-        }
-    }
-
-    public readonly unsafe struct TypedSerializationMethods<T>
+    public readonly unsafe struct TypedDataSerializer<T>
     {
         private readonly DataSerializer _methods;
 
         public DataType DataType => _methods.DataType;
 
-        public TypedSerializationMethods(DataSerializer methods)
+        public TypedDataSerializer(DataSerializer methods)
         {
             _methods = methods;
         }

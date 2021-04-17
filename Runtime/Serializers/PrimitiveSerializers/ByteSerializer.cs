@@ -13,19 +13,9 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class ByteSerializer : DataSerializer, ICustomSerializer
+    public sealed class ByteSerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(byte);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(byte);
 
         public ByteSerializer() : base(DataType.Byte)
         {
@@ -46,19 +36,9 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class ByteArraySerializer : DataSerializer, ICustomSerializer
+    public sealed class ByteArraySerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(byte[]);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(byte[]);
 
         public ByteArraySerializer() : base(DataType.Array)
         {
@@ -118,25 +98,15 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class ByteListSerializer : DataSerializer, ICustomSerializer
+    public sealed class ByteListSerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(List<byte>);
+        public override Type SerializedType => typeof(List<byte>);
 
         private readonly ListHelper<byte> _listHelper;
 
         public ByteListSerializer() : base(DataType.Array)
         {
             _listHelper = ListHelper<byte>.Create();
-        }
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)

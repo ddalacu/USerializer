@@ -6,21 +6,11 @@ namespace USerialization
     /// Simply throws a exception when trying to write or read
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public unsafe class NotImplementedCustomSerializer<T> : DataSerializer, ICustomSerializer
+    public unsafe class NotImplementedCustomSerializer<T> : CustomDataSerializer
     {
-        public Type SerializedType => typeof(T);
+        public override Type SerializedType => typeof(T);
 
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
-
-        public NotImplementedCustomSerializer() : base((DataType)0)
+        public NotImplementedCustomSerializer() : base(DataType.None)
         {
 
         }

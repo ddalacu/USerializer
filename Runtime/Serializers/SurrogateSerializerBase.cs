@@ -1,42 +1,42 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
+using UnityEngine;
 
 namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public abstract class SurrogateSerializerBase<T, TSurrogate> : DataSerializer, ICustomSerializer
+    public abstract class SurrogateSerializerBase<T, TSurrogate> : CustomDataSerializer
     {
-        public Type SerializedType => _type;
+        public override Type SerializedType => typeof(T);
 
         private USerializer _serializer;
-
-        private Type _type;
 
         protected USerializer Serializer => _serializer;
 
         private DataSerializer _dataSerializer;
 
-        protected SurrogateSerializerBase() : base(DataType.Object)
+        protected SurrogateSerializerBase() : base(DataType.None)
         {
-            _type = typeof(T);
+
         }
 
-        public void Initialize(USerializer serializer)
+        public override void Initialize(USerializer serializer)
         {
             _serializer = serializer;
-            _serializer.TryGetSerializationMethods(typeof(TSurrogate), out _dataSerializer);
+
+            var type = typeof(TSurrogate);
+            if (_serializer.TryGetDataSerializer(type, out _dataSerializer))
+                DataType = _dataSerializer.DataType;
+            else
+                Debug.LogError($"Could not get serialization data for {type}");
         }
 
         public abstract void CopyToSurrogate(ref T from, ref TSurrogate to);
 
         public abstract void CopyFromSurrogate(ref TSurrogate from, ref T to);
 
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {

@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
-using UnityEngine;
 
 namespace USerialization
 {
@@ -19,7 +18,7 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public class SerializerOutput
+    public sealed class SerializerOutput
     {
         private Stream _stream;
 
@@ -152,10 +151,12 @@ namespace USerialization
         public void WriteInt(int value)
         {
             EnsureNext(4);
-            _buffer[_position++] = (byte)value;
-            _buffer[_position++] = (byte)(value >> 8);
-            _buffer[_position++] = (byte)(value >> 16);
-            _buffer[_position++] = (byte)(value >> 24);
+            _buffer[_position] = (byte)value;
+            _buffer[_position + 1] = (byte)(value >> 8);
+            _buffer[_position + 2] = (byte)(value >> 16);
+            _buffer[_position + 3] = (byte)(value >> 24);
+
+            _position += 4;
         }
 
         public void Write7BitEncodedInt(int value)
@@ -193,10 +194,11 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteIntUnchecked(int value)
         {
-            _buffer[_position++] = (byte)value;
-            _buffer[_position++] = (byte)(value >> 8);
-            _buffer[_position++] = (byte)(value >> 16);
-            _buffer[_position++] = (byte)(value >> 24);
+            _buffer[_position] = (byte)value;
+            _buffer[_position + 1] = (byte)(value >> 8);
+            _buffer[_position + 2] = (byte)(value >> 16);
+            _buffer[_position + 3] = (byte)(value >> 24);
+            _position += 4;
         }
 
 
@@ -235,10 +237,11 @@ namespace USerialization
         public void WriteNull()
         {
             EnsureNext(4);
-            _buffer[_position++] = 255;
-            _buffer[_position++] = 255;
-            _buffer[_position++] = 255;
-            _buffer[_position++] = 255;
+            _buffer[_position] = 255;
+            _buffer[_position + 1] = 255;
+            _buffer[_position + 2] = 255;
+            _buffer[_position + 3] = 255;
+            _position += 4;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -293,10 +296,11 @@ namespace USerialization
             EnsureNext(4);
             //write the value
             uint tmpValue = *(uint*)&value;
-            _buffer[_position++] = (byte)tmpValue;
-            _buffer[_position++] = (byte)(tmpValue >> 8);
-            _buffer[_position++] = (byte)(tmpValue >> 16);
-            _buffer[_position++] = (byte)(tmpValue >> 24);
+            _buffer[_position] = (byte)tmpValue;
+            _buffer[_position + 1] = (byte)(tmpValue >> 8);
+            _buffer[_position + 2] = (byte)(tmpValue >> 16);
+            _buffer[_position + 3] = (byte)(tmpValue >> 24);
+            _position += 4;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -304,20 +308,22 @@ namespace USerialization
         {
             //write the value
             uint tmpValue = *(uint*)&value;
-            _buffer[_position++] = (byte)tmpValue;
-            _buffer[_position++] = (byte)(tmpValue >> 8);
-            _buffer[_position++] = (byte)(tmpValue >> 16);
-            _buffer[_position++] = (byte)(tmpValue >> 24);
+            _buffer[_position] = (byte)tmpValue;
+            _buffer[_position + 1] = (byte)(tmpValue >> 8);
+            _buffer[_position + 2] = (byte)(tmpValue >> 16);
+            _buffer[_position + 3] = (byte)(tmpValue >> 24);
+            _position += 4;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUInt(uint value)
         {
             EnsureNext(4);
-            _buffer[_position++] = (byte)value;
-            _buffer[_position++] = (byte)(value >> 8);
-            _buffer[_position++] = (byte)(value >> 16);
-            _buffer[_position++] = (byte)(value >> 24);
+            _buffer[_position] = (byte)value;
+            _buffer[_position + 1] = (byte)(value >> 8);
+            _buffer[_position + 2] = (byte)(value >> 16);
+            _buffer[_position + 3] = (byte)(value >> 24);
+            _position += 4;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -325,14 +331,15 @@ namespace USerialization
         {
             EnsureNext(8);
 
-            _buffer[_position++] = (byte)value;
-            _buffer[_position++] = (byte)(value >> 8);
-            _buffer[_position++] = (byte)(value >> 16);
-            _buffer[_position++] = (byte)(value >> 24);
-            _buffer[_position++] = (byte)(value >> 32);
-            _buffer[_position++] = (byte)(value >> 40);
-            _buffer[_position++] = (byte)(value >> 48);
-            _buffer[_position++] = (byte)(value >> 56);
+            _buffer[_position] = (byte)value;
+            _buffer[_position + 1] = (byte)(value >> 8);
+            _buffer[_position + 2] = (byte)(value >> 16);
+            _buffer[_position + 3] = (byte)(value >> 24);
+            _buffer[_position + 4] = (byte)(value >> 32);
+            _buffer[_position + 5] = (byte)(value >> 40);
+            _buffer[_position + 6] = (byte)(value >> 48);
+            _buffer[_position + 7] = (byte)(value >> 56);
+            _position += 8;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -340,14 +347,15 @@ namespace USerialization
         {
             EnsureNext(8);
 
-            _buffer[_position++] = (byte)value;
-            _buffer[_position++] = (byte)(value >> 8);
-            _buffer[_position++] = (byte)(value >> 16);
-            _buffer[_position++] = (byte)(value >> 24);
-            _buffer[_position++] = (byte)(value >> 32);
-            _buffer[_position++] = (byte)(value >> 40);
-            _buffer[_position++] = (byte)(value >> 48);
-            _buffer[_position++] = (byte)(value >> 56);
+            _buffer[_position] = (byte)value;
+            _buffer[_position + 1] = (byte)(value >> 8);
+            _buffer[_position + 2] = (byte)(value >> 16);
+            _buffer[_position + 3] = (byte)(value >> 24);
+            _buffer[_position + 4] = (byte)(value >> 32);
+            _buffer[_position + 5] = (byte)(value >> 40);
+            _buffer[_position + 6] = (byte)(value >> 48);
+            _buffer[_position + 7] = (byte)(value >> 56);
+            _position += 8;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -355,8 +363,9 @@ namespace USerialization
         {
             EnsureNext(2);
 
-            _buffer[_position++] = (byte)value;
-            _buffer[_position++] = (byte)(value >> 8);
+            _buffer[_position] = (byte)value;
+            _buffer[_position + 1] = (byte)(value >> 8);
+            _position += 2;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -364,8 +373,9 @@ namespace USerialization
         {
             EnsureNext(2);
 
-            _buffer[_position++] = (byte)value;
-            _buffer[_position++] = (byte)(value >> 8);
+            _buffer[_position] = (byte)value;
+            _buffer[_position + 1] = (byte)(value >> 8);
+            _position += 2;
         }
     }
 

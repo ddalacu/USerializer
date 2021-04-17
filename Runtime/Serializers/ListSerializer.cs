@@ -341,7 +341,7 @@ namespace USerialization
             }
         }
 
-        public bool TryGetSerializationMethods(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
 
             if (type.IsConstructedGenericType == false)
@@ -358,7 +358,7 @@ namespace USerialization
 
             var elementType = type.GetGenericArguments()[0];
 
-            if (_serializer.TryGetSerializationMethods(elementType, out var elementDataSerializer) == false)
+            if (_serializer.TryGetDataSerializer(elementType, out var elementDataSerializer) == false)
             {
                 serializationMethods = default;
                 return false;

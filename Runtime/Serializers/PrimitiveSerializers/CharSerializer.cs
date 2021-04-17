@@ -9,19 +9,9 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class CharSerializer : DataSerializer, ICustomSerializer
+    public sealed class CharSerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(char);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(char);
 
         public CharSerializer() : base(DataType.Char)
         {

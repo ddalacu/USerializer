@@ -1,11 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
 using NUnit.Framework;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using USerialization;
+
+[assembly: CustomSerializer(typeof(Tests.CustomStructSerializer))]
 
 namespace Tests
 {
+
+    public struct CustomStruct
+    {
+        public int Field;
+        public int Property { get; set; }
+        public int Property2 { get; set; }
+
+    }
+
+
+    public class CustomStructSerializer : CustomStructSerializer<CustomStruct>
+    {
+        public override void LocalInit(StructMemberAdder<CustomStruct> adder)
+        {
+            adder.AddField(0, nameof(CustomStruct.Field));
+
+            adder.AddField(1, (ref CustomStruct obj, int val) => obj.Property = val, (ref CustomStruct obj) => obj.Property);
+
+            adder.AddBackingField(2, nameof(CustomStruct.Property2));
+
+            //adder.AddProperty<int>(1, nameof(CustomStruct.Property));
+        }
+    }
+
     public class StructSerializationTests
     {
         [Serializable]
@@ -153,6 +179,24 @@ namespace Tests
             var result = TestUtils.SerializeDeserializeTest(initial);
 
             Debug.Assert(result.Time == initial.Time);
+        }
+
+
+        [Test]
+        public void CustomStructSerialization()
+        {
+            var initial = new CustomStruct()
+            {
+               Field = 123,
+               Property = 112,
+               Property2 = 221
+            };
+            var result = TestUtils.SerializeDeserializeTest(initial);
+
+            Debug.Assert(result.Field == initial.Field);
+            Debug.Assert(result.Property == initial.Property);
+            Debug.Assert(result.Property2 == initial.Property2);
+
         }
 
     }

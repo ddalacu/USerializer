@@ -37,7 +37,7 @@ namespace USerialization
                 serializationProvider.Start(this);
         }
 
-        public bool TryGetSerializationMethods(Type type, out DataSerializer dataSerializer)
+        public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer)
         {
             if (_methods.TryGetValue(type, out dataSerializer))
             {
@@ -46,7 +46,7 @@ namespace USerialization
 
             foreach (var provider in _providers)
             {
-                if (provider.TryGetSerializationMethods(type, out dataSerializer) == false)
+                if (provider.TryGet(type, out dataSerializer) == false)
                     continue;
 
                 _methods.Add(type, dataSerializer);
@@ -58,7 +58,7 @@ namespace USerialization
             return false;
         }
 
-        public bool TryGetSerializationMethods<T>(out TypedSerializationMethods<T> methods)
+        public bool TryGetDataSerializer<T>(out TypedDataSerializer<T> methods)
         {
             var type = typeof(T);
 
@@ -66,7 +66,7 @@ namespace USerialization
             {
                 if (result != null)
                 {
-                    methods = new TypedSerializationMethods<T>(result);
+                    methods = new TypedDataSerializer<T>(result);
                     return true;
                 }
 
@@ -76,11 +76,11 @@ namespace USerialization
 
             foreach (var provider in _providers)
             {
-                if (provider.TryGetSerializationMethods(type, out result) == false)
+                if (provider.TryGet(type, out result) == false)
                     continue;
 
                 _methods.Add(type, result);
-                methods = new TypedSerializationMethods<T>(result);
+                methods = new TypedDataSerializer<T>(result);
                 return true;
             }
 
@@ -97,7 +97,7 @@ namespace USerialization
                 && shouldUse(provider) == false)
                     continue;
 
-                if (provider.TryGetSerializationMethods(type, out dataSerializer) == false)
+                if (provider.TryGet(type, out dataSerializer) == false)
                     continue;
 
                 return true;
@@ -117,7 +117,7 @@ namespace USerialization
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
 
-            return TryGetSerializationMethods(type, out _);
+            return TryGetDataSerializer(type, out _);
         }
 
         public unsafe bool Serialize([NotNull] SerializerOutput output, object o)
@@ -128,7 +128,7 @@ namespace USerialization
 
             var type = o.GetType();
 
-            if (TryGetSerializationMethods(type, out var serializationMethods))
+            if (TryGetDataSerializer(type, out var serializationMethods))
             {
                 if (type.IsValueType)
                 {
@@ -159,7 +159,7 @@ namespace USerialization
             Profiler.BeginSample("USerializer.SerializeTyped");
             var type = value.GetType();
 
-            if (TryGetSerializationMethods(type, out var serializationMethods))
+            if (TryGetDataSerializer(type, out var serializationMethods))
             {
                 var fieldAddress = Unsafe.AsPointer(ref value);
                 serializationMethods.WriteDelegate(fieldAddress, output);
@@ -178,7 +178,7 @@ namespace USerialization
 
             Profiler.BeginSample("USerializer.TryDeserialize");
 
-            if (TryGetSerializationMethods(typeof(T), out var serializationMethods))
+            if (TryGetDataSerializer(typeof(T), out var serializationMethods))
             {
                 result = default;
                 serializationMethods.ReadDelegate(Unsafe.AsPointer(ref result), input);
@@ -208,7 +208,7 @@ namespace USerialization
 
             Profiler.BeginSample("USerializer.TryPopulateObject");
 
-            if (TryGetSerializationMethods(type, out var serializationMethods) == false)
+            if (TryGetDataSerializer(type, out var serializationMethods) == false)
             {
                 Profiler.EndSample();
                 Debug.LogError($"Could not find serialization data for {type}");
@@ -229,7 +229,7 @@ namespace USerialization
 
             Profiler.BeginSample("USerializer.TryPopulateObject");
 
-            if (TryGetSerializationMethods(type, out var serializationMethods) == false)
+            if (TryGetDataSerializer(type, out var serializationMethods) == false)
             {
                 Profiler.EndSample();
                 Debug.LogError($"Could not find serialization data for {type}");

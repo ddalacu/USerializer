@@ -9,19 +9,9 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class SByteSerializer : DataSerializer, ICustomSerializer
+    public sealed class SByteSerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(sbyte);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(sbyte);
 
         public SByteSerializer() : base(DataType.SByte)
         {

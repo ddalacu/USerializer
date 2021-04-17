@@ -14,7 +14,7 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public class SerializerInput
+    public sealed class SerializerInput
     {
         private Stream _stream;
         private byte[] _buffer;
@@ -233,71 +233,8 @@ namespace USerialization
             }
         }
 
-        public void SkipData(DataType dataType)
+        public void Skip(int toSkip)
         {
-            int toSkip;
-            switch (dataType)
-            {
-                case DataType.Byte:
-                    toSkip = sizeof(byte);
-                    break;
-                case DataType.Boolean:
-                    toSkip = sizeof(bool);
-                    break;
-                case DataType.Int32:
-                    toSkip = sizeof(int);
-                    break;
-                case DataType.Int64:
-                    toSkip = sizeof(long);
-                    break;
-                case DataType.Single:
-                    toSkip = sizeof(float);
-                    break;
-                case DataType.Double:
-                    toSkip = sizeof(double);
-                    break;
-                case DataType.Object:
-                    toSkip = ReadInt();
-                    if (toSkip == -1)//null
-                        return;
-                    break;
-                case DataType.String:
-                    {
-                        toSkip = Read7BitEncodedInt(); //null
-                        toSkip -= 1;
-                        if (toSkip == -1)
-                            return;
-
-                        toSkip = toSkip * sizeof(char);
-                        break;
-                    }
-                case DataType.Array:
-                    toSkip = ReadInt();//null
-                    if (toSkip == -1)
-                        return;
-                    break;
-                case DataType.SByte:
-                    toSkip = sizeof(sbyte);
-                    break;
-                case DataType.Char:
-                    toSkip = sizeof(char);
-                    break;
-                case DataType.Int16:
-                    toSkip = sizeof(short);
-                    break;
-                case DataType.UInt16:
-                    toSkip = sizeof(ushort);
-                    break;
-                case DataType.UInt32:
-                    toSkip = sizeof(uint);
-                    break;
-                case DataType.UInt64:
-                    toSkip = sizeof(ulong);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(dataType), dataType, null);
-            }
-
             Debug.Assert(toSkip >= 0);
             EnsureNext(toSkip);
             _position += toSkip;

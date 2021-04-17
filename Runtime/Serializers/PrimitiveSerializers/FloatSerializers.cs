@@ -9,22 +9,13 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class FloatSerializer : DataSerializer, ICustomSerializer
+    public sealed class FloatSerializer : CustomDataSerializer
     {
-        public Type SerializedType => typeof(float);
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public DataSerializer GetMethods()
-        {
-            return this;
-        }
+        public override Type SerializedType => typeof(float);
 
         public FloatSerializer() : base(DataType.Single)
         {
+
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
