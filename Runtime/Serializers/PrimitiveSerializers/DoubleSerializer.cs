@@ -2,17 +2,17 @@
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(SByteSerializer))]
+[assembly: CustomSerializer(typeof(DoubleSerializer))]
 
 namespace USerialization
 {
-
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class SByteSerializer : CustomDataSerializer
+    public sealed class DoubleSerializer : CustomDataSerializer
     {
         private DataType _dataType;
-        public override Type SerializedType => typeof(sbyte);
+
+        public override Type SerializedType => typeof(double);
 
         public override DataType GetDataType() => _dataType;
 
@@ -20,7 +20,7 @@ namespace USerialization
         {
             var typeLogic = serializer.DataTypesDatabase;
 
-            if (typeLogic.TryGet(out SByteDataTypeLogic arrayDataTypeLogic) == false)
+            if (typeLogic.TryGet(out DoubleDataTypeLogic arrayDataTypeLogic) == false)
                 return false;
 
             _dataType = arrayDataTypeLogic.Value;
@@ -29,20 +29,19 @@ namespace USerialization
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
-            var value = *(byte*)(fieldAddress);
-            output.WriteByte(value);
+            var value = *(double*)(fieldAddress);
+            output.WriteDouble(value);
         }
 
         public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
         {
-            var value = (byte*)(fieldAddress);
-            *value = input.ReadByte();
+            var value = (double*)(fieldAddress);
+            *value = input.ReadDouble();
         }
     }
 
-    public sealed class SByteDataTypeLogic : UnmanagedDataTypeLogic<sbyte>
+    public sealed class DoubleDataTypeLogic : UnmanagedDataTypeLogic<double>
     {
 
     }
-
 }

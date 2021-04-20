@@ -61,7 +61,7 @@ namespace USerialization
                 return false;
             }
 
-            var toAdd = new MemberSerializerStruct(hash, new FieldArrayWriter<T, TElement>(elementSerializer, getLength, setLength, getElement, setElement));
+            var toAdd = new MemberSerializerStruct(hash, new FieldArrayWriter<T, TElement>(elementSerializer, getLength, setLength, getElement, setElement, _serializer));
             Add(toAdd);
             return true;
         }
@@ -77,9 +77,9 @@ namespace USerialization
         public bool AddField<TMember>(int hash, [NotNull] SetPropertyDelegate<T, TMember> set,
             [NotNull] GetPropertyDelegate<T, TMember> get)
         {
-            if (set == null) 
+            if (set == null)
                 throw new ArgumentNullException(nameof(set));
-            if (get == null) 
+            if (get == null)
                 throw new ArgumentNullException(nameof(get));
 
             var memberType = typeof(TMember);
@@ -186,9 +186,9 @@ namespace USerialization
         public bool AddField<TMember>(int hash, [NotNull] ByRefFieldWriter<T, TMember>.SetDelegate set,
             [NotNull] ByRefFieldWriter<T, TMember>.GetDelegate get)
         {
-            if (set == null) 
+            if (set == null)
                 throw new ArgumentNullException(nameof(set));
-            if (get == null) 
+            if (get == null)
                 throw new ArgumentNullException(nameof(get));
 
             var memberType = typeof(TMember);
@@ -234,7 +234,7 @@ namespace USerialization
             if (propertyName == null)
                 throw new ArgumentNullException(nameof(propertyName));
 
-            var type = typeof(T); 
+            var type = typeof(T);
 
             var formattedFieldName = $"<{propertyName}>k__BackingField";
 
@@ -269,7 +269,9 @@ namespace USerialization
 
         private int _fieldOffset;
 
-        public StructFieldWriter(DataSerializer dataSerializer, FieldInfo fieldInfo) : base(dataSerializer.DataType)
+        public override DataType GetDataType() => _dataSerializer.GetDataType();
+
+        public StructFieldWriter(DataSerializer dataSerializer, FieldInfo fieldInfo)
         {
             _fieldOffset = UnsafeUtility.GetFieldOffset(fieldInfo);
             _dataSerializer = dataSerializer;
@@ -297,8 +299,9 @@ namespace USerialization
         private DataSerializer _dataSerializer;
 
         private int _fieldOffset;
+        public override DataType GetDataType() => _dataSerializer.GetDataType();
 
-        public ClassFieldWriter([NotNull] DataSerializer dataSerializer, [NotNull] FieldInfo fieldInfo) : base(dataSerializer.DataType)
+        public ClassFieldWriter([NotNull] DataSerializer dataSerializer, [NotNull] FieldInfo fieldInfo)
         {
             if (dataSerializer == null)
                 throw new ArgumentNullException(nameof(dataSerializer));
@@ -344,8 +347,9 @@ namespace USerialization
         private readonly GetPropertyDelegate<T, TMember> _get;
 
         private DataSerializer _dataSerializer;
+        public override DataType GetDataType() => _dataSerializer.GetDataType();
 
-        public PropertyWriter(DataSerializer dataSerializer, SetPropertyDelegate<T, TMember> set, GetPropertyDelegate<T, TMember> get) : base(dataSerializer.DataType)
+        public PropertyWriter(DataSerializer dataSerializer, SetPropertyDelegate<T, TMember> set, GetPropertyDelegate<T, TMember> get)
         {
             _set = set;
             _get = get;
@@ -379,8 +383,9 @@ namespace USerialization
         private readonly SetDelegate _set;
         private readonly GetDelegate _get;
         private DataSerializer _dataSerializer;
+        public override DataType GetDataType() => _dataSerializer.GetDataType();
 
-        public ByRefFieldWriter(DataSerializer dataSerializer, SetDelegate set, GetDelegate get) : base(dataSerializer.DataType)
+        public ByRefFieldWriter(DataSerializer dataSerializer, SetDelegate set, GetDelegate get)
         {
             _set = set;
             _get = get;
@@ -425,17 +430,26 @@ namespace USerialization
 
         public delegate void SetLengthDelegate(ref T obj, int length);
 
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
         public FieldArrayWriter(DataSerializer elementSerializer,
             GetLengthDelegate getLengthDelegate,
             SetLengthDelegate setLengthDelegate,
             GetElementDelegate getElementDelegate,
-            SetElementDelegate setElementDelegate) : base(DataType.Array)
+            SetElementDelegate setElementDelegate, USerializer uSerializer)
         {
             _elementSerializer = elementSerializer;
             _getLengthDelegate = getLengthDelegate;
             _setLengthDelegate = setLengthDelegate;
             _getElementDelegate = getElementDelegate;
             _setElementDelegate = setElementDelegate;
+
+            var typeLogic = uSerializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic))
+                _dataType = arrayDataTypeLogic.Value;
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
@@ -455,7 +469,7 @@ namespace USerialization
             var sizeTracker = output.BeginSizeTrack();
             {
                 output.EnsureNext(6);
-                output.WriteByteUnchecked((byte)_elementSerializer.DataType);
+                output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
                 output.Write7BitEncodedIntUnchecked(count);
 
                 for (var index = 0; index < count; index++)
@@ -482,7 +496,7 @@ namespace USerialization
 
                 _setLengthDelegate(ref instance, count);
 
-                if (type == _elementSerializer.DataType)
+                if (type == _elementSerializer.GetDataType())
                 {
                     for (var index = 0; index < count; index++)
                     {

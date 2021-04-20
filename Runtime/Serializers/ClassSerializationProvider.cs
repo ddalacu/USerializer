@@ -57,9 +57,9 @@ namespace USerialization
         public DataSerializer GetSerializationMethods(Type type, TypeData typeData)
         {
             if (typeof(ISerializationCallbackReceiver).IsAssignableFrom(type))
-                return new ClassWithEventsDataSerializer(type, typeData);
+                return new ClassWithEventsDataSerializer(type, typeData, _serializer);
 
-            return new ClassDataSerializer(type, typeData);
+            return new ClassDataSerializer(type, typeData, _serializer);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
@@ -69,8 +69,13 @@ namespace USerialization
             private readonly Type _type;
             private readonly TypeData _typeData;
             private readonly bool _haveCtor;
+            private DataTypesDatabase _dataTypesDatabase;
 
-            public ClassDataSerializer(Type type, TypeData typeData) : base(DataType.Object)
+            private DataType _dataType;
+
+            public override DataType GetDataType() => _dataType;
+
+            public ClassDataSerializer(Type type, TypeData typeData, USerializer serializer)
             {
                 if (type.IsValueType)
                     throw new ArgumentException(nameof(type));
@@ -80,6 +85,11 @@ namespace USerialization
 
                 var ctor = _type.GetConstructor(Type.EmptyTypes);
                 _haveCtor = ctor != null;
+
+                _dataTypesDatabase = serializer.DataTypesDatabase;
+
+                if (_dataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
+                    _dataType = arrayDataTypeLogic.Value;
             }
 
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -117,7 +127,7 @@ namespace USerialization
                     byte* objectAddress;
                     UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
 
-                    _typeData.Fields.ReadFields(objectAddress, input);
+                    _typeData.Fields.ReadFields(objectAddress, input, _dataTypesDatabase);
 
                     input.EndObject(end);
                 }
@@ -135,8 +145,13 @@ namespace USerialization
             private readonly Type _type;
             private readonly TypeData _typeData;
             private readonly bool _haveCtor;
+            private DataTypesDatabase _dataTypesDatabase;
 
-            public ClassWithEventsDataSerializer(Type type, TypeData typeData) : base(DataType.Object)
+            private DataType _dataType;
+
+            public override DataType GetDataType() => _dataType;
+
+            public ClassWithEventsDataSerializer(Type type, TypeData typeData, USerializer serializer)
             {
                 if (type.IsValueType)
                     throw new ArgumentException(nameof(type));
@@ -146,7 +161,13 @@ namespace USerialization
 
                 var ctor = _type.GetConstructor(Type.EmptyTypes);
                 _haveCtor = ctor != null;
+
+                _dataTypesDatabase = serializer.DataTypesDatabase;
+
+                if (_dataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
+                    _dataType = arrayDataTypeLogic.Value;
             }
+
 
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
             {
@@ -185,7 +206,7 @@ namespace USerialization
                     byte* objectAddress;
                     UnsafeUtility.CopyObjectAddressToPtr(instance, &objectAddress);
 
-                    _typeData.Fields.ReadFields(objectAddress, input);
+                    _typeData.Fields.ReadFields(objectAddress, input, _dataTypesDatabase);
 
                     Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
 

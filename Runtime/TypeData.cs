@@ -51,7 +51,7 @@ namespace USerialization
             {
                 var fieldData = fields[index];
 
-                if (type != fieldData.SerializationMethods.DataType)
+                if (type != fieldData.SerializationMethods.GetDataType())
                     continue;
 
                 var alternateHashes = fieldData.AlternateHashes;

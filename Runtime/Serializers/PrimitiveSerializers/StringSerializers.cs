@@ -17,8 +17,19 @@ namespace USerialization
     {
         public override Type SerializedType => typeof(string);
 
-        public StringSerializer() : base(DataType.String)
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out StringDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -34,15 +45,49 @@ namespace USerialization
         }
     }
 
+    public sealed class StringDataTypeLogic : IDataTypeLogic
+    {
+        public DataType Value { get; set; }
+
+        public void Skip(SerializerInput input)
+        {
+            var chars = input.Read7BitEncodedInt();
+
+            chars -= 1;
+
+            if (chars == -1)//null
+                return;
+
+            input.Skip(chars * sizeof(char));
+        }
+    }
+
+
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class StringArraySerializer : CustomDataSerializer
     {
+        private DataType _elementDataType;
+
+        private DataType _dataType;
+
         public override Type SerializedType => typeof(string[]);
 
-        public StringArraySerializer() : base(DataType.Array)
-        {
+        public override DataType GetDataType() => _dataType;
 
+        public override bool TryInitialize(USerializer serializer)
+        {
+            var typeLogic = serializer.DataTypesDatabase;
+            if (typeLogic.TryGet(out StringDataTypeLogic result) == false)
+                return false;
+
+            _elementDataType = result.Value;
+
+            if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -55,7 +100,7 @@ namespace USerialization
                     var count = array.Length;
 
                     output.EnsureNext(6);
-                    output.WriteByteUnchecked((byte)DataType.String);
+                    output.WriteByteUnchecked((byte)_elementDataType);
                     output.Write7BitEncodedIntUnchecked(count);
 
                     for (var i = 0; i < count; i++)
@@ -80,7 +125,7 @@ namespace USerialization
                 var count = input.Read7BitEncodedInt();
                 array = new string[count];
 
-                if (type == DataType.String)
+                if (type == _elementDataType)
                 {
                     for (var i = 0; i < count; i++)
                         array[i] = input.ReadString();
@@ -103,13 +148,30 @@ namespace USerialization
 
         private static readonly ListHelper<string> _listHelper;
 
+        private DataType _elementDataType;
+
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
         static StringListSerializer()
         {
             _listHelper = ListHelper<string>.Create();
         }
 
-        public StringListSerializer() : base(DataType.Array)
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+            if (typeLogic.TryGet(out StringDataTypeLogic result) == false)
+                return false;
+
+            _elementDataType = result.Value;
+
+            if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -122,7 +184,7 @@ namespace USerialization
                     var count = list.Count;
 
                     output.EnsureNext(6);
-                    output.WriteByteUnchecked((byte)DataType.String);
+                    output.WriteByteUnchecked((byte)_elementDataType);
                     output.Write7BitEncodedIntUnchecked(count);
 
                     for (var i = 0; i < count; i++)
@@ -151,7 +213,7 @@ namespace USerialization
 
                 _listHelper.SetArray(list, array);
 
-                if (type == DataType.String)
+                if (type == _elementDataType)
                 {
                     for (var i = 0; i < count; i++)
                         array[i] = input.ReadString();

@@ -15,20 +15,21 @@ namespace USerialization
 
     public class USerializer
     {
-        private readonly ISerializationPolicy _serializationPolicy;
-
         private readonly ISerializationProvider[] _providers;
 
         private readonly TypeDictionary<DataSerializer> _methods = new TypeDictionary<DataSerializer>(1024);
 
         public ISerializationProvider[] Providers => _providers;
 
-        public ISerializationPolicy SerializationPolicy => _serializationPolicy;
+        public ISerializationPolicy SerializationPolicy { get; }
 
-        public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers)
+        public DataTypesDatabase DataTypesDatabase { get; private set; }
+
+        public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers, DataTypesDatabase dataTypesDatabase)
         {
-            _serializationPolicy = serializationPolicy;
+            SerializationPolicy = serializationPolicy;
             _providers = providers;
+            DataTypesDatabase = dataTypesDatabase;
 
             foreach (var serializationProvider in _providers)
                 serializationProvider.Initialize(this);

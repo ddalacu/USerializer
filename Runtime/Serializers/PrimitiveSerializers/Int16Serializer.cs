@@ -13,8 +13,19 @@ namespace USerialization
     {
         public override Type SerializedType => typeof(short);
 
-        public Int16Serializer() : base(DataType.Int16)
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out Int16DataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -29,4 +40,9 @@ namespace USerialization
             *value = input.ReadInt16();
         }
     }
+
+    public sealed class Int16DataTypeLogic : UnmanagedDataTypeLogic<Int16>
+    {
+    }
+
 }

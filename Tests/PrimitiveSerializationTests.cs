@@ -232,6 +232,31 @@ namespace Tests
         }
 
 
+
+        [Test]
+        public void DoubleSerialization()
+        {
+            var input = BuildData<double>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(input == result);
+        }
+
+        [Test]
+        public void DoubleArraySerialization()
+        {
+            var input = BuildDataArray<double>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
+        [Test]
+        public void DoubleListSerialization()
+        {
+            var input = BuildDataList<double>();
+            var result = TestUtils.SerializeDeserializeTest(input);
+            Debug.Assert(TestUtils.EqualArrays(input, result));
+        }
+
         [Test]
         public void BoolSerialization()
         {

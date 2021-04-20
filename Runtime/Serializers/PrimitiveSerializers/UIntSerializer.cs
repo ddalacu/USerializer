@@ -10,10 +10,19 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class UIntSerializer : CustomDataSerializer
     {
+        private DataType _dataType;
         public override Type SerializedType => typeof(uint);
+        public override DataType GetDataType() => _dataType;
 
-        public UIntSerializer() : base(DataType.UInt32)
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out UInt32DataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -28,4 +37,10 @@ namespace USerialization
             *value = input.ReadUInt();
         }
     }
+
+    public sealed class UInt32DataTypeLogic : UnmanagedDataTypeLogic<UInt32>
+    {
+
+    }
+
 }

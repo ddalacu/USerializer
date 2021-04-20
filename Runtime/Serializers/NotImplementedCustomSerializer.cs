@@ -10,10 +10,7 @@ namespace USerialization
     {
         public override Type SerializedType => typeof(T);
 
-        public NotImplementedCustomSerializer() : base(DataType.None)
-        {
-
-        }
+        public override DataType GetDataType() => DataType.None;
 
         public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {

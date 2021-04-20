@@ -171,6 +171,20 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe double ReadDouble()
+        {
+            EnsureNext(8);
+
+            uint lo = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
+                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
+            uint hi = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
+                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
+
+            ulong tmpBuffer = ((ulong)hi) << 32 | lo;
+            return *((double*)&tmpBuffer);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe float ReadFloatUnchecked()
         {
             uint tmpBuffer = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);

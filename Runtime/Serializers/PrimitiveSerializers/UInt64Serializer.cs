@@ -11,10 +11,20 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class UInt64Serializer : CustomDataSerializer
     {
+        private DataType _dataType;
         public override Type SerializedType => typeof(ulong);
 
-        public UInt64Serializer() : base(DataType.UInt64)
+        public override DataType GetDataType() => _dataType;
+
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out UInt64DataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -28,5 +38,9 @@ namespace USerialization
             var value = (ulong*)(fieldAddress);
             *value = input.ReadUInt64();
         }
+    }
+
+    public sealed class UInt64DataTypeLogic : UnmanagedDataTypeLogic<UInt64>
+    {
     }
 }

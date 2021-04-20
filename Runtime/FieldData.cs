@@ -62,7 +62,7 @@ namespace USerialization
 
                 output.EnsureNext(5);
                 output.WriteIntUnchecked(fieldData.FieldNameHash);
-                output.WriteByteUnchecked((byte)fieldData.SerializationMethods.DataType);
+                output.WriteByteUnchecked((byte)fieldData.SerializationMethods.GetDataType());
 
                 fieldData.SerializationMethods.WriteDelegate(objectAddress + fieldData.Offset, output);
             }
@@ -71,7 +71,7 @@ namespace USerialization
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe void ReadFields(this FieldData[] fieldDatas, byte* objectAddress, SerializerInput input)
+        public static unsafe void ReadFields(this FieldData[] fieldDatas, byte* objectAddress, SerializerInput input, DataTypesDatabase dataTypesDatabase)
         {
             var fieldCount = input.ReadByte();
             var fieldsLength = fieldDatas.Length;
@@ -91,10 +91,12 @@ namespace USerialization
 
                     if (field == fieldData.FieldNameHash)
                     {
-                        if (type == fieldData.SerializationMethods.DataType)
+                        var dataSerializer = fieldData.SerializationMethods;
+
+                        if (type == dataSerializer.GetDataType())
                         {
                             var fieldDataOffset = objectAddress + fieldData.Offset;
-                            fieldData.SerializationMethods.ReadDelegate(fieldDataOffset, input);
+                            dataSerializer.ReadDelegate(fieldDataOffset, input);
                             deserialized = true;
                         }
 
@@ -112,7 +114,7 @@ namespace USerialization
                     else
                     {
                         //Debug.Log($"Skipping field of type {type}");
-                        DataTypeLogic.SkipData(type, input);
+                        dataTypesDatabase.SkipData(type, input);
                     }
                 }
             }

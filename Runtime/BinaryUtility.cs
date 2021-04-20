@@ -15,7 +15,7 @@ namespace USerialization
         static BinaryUtility()
         {
             var providers = ProvidersUtils.GetDefaultProviders();
-            _uSerializer = new USerializer(new UnitySerializationPolicy(), providers);
+            _uSerializer = new USerializer(new UnitySerializationPolicy(), providers, new DataTypesDatabase());
         }
 
         /// <summary>

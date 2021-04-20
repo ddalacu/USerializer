@@ -43,7 +43,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods = new ArrayDataSerializer(elementType, elementSerializer);
+            serializationMethods = new ArrayDataSerializer(elementType, elementSerializer, _serializer);
             return true;
         }
 
@@ -56,7 +56,12 @@ namespace USerialization
             private readonly DataSerializer _elementSerializer;
             private readonly int _size;
 
-            public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer) : base(DataType.Array)
+            private DataType _dataType;
+
+            public override DataType GetDataType() => _dataType;
+
+
+            public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer, USerializer serializer)
             {
                 if (elementType.IsValueType)
                     _size = UnsafeUtility.SizeOf(elementType);
@@ -65,6 +70,11 @@ namespace USerialization
 
                 _elementType = elementType;
                 _elementSerializer = elementSerializer;
+
+                var typeLogic = serializer.DataTypesDatabase;
+
+                if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic))
+                    _dataType = arrayDataTypeLogic.Value;
             }
 
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -82,7 +92,7 @@ namespace USerialization
                 var sizeTracker = output.BeginSizeTrack();
                 {
                     output.EnsureNext(6);
-                    output.WriteByteUnchecked((byte)_elementSerializer.DataType);
+                    output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
                     output.Write7BitEncodedIntUnchecked(count);
 
                     var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
@@ -111,7 +121,7 @@ namespace USerialization
                     if (array == null || array.Length != count)
                         array = Array.CreateInstance(_elementType, count);
 
-                    if (type == _elementSerializer.DataType)
+                    if (type == _elementSerializer.GetDataType())
                     {
                         var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
@@ -8,24 +9,19 @@ namespace USerialization
     {
         public abstract Type SerializedType { get; }
 
-        public virtual void Initialize(USerializer serializer)
+        public virtual bool TryInitialize(USerializer serializer)
         {
-
-        }
-
-        protected CustomDataSerializer(DataType dataType) : base(dataType)
-        {
-
+            return true;
         }
     }
 
     public class CustomSerializerProvider : ISerializationProvider
     {
-        private TypeDictionary<CustomDataSerializer> _instances;
+        private Dictionary<Type, CustomDataSerializer> _instances;
 
         public void Initialize(USerializer serializer)
         {
-            _instances = new TypeDictionary<CustomDataSerializer>(512);
+            _instances = new Dictionary<Type, CustomDataSerializer>(512);
 
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
@@ -55,9 +51,21 @@ namespace USerialization
 
         public void Start(USerializer serializer)
         {
-            foreach (var instance in _instances.Values())
+            var toRemove = new List<Type>();
+
+            foreach (var entry in _instances)
             {
-                instance.Initialize(serializer);
+                if (entry.Value.TryInitialize(serializer) == false)
+                    toRemove.Add(entry.Key);
+            }
+
+            foreach (var type in toRemove)
+                _instances.Remove(type);
+
+            foreach (var value in _instances.Values)
+            {
+                if (value.GetDataType() == DataType.None)
+                    Debug.LogError($"{value} should assign data type inside TryInitialize!");
             }
         }
 

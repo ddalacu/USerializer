@@ -303,6 +303,7 @@ namespace USerialization
             _position += 4;
         }
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteFloatUnchecked(float value)
         {
@@ -316,6 +317,23 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteDouble(double value)
+        {
+            EnsureNext(8);
+
+            ulong TmpValue = *(ulong*)&value;
+            _buffer[_position] = (byte)TmpValue;
+            _buffer[_position + 1] = (byte)(TmpValue >> 8);
+            _buffer[_position + 2] = (byte)(TmpValue >> 16);
+            _buffer[_position + 3] = (byte)(TmpValue >> 24);
+            _buffer[_position + 4] = (byte)(TmpValue >> 32);
+            _buffer[_position + 5] = (byte)(TmpValue >> 40);
+            _buffer[_position + 6] = (byte)(TmpValue >> 48);
+            _buffer[_position + 7] = (byte)(TmpValue >> 56);
+            _position += 8;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUInt(uint value)
         {
             EnsureNext(4);
@@ -325,6 +343,7 @@ namespace USerialization
             _buffer[_position + 3] = (byte)(value >> 24);
             _position += 4;
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUInt64(ulong value)

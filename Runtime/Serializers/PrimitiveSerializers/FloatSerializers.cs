@@ -11,11 +11,21 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class FloatSerializer : CustomDataSerializer
     {
+        private DataType _dataType;
+
         public override Type SerializedType => typeof(float);
 
-        public FloatSerializer() : base(DataType.Single)
-        {
+        public override DataType GetDataType() => _dataType;
 
+        public override bool TryInitialize(USerializer serializer)
+        {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out SingleDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -31,4 +41,8 @@ namespace USerialization
         }
     }
 
+    public sealed class SingleDataTypeLogic : UnmanagedDataTypeLogic<float>
+    {
+
+    }
 }

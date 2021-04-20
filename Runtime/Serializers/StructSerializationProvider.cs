@@ -47,7 +47,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods = new StructDataSerializer(typeData);
+            serializationMethods = new StructDataSerializer(typeData, _serializer);
             return true;
         }
 
@@ -56,10 +56,18 @@ namespace USerialization
         public class StructDataSerializer : DataSerializer
         {
             private FieldData[] _fields;
+            private DataTypesDatabase _dataTypesDatabase;
+            private DataType _dataType;
 
-            public StructDataSerializer(TypeData typeData) : base(DataType.Object)
+            public override DataType GetDataType() => _dataType;
+
+            public StructDataSerializer(TypeData typeData, USerializer serializer)
             {
                 _fields = typeData.Fields;
+                _dataTypesDatabase = serializer.DataTypesDatabase;
+
+                if (_dataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
+                    _dataType = arrayDataTypeLogic.Value;
             }
 
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -75,7 +83,7 @@ namespace USerialization
             {
                 if (input.BeginReadSize(out var end))
                 {
-                    _fields.ReadFields((byte*)fieldAddress, input);
+                    _fields.ReadFields((byte*)fieldAddress, input, _dataTypesDatabase);
 
                     input.EndObject(end);
                 }

@@ -17,8 +17,19 @@ namespace USerialization
     {
         public override Type SerializedType => typeof(byte);
 
-        public ByteSerializer() : base(DataType.Byte)
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out ByteDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -34,14 +45,37 @@ namespace USerialization
         }
     }
 
+    public sealed class ByteDataTypeLogic : UnmanagedDataTypeLogic<byte>
+    {
+
+    }
+
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class ByteArraySerializer : CustomDataSerializer
     {
         public override Type SerializedType => typeof(byte[]);
 
-        public ByteArraySerializer() : base(DataType.Array)
+        private DataType _elementDataType;
+
+
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+            if (typeLogic.TryGet(out ByteDataTypeLogic result) == false)
+                return false;
+
+            _elementDataType = result.Value;
+
+            if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -55,7 +89,7 @@ namespace USerialization
 
                     output.EnsureNext(6 + (count * sizeof(byte)));
 
-                    output.WriteByteUnchecked((byte)DataType.Byte);
+                    output.WriteByteUnchecked((byte)_elementDataType);
                     output.Write7BitEncodedIntUnchecked(count);
 
                     output.WriteBytesUnchecked(array, count);
@@ -78,7 +112,7 @@ namespace USerialization
 
                 var count = input.Read7BitEncodedInt();
 
-                if (type == DataType.Byte)
+                if (type == _elementDataType)
                 {
                     array = input.ReadBytes(count);
                 }
@@ -104,9 +138,31 @@ namespace USerialization
 
         private readonly ListHelper<byte> _listHelper;
 
-        public ByteListSerializer() : base(DataType.Array)
+        private DataType _elementDataType;
+
+
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        public ByteListSerializer()
         {
             _listHelper = ListHelper<byte>.Create();
+        }
+
+        public override bool TryInitialize(USerializer serializer)
+        {
+            var typeLogic = serializer.DataTypesDatabase;
+            if (typeLogic.TryGet(out ByteDataTypeLogic result) == false)
+                return false;
+
+            _elementDataType = result.Value;
+
+            if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -124,7 +180,7 @@ namespace USerialization
 
                 output.EnsureNext(6 + (count * sizeof(byte)));
 
-                output.WriteByteUnchecked((byte)DataType.Byte);
+                output.WriteByteUnchecked((byte)_elementDataType);
                 output.Write7BitEncodedIntUnchecked(count);
                 output.WriteBytesUnchecked(array, count);
             }
@@ -142,7 +198,7 @@ namespace USerialization
                 var count = input.Read7BitEncodedInt();
                 list = new List<byte>();
 
-                if (type == DataType.Byte)
+                if (type == _elementDataType)
                 {
                     _listHelper.SetArray(list, input.ReadBytes(count));
                 }

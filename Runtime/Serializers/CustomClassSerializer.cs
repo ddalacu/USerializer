@@ -20,7 +20,11 @@ namespace USerialization
 
         private MemberSerializerStruct[] _members;
 
-        protected CustomClassSerializer() : base(DataType.Object)
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        protected CustomClassSerializer()
         {
             _type = typeof(T);
 
@@ -29,7 +33,7 @@ namespace USerialization
                 Debug.LogError("This is not supported!");
         }
 
-        public override void Initialize(USerializer serializer)
+        public override bool TryInitialize(USerializer serializer)
         {
             _serializer = serializer;
 
@@ -38,6 +42,12 @@ namespace USerialization
             LocalInit(adder);
 
             _members = adder.GetMembers();
+
+            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
 
@@ -64,7 +74,7 @@ namespace USerialization
                 if (objectInstance == null)
                     objectInstance = Activator.CreateInstance(_type);
 
-                _members.ReadFields((byte*)fieldAddress, input);
+                _members.ReadFields((byte*)fieldAddress, input, _serializer.DataTypesDatabase);
 
                 input.EndObject(end);
             }
@@ -91,7 +101,11 @@ namespace USerialization
 
         private MemberSerializerStruct[] _members;
 
-        protected CustomStructSerializer() : base(DataType.Object)
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        protected CustomStructSerializer()
         {
             _type = typeof(T);
 
@@ -100,15 +114,19 @@ namespace USerialization
                 Debug.LogError("This is not supported!");
         }
 
-        public override void Initialize(USerializer serializer)
+        public override bool TryInitialize(USerializer serializer)
         {
             _serializer = serializer;
 
             var adder = new StructMemberAdder<T>(serializer);
-
             LocalInit(adder);
-
             _members = adder.GetMembers();
+
+            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
@@ -124,7 +142,7 @@ namespace USerialization
         {
             if (input.BeginReadSize(out var end))
             {
-                _members.ReadFields((byte*)fieldAddress, input);
+                _members.ReadFields((byte*)fieldAddress, input, _serializer.DataTypesDatabase);
                 input.EndObject(end);
             }
             else

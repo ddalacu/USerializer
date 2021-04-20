@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -33,7 +32,7 @@ namespace USerialization
                 var field = members[i];
                 var fieldDataSerializer = field.DataSerializer;
                 output.WriteIntUnchecked(field.Hash);
-                output.WriteByteUnchecked((byte)fieldDataSerializer.DataType);
+                output.WriteByteUnchecked((byte)fieldDataSerializer.GetDataType());
                 fieldDataSerializer.WriteDelegate(fieldAddress, output);
             }
         }
@@ -41,7 +40,7 @@ namespace USerialization
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe void ReadFields(this MemberSerializerStruct[] members, byte* fieldAddress, SerializerInput input)
+        public static unsafe void ReadFields(this MemberSerializerStruct[] members, byte* fieldAddress, SerializerInput input, DataTypesDatabase dataTypesDatabase)
         {
             var fieldsCount = input.ReadByte();
             var size = members.Length;
@@ -62,7 +61,7 @@ namespace USerialization
 
                     if (field == fieldData.Hash)
                     {
-                        if (type == dataSerializer.DataType)
+                        if (type == dataSerializer.GetDataType())
                         {
                             dataSerializer.ReadDelegate(fieldAddress, input);
                             deserialized = true;
@@ -75,7 +74,7 @@ namespace USerialization
 
                 if (deserialized == false)
                 {
-                    DataTypeLogic.SkipData(type, input);
+                    dataTypesDatabase.SkipData(type, input);
                 }
             }
         }

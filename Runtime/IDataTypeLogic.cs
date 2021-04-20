@@ -5,17 +5,19 @@ namespace USerialization
 {
     public interface IDataTypeLogic
     {
-        DataType Value { get; }
-
+        DataType Value { get; set; }
         void Skip(SerializerInput input);
     }
 
-    public class DataTypeLogic
+    public class DataTypesDatabase
     {
-        private static Dictionary<DataType, IDataTypeLogic> _dataEntries = new Dictionary<DataType, IDataTypeLogic>();
+        private Dictionary<DataType, IDataTypeLogic> _dataEntries;
 
-        static DataTypeLogic()
+        private byte _counter;
+
+        public DataTypesDatabase()
         {
+            _dataEntries = new Dictionary<DataType, IDataTypeLogic>(32);
             Register<ByteDataTypeLogic>();
             Register<SByteDataTypeLogic>();
             Register<CharDataTypeLogic>();
@@ -33,18 +35,39 @@ namespace USerialization
             Register<ObjectDataTypeLogic>();
         }
 
-        public static void Register<T>() where T : IDataTypeLogic, new()
+        public void Register<T>() where T : IDataTypeLogic, new()
         {
             var instance = new T();
-            _dataEntries.Add(instance.Value, instance);
+            if (_counter == 255)
+                throw new Exception("To many data types!");
+
+            _counter++;
+            var dataType = (DataType)_counter;
+            instance.Value = dataType;
+            _dataEntries.Add(dataType, instance);
         }
 
-        public static bool GetForType(DataType type, out IDataTypeLogic dataTypeLogic)
+        public bool TryGet<T>(out T result) where T : IDataTypeLogic, new()
+        {
+            foreach (var dataEntriesKey in _dataEntries.Values)
+            {
+                if (dataEntriesKey is T casted)
+                {
+                    result = casted;
+                    return true;
+                }
+            }
+
+            result = default;
+            return false;
+        }
+
+        public bool GetForType(DataType type, out IDataTypeLogic dataTypeLogic)
         {
             return _dataEntries.TryGetValue(type, out dataTypeLogic);
         }
 
-        public static void SkipData(DataType type, SerializerInput serializerInput)
+        public void SkipData(DataType type, SerializerInput serializerInput)
         {
             if (GetForType(type, out var dataEntry))
             {

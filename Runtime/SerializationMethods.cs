@@ -1,32 +1,21 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace USerialization
 {
     public abstract unsafe class DataSerializer
     {
-        private DataType _dataType;
-
-        public DataType DataType
-        {
-            get => _dataType;
-            protected set => _dataType = value;
-        }
-
-        protected DataSerializer(DataType dataType)
-        {
-            _dataType = dataType;
-        }
+        public abstract DataType GetDataType();
 
         public abstract void WriteDelegate(void* fieldAddress, SerializerOutput output);
 
         public abstract void ReadDelegate(void* fieldAddress, SerializerInput input);
+
     }
 
     public readonly unsafe struct TypedDataSerializer<T>
     {
         private readonly DataSerializer _methods;
-
-        public DataType DataType => _methods.DataType;
 
         public TypedDataSerializer(DataSerializer methods)
         {

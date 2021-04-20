@@ -237,7 +237,11 @@ namespace USerialization
             private int _size;
             private Type _fieldType;
 
-            public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer) : base(DataType.Array)
+            private DataType _dataType;
+
+            public override DataType GetDataType() => _dataType;
+
+            public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer, USerializer serializer)
             {
                 _fieldType = fieldType;
                 _elementType = elementType;
@@ -248,6 +252,9 @@ namespace USerialization
                     _size = UnsafeUtility.SizeOf(elementType);
                 else
                     _size = UnsafeUtility.SizeOf(typeof(IntPtr));
+
+                if (serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic))
+                    _dataType = arrayDataTypeLogic.Value;
             }
 
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -265,7 +272,7 @@ namespace USerialization
                 var sizeTracker = output.BeginSizeTrack();
                 {
                     output.EnsureNext(6);
-                    output.WriteByteUnchecked((byte)_elementSerializer.DataType);
+                    output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
                     output.Write7BitEncodedIntUnchecked(count);
 
                     var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
@@ -319,7 +326,7 @@ namespace USerialization
                         }
                     }
 
-                    if (type == _elementSerializer.DataType)
+                    if (type == _elementSerializer.GetDataType())
                     {
                         var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
@@ -364,7 +371,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods = new ListDataSerializer(type, elementType, elementDataSerializer);
+            serializationMethods = new ListDataSerializer(type, elementType, elementDataSerializer, _serializer);
             return true;
         }
     }

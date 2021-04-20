@@ -11,9 +11,19 @@ namespace USerialization
     {
         public override Type SerializedType => typeof(ushort);
 
-        public UInt16Serializer() : base(DataType.UInt16)
-        {
+        private DataType _dataType;
 
+        public override DataType GetDataType() => _dataType;
+
+        public override bool TryInitialize(USerializer serializer)
+        {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out UInt16DataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -27,5 +37,9 @@ namespace USerialization
             var value = (ushort*)(fieldAddress);
             *value = input.ReadUInt16();
         }
+    }
+
+    public sealed class UInt16DataTypeLogic : UnmanagedDataTypeLogic<UInt16>
+    {
     }
 }

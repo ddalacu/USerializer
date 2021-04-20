@@ -17,20 +17,18 @@ namespace USerialization
 
         private DataSerializer _dataSerializer;
 
-        protected SurrogateSerializerBase() : base(DataType.None)
-        {
+        public override DataType GetDataType() => _dataSerializer.GetDataType();
 
-        }
-
-        public override void Initialize(USerializer serializer)
+        public override bool TryInitialize(USerializer serializer)
         {
             _serializer = serializer;
 
             var type = typeof(TSurrogate);
             if (_serializer.TryGetDataSerializer(type, out _dataSerializer))
-                DataType = _dataSerializer.DataType;
-            else
-                Debug.LogError($"Could not get serialization data for {type}");
+                return true;
+
+            Debug.LogError($"Could not get serialization data for {type}");
+            return false;
         }
 
         public abstract void CopyToSurrogate(ref T from, ref TSurrogate to);

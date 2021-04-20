@@ -11,10 +11,20 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class Int64Serializer : CustomDataSerializer
     {
+        private DataType _dataType;
         public override Type SerializedType => typeof(long);
 
-        public Int64Serializer() : base(DataType.Int64)
+        public override DataType GetDataType() => _dataType;
+
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out Int64DataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -29,4 +39,10 @@ namespace USerialization
             *value = input.ReadInt64();
         }
     }
+
+    public sealed class Int64DataTypeLogic : UnmanagedDataTypeLogic<Int64>
+    {
+
+    }
+
 }

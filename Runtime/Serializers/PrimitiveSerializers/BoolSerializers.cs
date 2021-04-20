@@ -13,8 +13,19 @@ namespace USerialization
     {
         public override Type SerializedType => typeof(bool);
 
-        public BoolSerializer() : base(DataType.Boolean)
+        private DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        public override bool TryInitialize(USerializer serializer)
         {
+            var typeLogic = serializer.DataTypesDatabase;
+
+            if (typeLogic.TryGet(out BooleanDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            _dataType = arrayDataTypeLogic.Value;
+            return true;
         }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -28,5 +39,9 @@ namespace USerialization
             var value = (bool*)(fieldAddress);
             *value = input.ReadByte() == 1;
         }
+    }
+
+    public sealed class BooleanDataTypeLogic : UnmanagedDataTypeLogic<bool>
+    {
     }
 }
