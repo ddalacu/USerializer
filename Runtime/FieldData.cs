@@ -62,9 +62,9 @@ namespace USerialization
 
                 output.EnsureNext(5);
                 output.WriteIntUnchecked(fieldData.FieldNameHash);
-                output.WriteByteUnchecked((byte)fieldData.SerializationMethods.GetDataType());
-
-                fieldData.SerializationMethods.WriteDelegate(objectAddress + fieldData.Offset, output);
+                var dataSerializer = fieldData.SerializationMethods;
+                output.WriteByteUnchecked((byte)dataSerializer.GetDataType());
+                dataSerializer.WriteDelegate(objectAddress + fieldData.Offset, output);
             }
         }
 

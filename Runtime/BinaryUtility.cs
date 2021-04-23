@@ -12,6 +12,8 @@ namespace USerialization
     {
         private static USerializer _uSerializer;
 
+        public static USerializer USerializer => _uSerializer;
+
         static BinaryUtility()
         {
             var providers = ProvidersUtils.GetDefaultProviders();
