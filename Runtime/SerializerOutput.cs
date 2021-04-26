@@ -161,9 +161,6 @@ namespace USerialization
 
         public void Write7BitEncodedInt(int value)
         {
-            // EnsureNext(5);
-            EnsureNext(1);
-
             // Write out an int 7 bits at a time.  The high bit of the byte,
             // when on, tells reader to continue reading more bytes.
             uint v = (uint)value;   // support negative numbers
@@ -174,6 +171,9 @@ namespace USerialization
                 _buffer[_position++] = (byte)(v | 0x80);
                 v >>= 7;
             }
+
+
+            EnsureNext(1);
 
             _buffer[_position++] = (byte)v;
         }
