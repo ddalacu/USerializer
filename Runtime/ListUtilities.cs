@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
 
 namespace USerialization
 {
@@ -22,15 +21,7 @@ namespace USerialization
             _sizeFieldOffset = UnsafeUtility.GetFieldOffset(sizeMember);
         }
 
-        public static unsafe void SetArray<T>(List<T> list, T[] array)
-        {
-            byte* listAddress;
-            UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
-
-            Unsafe.Write(listAddress + _itemsFieldOffset, array);
-            Unsafe.Write(listAddress + _sizeFieldOffset, array.Length);
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static List<T> Create<T>(T[] array)
         {
             var newInstance = new List<T>();
@@ -38,6 +29,7 @@ namespace USerialization
             return newInstance;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe T[] GetArray<T>(List<T> list, out int count)
         {
             byte* listAddress;
@@ -45,6 +37,8 @@ namespace USerialization
             count = *(int*)(listAddress + _sizeFieldOffset);
             return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void SetArray(object list, Array array)
         {
             byte* listAddress;
@@ -54,6 +48,7 @@ namespace USerialization
             Unsafe.Write(listAddress + _sizeFieldOffset, array.Length);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void SetArray(object list, Array array, int count)
         {
             byte* listAddress;
@@ -63,6 +58,7 @@ namespace USerialization
             Unsafe.Write(listAddress + _sizeFieldOffset, count);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void SetCount(object list, int count)
         {
             byte* listAddress;
