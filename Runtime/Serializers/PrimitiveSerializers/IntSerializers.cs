@@ -88,12 +88,19 @@ namespace USerialization
                 {
                     var count = array.Length;
 
-                    output.EnsureNext(6 + (count * sizeof(int)));
-                    output.WriteByteUnchecked((byte)_elementDataType);
-                    output.Write7BitEncodedIntUnchecked(count);
+                    if (count > 0)
+                    {
+                        output.EnsureNext(6 + (count * sizeof(int)));
+                        output.Write7BitEncodedIntUnchecked(count);
+                        output.WriteByteUnchecked((byte)_elementDataType);
 
-                    for (var i = 0; i < count; i++)
-                        output.WriteIntUnchecked(array[i]);
+                        for (var i = 0; i < count; i++)
+                            output.WriteIntUnchecked(array[i]);
+                    }
+                    else
+                    {
+                        output.WriteByte(0);
+                    }
                 }
                 output.WriteSizeTrack(sizeTracker);
             }
@@ -109,15 +116,17 @@ namespace USerialization
 
             if (input.BeginReadSize(out var end))
             {
-                var type = (DataType)input.ReadByte();
-
                 var count = input.Read7BitEncodedInt();
                 array = new int[count];
 
-                if (type == _elementDataType)
+                if (count > 0)
                 {
-                    for (var i = 0; i < count; i++)
-                        array[i] = input.ReadInt();
+                    var type = (DataType)input.ReadByte();
+                    if (type == _elementDataType)
+                    {
+                        for (var i = 0; i < count; i++)
+                            array[i] = input.ReadInt();
+                    }
                 }
 
                 input.EndObject(end);
@@ -178,14 +187,21 @@ namespace USerialization
             {
                 var count = list.Count;
 
+                if (count > 0)
+                {
+                    output.EnsureNext(6 + (count * sizeof(int)));
+                    output.Write7BitEncodedIntUnchecked(count);
+                    output.WriteByteUnchecked((byte)_elementDataType);
 
-                output.EnsureNext(6 + (count * sizeof(int)));
-                output.WriteByteUnchecked((byte)_elementDataType);
-                output.Write7BitEncodedIntUnchecked(count);
-
-                for (var i = 0; i < count; i++)
-                    output.WriteIntUnchecked(list[i]);
+                    for (var i = 0; i < count; i++)
+                        output.WriteIntUnchecked(list[i]);
+                }
+                else
+                {
+                    output.WriteByte(0);
+                }
             }
+
             output.WriteSizeTrack(sizeTracker);
         }
 
@@ -195,18 +211,20 @@ namespace USerialization
 
             if (input.BeginReadSize(out var end))
             {
-                var type = (DataType)input.ReadByte();
-
                 var count = input.Read7BitEncodedInt();
                 list = new List<int>();
                 var array = new int[count];
 
                 _listHelper.SetArray(list, array);
 
-                if (type == _elementDataType)
+                if (count > 0)
                 {
-                    for (var i = 0; i < count; i++)
-                        array[i] = input.ReadInt();
+                    var type = (DataType)input.ReadByte();
+                    if (type == _elementDataType)
+                    {
+                        for (var i = 0; i < count; i++)
+                            array[i] = input.ReadInt();
+                    }
                 }
 
                 input.EndObject(end);

@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.IL2CPP.CompilerServices;
-using UnityEngine;
 
 namespace USerialization
 {
@@ -69,12 +68,12 @@ namespace USerialization
 
                 var sizeTracker = output.BeginSizeTrack();
                 {
-                    output.EnsureNext(6);
-                    output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
-                    output.Write7BitEncodedIntUnchecked(count);
-
                     if (count > 0)
                     {
+                        output.EnsureNext(6);
+                        output.Write7BitEncodedIntUnchecked(count);
+                        output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
+
                         var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
                         for (var index = 0; index < count; index++)
@@ -84,6 +83,10 @@ namespace USerialization
                         }
 
                         UnsafeUtility.ReleaseGCObject(handle);
+                    }
+                    else
+                    {
+                        output.WriteByte(0);
                     }
                 }
 
@@ -96,7 +99,6 @@ namespace USerialization
 
                 if (input.BeginReadSize(out var end))
                 {
-                    var type = (DataType)input.ReadByte();
                     var count = input.Read7BitEncodedInt();
 
                     Array array;
@@ -127,17 +129,21 @@ namespace USerialization
                         }
                     }
 
-                    if (type == _elementSerializer.GetDataType())
+                    if (count > 0)
                     {
-                        var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-                        for (int i = 0; i < count; i++)
+                        var type = (DataType)input.ReadByte();
+                        if (type == _elementSerializer.GetDataType())
                         {
-                            _elementSerializer.ReadDelegate(address, input);
-                            address += _size;
-                        }
+                            var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
-                        UnsafeUtility.ReleaseGCObject(handle);
+                            for (int i = 0; i < count; i++)
+                            {
+                                _elementSerializer.ReadDelegate(address, input);
+                                address += _size;
+                            }
+
+                            UnsafeUtility.ReleaseGCObject(handle);
+                        }
                     }
 
                     input.EndObject(end);
