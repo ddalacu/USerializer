@@ -95,15 +95,18 @@ namespace USerialization
                     output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
                     output.Write7BitEncodedIntUnchecked(count);
 
-                    var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
-
-                    for (var index = 0; index < count; index++)
+                    if (count > 0)
                     {
-                        _elementSerializer.WriteDelegate(address, output);
-                        address += _size;
-                    }
+                        var address = (byte*)UnsafeUtility.PinGCArrayAndGetDataAddress(array, out var handle);
 
-                    UnsafeUtility.ReleaseGCObject(handle);
+                        for (var index = 0; index < count; index++)
+                        {
+                            _elementSerializer.WriteDelegate(address, output);
+                            address += _size;
+                        }
+
+                        UnsafeUtility.ReleaseGCObject(handle);
+                    }
                 }
                 output.WriteSizeTrack(sizeTracker);
             }

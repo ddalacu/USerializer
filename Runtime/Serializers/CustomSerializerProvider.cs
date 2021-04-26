@@ -40,10 +40,6 @@ namespace USerialization
                     }
 
                     var instance = (CustomDataSerializer)Activator.CreateInstance(attribute.SerializerType);
-
-                    if (serializer.SerializationPolicy.ShouldSerialize(instance.SerializedType) == false)
-                        continue;
-
                     _instances.Add(instance.SerializedType, instance);
                 }
             }
@@ -71,6 +67,7 @@ namespace USerialization
 
         public bool TryGet(Type type, out DataSerializer dataSerializer)
         {
+
             if (_instances.TryGetValue(type, out var instance))
             {
                 dataSerializer = instance;// new SerializationMethods(instance.Write, instance.Read, instance.DataType);
