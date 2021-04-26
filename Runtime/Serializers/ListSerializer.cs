@@ -30,7 +30,6 @@ namespace USerialization
         {
             private readonly Type _elementType;
             private readonly DataSerializer _elementSerializer;
-            private ListHelper _listHelper;
             private int _size;
             private Type _fieldType;
 
@@ -43,7 +42,6 @@ namespace USerialization
                 _fieldType = fieldType;
                 _elementType = elementType;
                 _elementSerializer = elementSerializer;
-                _listHelper = ListHelper.Create(fieldType);
 
                 if (elementType.IsValueType)
                     _size = UnsafeUtility.SizeOf(elementType);
@@ -64,7 +62,7 @@ namespace USerialization
                     return;
                 }
 
-                var array = _listHelper.GetArray(list, out var count);
+                var array = ListHelpers.GetArray(list, out var count);
 
                 var sizeTracker = output.BeginSizeTrack();
                 {
@@ -107,16 +105,16 @@ namespace USerialization
                     {
                         list = FormatterServices.GetUninitializedObject(_fieldType);
                         array = Array.CreateInstance(_elementType, count);
-                        _listHelper.SetArray(list, array, count);
+                        ListHelpers.SetArray(list, array, count);
                     }
                     else
                     {
-                        array = _listHelper.GetArray(list, out var currentCount);
+                        array = ListHelpers.GetArray(list, out var currentCount);
 
                         if (currentCount < count)//if we need more elements in the array then we allocate a array
                         {
                             array = Array.CreateInstance(_elementType, count);
-                            _listHelper.SetArray(list, array, count);
+                            ListHelpers.SetArray(list, array, count);
                         }
                         else
                         {
@@ -124,7 +122,7 @@ namespace USerialization
                             {
                                 var remaining = currentCount - count;
                                 Array.Clear(array, count, remaining);
-                                _listHelper.SetCount(list, count);
+                                ListHelpers.SetCount(list, count);
                             }
                         }
                     }

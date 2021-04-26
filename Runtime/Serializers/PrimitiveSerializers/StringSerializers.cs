@@ -156,18 +156,11 @@ namespace USerialization
     {
         public override Type SerializedType => typeof(List<string>);
 
-        private static readonly ListHelper<string> _listHelper;
-
         private DataType _elementDataType;
 
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
-
-        static StringListSerializer()
-        {
-            _listHelper = ListHelper<string>.Create();
-        }
 
         public override bool TryInitialize(USerializer serializer)
         {
@@ -227,7 +220,7 @@ namespace USerialization
                 list = new List<string>();
                 var array = new string[count];
 
-                _listHelper.SetArray(list, array);
+                ListHelpers.SetArray(list, array);
 
                 if (count > 0)
                 {

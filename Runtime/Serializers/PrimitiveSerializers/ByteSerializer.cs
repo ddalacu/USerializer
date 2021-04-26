@@ -147,19 +147,12 @@ namespace USerialization
     {
         public override Type SerializedType => typeof(List<byte>);
 
-        private readonly ListHelper<byte> _listHelper;
-
         private DataType _elementDataType;
 
 
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
-
-        public ByteListSerializer()
-        {
-            _listHelper = ListHelper<byte>.Create();
-        }
 
         public override bool TryInitialize(USerializer serializer)
         {
@@ -187,7 +180,7 @@ namespace USerialization
 
             var sizeTracker = output.BeginSizeTrack();
             {
-                var array = _listHelper.GetArray(list, out var count);
+                var array = ListHelpers.GetArray<byte>(list, out var count);
 
                 if (count > 0)
                 {
@@ -221,16 +214,16 @@ namespace USerialization
 
                     if (type == _elementDataType)
                     {
-                        _listHelper.SetArray(list, input.ReadBytes(count));
+                        ListHelpers.SetArray(list, input.ReadBytes(count));
                     }
                     else
                     {
-                        _listHelper.SetArray(list, new byte[count]);
+                        ListHelpers.SetArray(list, new byte[count]);
                     }
                 }
                 else
                 {
-                    _listHelper.SetArray(list, new byte[0]);
+                    ListHelpers.SetArray(list, Array.Empty<byte>());
                 }
 
                 input.EndObject(end);

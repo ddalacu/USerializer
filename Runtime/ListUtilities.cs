@@ -3,33 +3,26 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace USerialization
 {
-    public readonly struct ListHelper<T>
+    public static class ListHelpers
     {
-        private readonly int _itemsFieldOffset;
-        private readonly int _sizeFieldOffset;
+        private static readonly int _itemsFieldOffset;
+        private static readonly int _sizeFieldOffset;
 
-        private ListHelper(int itemsFieldOffset, int sizeFieldOffset)
+        static ListHelpers()
         {
-            _itemsFieldOffset = itemsFieldOffset;
-            _sizeFieldOffset = sizeFieldOffset;
-        }
-
-        public static ListHelper<T> Create()
-        {
-            var listType = typeof(List<T>);
+            var listType = typeof(List<object>);
             var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
             var sizeMember = listType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
 
-            var itemsFieldOffset = UnsafeUtility.GetFieldOffset(itemsMember);
-            var sizeFieldOffset = UnsafeUtility.GetFieldOffset(sizeMember);
-
-            return new ListHelper<T>(itemsFieldOffset, sizeFieldOffset);
+            _itemsFieldOffset = UnsafeUtility.GetFieldOffset(itemsMember);
+            _sizeFieldOffset = UnsafeUtility.GetFieldOffset(sizeMember);
         }
 
-        public unsafe void SetArray(List<T> list, T[] array)
+        public static unsafe void SetArray<T>(List<T> list, T[] array)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
@@ -38,45 +31,21 @@ namespace USerialization
             Unsafe.Write(listAddress + _sizeFieldOffset, array.Length);
         }
 
-        public List<T> Create(T[] array)
+        public static List<T> Create<T>(T[] array)
         {
             var newInstance = new List<T>();
             SetArray(newInstance, array);
             return newInstance;
         }
 
-        public unsafe T[] GetArray(List<T> list, out int count)
+        public static unsafe T[] GetArray<T>(List<T> list, out int count)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
             count = *(int*)(listAddress + _sizeFieldOffset);
             return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
         }
-    }
-
-    public readonly struct ListHelper
-    {
-        private readonly int _itemsFieldOffset;
-        private readonly int _sizeFieldOffset;
-
-        private ListHelper(int itemsFieldOffset, int sizeFieldOffset)
-        {
-            _itemsFieldOffset = itemsFieldOffset;
-            _sizeFieldOffset = sizeFieldOffset;
-        }
-
-        public static ListHelper Create(Type listType)
-        {
-            var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
-            var sizeMember = listType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
-
-            var itemsFieldOffset = UnsafeUtility.GetFieldOffset(itemsMember);
-            var sizeFieldOffset = UnsafeUtility.GetFieldOffset(sizeMember);
-
-            return new ListHelper(itemsFieldOffset, sizeFieldOffset);
-        }
-
-        public unsafe void SetArray(object list, Array array)
+        public static unsafe void SetArray(object list, Array array)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
@@ -85,7 +54,7 @@ namespace USerialization
             Unsafe.Write(listAddress + _sizeFieldOffset, array.Length);
         }
 
-        public unsafe void SetArray(object list, Array array, int count)
+        public static unsafe void SetArray(object list, Array array, int count)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
@@ -94,7 +63,7 @@ namespace USerialization
             Unsafe.Write(listAddress + _sizeFieldOffset, count);
         }
 
-        public unsafe void SetCount(object list, int count)
+        public static unsafe void SetCount(object list, int count)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
@@ -102,7 +71,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe Array GetArray(object list, out int count)
+        public static unsafe Array GetArray(object list, out int count)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
@@ -112,26 +81,13 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe T[] GetArray<T>(object list, out int count)
+        public static unsafe T[] GetArray<T>(object list, out int count)
         {
             byte* listAddress;
             UnsafeUtility.CopyObjectAddressToPtr(list, &listAddress);
 
             count = *(int*)(listAddress + _sizeFieldOffset);
             return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
-        }
-    }
-
-
-    public static class ListUtilities
-    {
-        public static void GetListOffsets(Type listType, out int itemsFieldOffset, out int sizeFieldOffset)
-        {
-            var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
-            var sizeMember = listType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
-
-            itemsFieldOffset = UnsafeUtility.GetFieldOffset(itemsMember);
-            sizeFieldOffset = UnsafeUtility.GetFieldOffset(sizeMember);
         }
     }
 }
