@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using CommandLine;
 using Microcharts;
 using SkiaSharp;
@@ -19,7 +20,7 @@ namespace PerformanceTests
         {
             var fail = 0;
             Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(Execute).WithNotParsed(
-                delegate(IEnumerable<Error> errors)
+                delegate (IEnumerable<Error> errors)
                 {
                     foreach (var error in errors)
                     {
@@ -60,20 +61,25 @@ namespace PerformanceTests
 
             chart.MaxValue = 100;
             chart.IsAnimated = false;
+            chart.AnimationProgress = 1;
+            chart.Margin =60;
             //chart.BackgroundColor = new SKColor(255, 255, 255);
 
             // chart.LabelTextSize = 10;
 
-            var info = new SKImageInfo(1024, 1024, SKColorType.Rgba8888);
+            var width = 1024;
+            var height = 512;
+
+            var info = new SKImageInfo(width, height, SKColorType.Rgba8888);
 
             using (var surface = SKSurface.Create(info))
             {
                 SKCanvas canvas = surface.Canvas;
-                canvas.Clear(SKColors.White);
+                canvas.Clear(SKColors.Transparent);
 
                 //canvas.DrawColor(new SKColor(0, 0, 0), SKBlendMode.Src);
-                chart.AnimationProgress = 1;
-                chart.DrawContent(canvas, 1024, 1024);
+
+                chart.DrawContent(canvas, width, height);
 
                 //canvas.Save();
 
@@ -86,7 +92,8 @@ namespace PerformanceTests
                     TextSize = 20
                 };
                 Console.WriteLine(options.Branch);
-                canvas.DrawText($"Branch:{options.Branch}", new SKPoint(50, 50), paint);
+                canvas.DrawText($"{DateTime.Now.ToLongDateString()}  {options.Branch}", new SKPoint(50, 25), paint);
+                //canvas.DrawText(DateTime.Now.ToLongDateString(), new SKPoint(50, 100), paint);
 
                 canvas.Flush();
                 canvas.Save();
