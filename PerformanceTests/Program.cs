@@ -86,6 +86,10 @@ namespace PerformanceTests
                 }
 
                 Console.WriteLine(file);
+
+
+                File.WriteAllText(Path.Combine(directory, "index.html"), "HelloWorld");
+
             }
 
         }
