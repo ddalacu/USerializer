@@ -26,7 +26,7 @@ jobs:
     # - name: Test
       # run: dotnet test --no-build --verbosity normal
     - name: PerormanceTest
-      run: dotnet run --project PerformanceTests
+      run: dotnet run --project PerformanceTests --branch $(git rev-parse --short "$GITHUB_SHA")
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:

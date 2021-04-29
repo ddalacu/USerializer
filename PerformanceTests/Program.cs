@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using CommandLine;
 using Microcharts;
 using SkiaSharp;
 
@@ -8,9 +9,19 @@ namespace PerformanceTests
 {
     class Program
     {
+        public class Options
+        {
+            [Option('b', "branch", Required = false, HelpText = "Branch.", Default = "UNKNOWN-BRANCH")]
+            public string Branch { get; set; }
+        }
+
         static void Main(string[] args)
         {
+            Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(Execute);
+        }
 
+        private static void Execute(Options options)
+        {
             var chart = new BarChart
             {
                 Entries = new List<ChartEntry>()
@@ -60,9 +71,11 @@ namespace PerformanceTests
                 {
                     IsAntialias = true,
                     Color = new SKColor(0x2c, 0x3e, 0x50),
-                    StrokeCap = SKStrokeCap.Round
+                    StrokeCap = SKStrokeCap.Round,
+                    TextSize = 20
                 };
-
+                Console.WriteLine(options.Branch);
+                canvas.DrawText($"Branch:{options.Branch}", new SKPoint(50, 50), paint);
 
                 canvas.Flush();
                 canvas.Save();
@@ -85,13 +98,8 @@ namespace PerformanceTests
                     }
                 }
 
-                Console.WriteLine(file);
-
-
-                File.WriteAllText(Path.Combine(directory, "index.html"), "HelloWorld");
-
+                File.WriteAllText(Path.Combine(directory, "index.html"), "Nothing to see here, go to the repo page!");
             }
-
         }
     }
 }
