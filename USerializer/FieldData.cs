@@ -1,12 +1,6 @@
-﻿using System;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
-
-#if UNITY
-using UnityEngine.Serialization;
-#endif
 
 namespace USerialization
 {
@@ -14,7 +8,6 @@ namespace USerialization
     [StructLayout(LayoutKind.Auto)]
     public readonly struct FieldData
     {
-        //public readonly FieldInfo FieldInfo;
         public readonly int FieldNameHash;
         public readonly ushort Offset;
         public readonly DataSerializer SerializationMethods;
@@ -26,13 +19,6 @@ namespace USerialization
             SerializationMethods = serializationMethods;
             Offset = offset;
             FieldNameHash = fieldName.GetInt32Hash();
-
-
-            //if (_formerlySerializedAsType == null)
-            //    _formerlySerializedAsType = typeof(FormerlySerializedAsAttribute);
-
-            //var attributes = (FormerlySerializedAsAttribute[])fieldInfo.GetCustomAttributes(_formerlySerializedAsType, false);
-
 
             if (alternateFieldNames != null &&
                 alternateFieldNames.Length != 0)
