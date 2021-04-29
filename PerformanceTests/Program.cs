@@ -70,11 +70,16 @@ namespace PerformanceTests
 
                 var snapshot = surface.Snapshot();
 
-                var file = $"output.png";
+                var directory = "public";
+
+                if (Directory.Exists(directory) == false)
+                    Directory.CreateDirectory(directory);
+
+                var file = Path.Combine(directory, $"output.png");
 
                 using (var data = snapshot.Encode(SKEncodedImageFormat.Png, 80))
                 {
-                    using (var stream = File.OpenWrite($"output.png"))
+                    using (var stream = File.OpenWrite(file))
                     {
                         data.SaveTo(stream);
                     }
