@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microcharts" Version="0.9.5.9" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.80.2" />
   </ItemGroup>
 
 </Project>
