@@ -1,4 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
-    <ui:VisualElement name="HistoryElement" style="height: 20px;" />
-    <ui:ListView focusable="True" item-height="20" style="flex-grow: 1;" />
-</ui:UXML>
