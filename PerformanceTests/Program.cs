@@ -15,9 +15,20 @@ namespace PerformanceTests
             public string Branch { get; set; }
         }
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(Execute);
+            var fail = 0;
+            Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(Execute).WithNotParsed(
+                delegate(IEnumerable<Error> errors)
+                {
+                    foreach (var error in errors)
+                    {
+                        Console.Error.WriteLine(error.Tag);
+                    }
+
+                    fail = 1;
+                });
+            return fail;
         }
 
         private static void Execute(Options options)
