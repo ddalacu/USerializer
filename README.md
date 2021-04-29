@@ -2,6 +2,8 @@
 Fast c# binary serializer made for Unity3D but will run on net core and net framework
 No code generation, supports versioning
 
+![Performance image](../gh-pages/output.png)
+
  ```csharp
 	public class SerializeFieldAttribute : Attribute
     {
