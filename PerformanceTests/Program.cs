@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using CommandLine;
@@ -58,7 +59,7 @@ namespace PerformanceTests
             {
                 var destFileName = Path.Combine(directory, $"performance.md");
 
-                if(File.Exists(destFileName))
+                if (File.Exists(destFileName))
                     File.Delete(destFileName);
 
                 File.Move(htmlResult, destFileName);
@@ -87,7 +88,7 @@ namespace PerformanceTests
                 else
                     color = SKColor.Parse("#6666ff");
 
-                chartEntries.Add(new ChartEntry((float) meanMs)
+                chartEntries.Add(new ChartEntry((float)meanMs)
                 {
                     ValueLabelColor = new SKColor(10, 10, 10),
                     TextColor = new SKColor(1, 10, 10),
@@ -101,23 +102,20 @@ namespace PerformanceTests
             }
 
 
-            var chart = new BarChart()
+            var chart = new BarChart
             {
                 Entries = chartEntries,
                 LabelOrientation = Orientation.Horizontal,
                 ValueLabelOrientation = Orientation.Horizontal,
-                //PointMode = PointMode.Square,
-                //PointSize = 30
+                IsAnimated = false,
+                AnimationProgress = 1,
+                LabelTextSize = 14,
+                Typeface = SKTypeface.Default,
+                MaxValue = (float) (maxValue * 1.2f),
             };
 
-            chart.MaxValue = (float) (maxValue * 1.2f);
-            chart.IsAnimated = false;
-            chart.AnimationProgress = 1;
-            chart.LabelTextSize = 14;
-            chart.Margin = 60;
-
             var width = 1400;
-            var height = 800;
+            var height = 700;
 
             var info = new SKImageInfo(width, height, SKColorType.Rgba8888);
 
@@ -126,9 +124,12 @@ namespace PerformanceTests
                 SKCanvas canvas = surface.Canvas;
                 canvas.Clear(SKColors.Transparent);
 
+
                 //canvas.DrawColor(new SKColor(0, 0, 0), SKBlendMode.Src);
 
-                chart.DrawContent(canvas, width, height);
+                canvas.Translate(0,100);
+                chart.Draw(canvas, width, height);
+                canvas.Translate(0, -100);
 
                 //canvas.Save();
 
@@ -146,7 +147,6 @@ namespace PerformanceTests
 
                 canvas.Flush();
                 canvas.Save();
-
 
                 var snapshot = surface.Snapshot();
 
