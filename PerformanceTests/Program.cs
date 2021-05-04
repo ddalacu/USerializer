@@ -108,7 +108,7 @@ namespace PerformanceTests
                 ValueLabelOrientation = Orientation.Horizontal
             };
 
-            chart.MaxValue = (float) (maxValue * 1.2);
+            chart.MaxValue = (float) (maxValue * 1.2f);
             chart.IsAnimated = false;
             chart.AnimationProgress = 1;
             chart.LabelTextSize = 16;
@@ -122,7 +122,7 @@ namespace PerformanceTests
 
             // chart.LabelTextSize = 10;
 
-            var width = 1024;
+            var width = 1600;
             var height = 600;
 
             var info = new SKImageInfo(width, height, SKColorType.Rgba8888);
