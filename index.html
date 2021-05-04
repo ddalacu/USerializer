@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>PerformanceTests.SerializationBenchmarks-20210504-150200</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.12.1, OS=ubuntu 20.04
+Intel Xeon CPU E5-2673 v3 2.40GHz, 1 CPU, 2 logical and 2 physical cores
+.NET Core SDK=5.0.202
+  [Host]   : .NET Core 5.0.5 (CoreCLR 5.0.521.16609, CoreFX 5.0.521.16609), X64 RyuJIT
+  ShortRun : .NET Core 5.0.5 (CoreCLR 5.0.521.16609, CoreFX 5.0.521.16609), X64 RyuJIT
+</code></pre>
+<pre><code>Job=ShortRun  IterationCount=3  LaunchCount=1  
+WarmupCount=3  
+</code></pre>
+
+<table>
+<thead><tr><th>          Method</th><th>Mean</th><th>Error</th><th>StdDev</th>
+</tr>
+</thead><tbody><tr><td>USerializerSerialize</td><td>9.591 ms</td><td>1.835 ms</td><td>0.1006 ms</td>
+</tr><tr><td>USerializerDeserialize</td><td>35.298 ms</td><td>7.909 ms</td><td>0.4335 ms</td>
+</tr><tr><td>MessagePackSerialize</td><td>9.096 ms</td><td>3.955 ms</td><td>0.2168 ms</td>
+</tr><tr><td>MessagePackDeserialize</td><td>28.880 ms</td><td>15.317 ms</td><td>0.8396 ms</td>
+</tr></tbody></table>
+</body>
+</html>
