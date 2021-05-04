@@ -1,4 +1,7 @@
 # USerializer
+
+[![.NET](https://github.com/ddalacu/USerializer/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/ddalacu/USerializer/actions/workflows/dotnet.yml)
+
 USerializer is a version tolerant binary serializer.
 
 This serializer was made for Unity3D but will run on net core, net framework and mono (at least it should :)).

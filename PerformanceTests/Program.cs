@@ -116,11 +116,6 @@ namespace PerformanceTests
             chart.LabelTextSize = 14;
             chart.Margin = 60;
 
-
-            //chart.BackgroundColor = new SKColor(255, 255, 255);
-
-            // chart.LabelTextSize = 10;
-
             var width = 1400;
             var height = 800;
 
