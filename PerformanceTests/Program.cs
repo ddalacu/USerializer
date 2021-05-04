@@ -108,7 +108,6 @@ namespace PerformanceTests
                 LabelOrientation = Orientation.Horizontal,
                 ValueLabelOrientation = Orientation.Horizontal,
                 IsAnimated = false,
-                AnimationProgress = 1,
                 LabelTextSize = 14,
                 Typeface = SKTypeface.Default,
                 MaxValue = (float) (maxValue * 1.2f),
