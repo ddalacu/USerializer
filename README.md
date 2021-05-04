@@ -10,6 +10,6 @@ Uses same principles as Unity's serialization pipeline to make serialization as 
 
 ![Performance image](../gh-pages/output.png)
 
-![Html performance](https://ddalacu.github.io/USerializer/)
+[Html performance](https://ddalacu.github.io/USerializer/)
 
 For examples on how to use this please check the BinaryUtility.cs inside tests project

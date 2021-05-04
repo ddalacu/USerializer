@@ -52,11 +52,11 @@ namespace PerformanceTests
             var file = Path.Combine(directory, $"output.png");
 
 
-            var htmlResult = Directory.GetFiles(summary.ResultsDirectoryPath, "*.html").FirstOrDefault();
+            var htmlResult = Directory.GetFiles(summary.ResultsDirectoryPath, "*.md").FirstOrDefault();
 
             if (htmlResult != null)
             {
-                var destFileName = Path.Combine(directory, $"index.html");
+                var destFileName = Path.Combine(directory, $"performance.md");
 
                 if(File.Exists(destFileName))
                     File.Delete(destFileName);
@@ -101,13 +101,13 @@ namespace PerformanceTests
             }
 
 
-            var chart = new PointChart()
+            var chart = new BarChart()
             {
                 Entries = chartEntries,
                 LabelOrientation = Orientation.Horizontal,
                 ValueLabelOrientation = Orientation.Horizontal,
-                PointMode = PointMode.Square,
-                PointSize = 30
+                //PointMode = PointMode.Square,
+                //PointSize = 30
             };
 
             chart.MaxValue = (float) (maxValue * 1.2f);
@@ -115,9 +115,6 @@ namespace PerformanceTests
             chart.AnimationProgress = 1;
             chart.LabelTextSize = 14;
             chart.Margin = 60;
-            chart.PointAreaAlpha = 100;
-
-            //chart.BarAreaAlpha = 100;
 
 
             //chart.BackgroundColor = new SKColor(255, 255, 255);
@@ -125,7 +122,7 @@ namespace PerformanceTests
             // chart.LabelTextSize = 10;
 
             var width = 1400;
-            var height = 600;
+            var height = 800;
 
             var info = new SKImageInfo(width, height, SKColorType.Rgba8888);
 
