@@ -40,8 +40,11 @@ namespace USerialization
 
                     var instance = (CustomDataSerializer)Activator.CreateInstance(attribute.SerializerType);
 
-                    if (serializer.SerializationPolicy.ShouldSerialize(instance.SerializedType) == false)
-                        continue;
+                    //if (serializer.SerializationPolicy.ShouldSerialize(instance.SerializedType) == false)
+                    //{
+                    //    Console.WriteLine(instance.SerializedType);
+                    //    continue;
+                    //}
 
                     _instances.Add(instance.SerializedType, instance);
                 }
