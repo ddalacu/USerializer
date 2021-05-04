@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
+using Ceras;
 using MessagePack;
 
 namespace PerformanceTests
@@ -14,6 +15,8 @@ namespace PerformanceTests
 
         private MessagePackBenchmark<BookShelf> _messagePackBenchmark;
 
+        private CerasBenchmark<BookShelf> _cerasBenchmark;
+
         private BookShelf _toSerialize;
 
         [GlobalSetup]
@@ -21,10 +24,12 @@ namespace PerformanceTests
         {
             _uSerializer = new USerializerBenchmark<BookShelf>();
             _messagePackBenchmark = new MessagePackBenchmark<BookShelf>();
+            _cerasBenchmark = new CerasBenchmark<BookShelf>();
             _toSerialize = Data(10000);
 
             _uSerializer.Init(_toSerialize);
             _messagePackBenchmark.Init(_toSerialize);
+            _cerasBenchmark.Init(_toSerialize);
         }
 
         public int BookDataSize = 64;
@@ -79,10 +84,23 @@ namespace PerformanceTests
         {
             _messagePackBenchmark.TestDeserialize(_toSerialize);
         }
+
+        [Benchmark()]
+        public void CerasSerialize()
+        {
+            _cerasBenchmark.TestSerialize(_toSerialize);
+        }
+
+        [Benchmark()]
+        public void CerasDeserialize()
+        {
+            _cerasBenchmark.TestDeserialize(_toSerialize);
+        }
     }
 
     [Serializable]
     [MessagePackObject]
+    [MemberConfig(TargetMember.All)]
     public class BookShelf
     {
         [Key(0)]
@@ -112,6 +130,7 @@ namespace PerformanceTests
 
     [Serializable]
     [MessagePackObject]
+    [MemberConfig(TargetMember.All)]
     public class Book
     {
         [Key(0)]

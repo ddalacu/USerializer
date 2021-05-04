@@ -101,28 +101,30 @@ namespace PerformanceTests
             }
 
 
-            var chart = new BarChart()
+            var chart = new PointChart()
             {
                 Entries = chartEntries,
                 LabelOrientation = Orientation.Horizontal,
-                ValueLabelOrientation = Orientation.Horizontal
+                ValueLabelOrientation = Orientation.Horizontal,
+                PointMode = PointMode.Square,
+                PointSize = 30
             };
 
             chart.MaxValue = (float) (maxValue * 1.2f);
             chart.IsAnimated = false;
             chart.AnimationProgress = 1;
-            chart.LabelTextSize = 16;
-            chart.PointSize = 10;
-            chart.Margin = 50;
+            chart.LabelTextSize = 14;
+            chart.Margin = 60;
             chart.PointAreaAlpha = 100;
-            chart.BarAreaAlpha = 100;
+
+            //chart.BarAreaAlpha = 100;
 
 
             //chart.BackgroundColor = new SKColor(255, 255, 255);
 
             // chart.LabelTextSize = 10;
 
-            var width = 1600;
+            var width = 1400;
             var height = 600;
 
             var info = new SKImageInfo(width, height, SKColorType.Rgba8888);

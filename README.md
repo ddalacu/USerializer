@@ -1,8 +1,12 @@
 # USerializer
-Fast c# binary serializer made for Unity3D but will run on net core and net framework
-No code generation, supports versioning
+USerializer is a version tolerant binary serializer
+This serializer was made for Unity3D but will run on net core, net framework and mono (at least it should :))
+It uses no code generation so it works aot and it supports versioning
+
 
 ![Performance image](../gh-pages/output.png)
+
+![HtmlPerformance](../gh-pages/index.html)
 
  ```csharp
 	public class SerializeFieldAttribute : Attribute
