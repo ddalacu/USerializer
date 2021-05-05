@@ -123,6 +123,7 @@ namespace PerformanceTests
             chart.IsAnimated = false;
 
             var width = 1400;
+
             var height = 700;
 
             var info = new SKImageInfo(width, height, SKColorType.Rgba8888);
