@@ -117,6 +117,8 @@ namespace PerformanceTests
                 LabelTextSize = 14,
                 Typeface = SKTypeface.Default,
                 MaxValue = 1.15f,
+                AnimationDuration = TimeSpan.Zero,
+                AnimationProgress = 1f
             };
 
             var width = 1400;
