@@ -31,12 +31,9 @@ This project is best used in cases where no code generation is allowed and you d
 
 ![Performance image](../gh-pages/output.png)
 
-[Performance](../gh-pages/performance.md)
+[Performance.md](../gh-pages/performance.md)
 
 Performance comes close to MessagePackSerializer even if no code is generated!
 Ceras is slower in perf tests because version tolerance is set to VersionToleranceMode.Standard also ceras offers way more features than this library does
 
-Only serializes fields but you can implement add custom serializers and serialize properties too,
-for examples on how to do this check ExampleClassSerializer inside tests project
-
-For examples on how to use this system, please check the BinaryUtility.cs inside tests project
+For proper examples on how to use this system, please check the BinaryUtility.cs inside tests project
