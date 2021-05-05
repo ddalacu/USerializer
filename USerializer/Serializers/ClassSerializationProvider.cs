@@ -6,6 +6,15 @@ using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
+    public class CircularReferenceException : Exception
+    {
+        public CircularReferenceException(string message) : base(message)
+        {
+
+        }
+    }
+
+
     public unsafe class ClassSerializationProvider : ISerializationProvider
     {
         private USerializer _serializer;
@@ -91,6 +100,10 @@ namespace USerialization
                     _dataType = arrayDataTypeLogic.Value;
             }
 
+            private int _stack;
+
+            private const int MaxStack = 32;
+
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
             {
                 var obj = Unsafe.Read<object>(fieldAddress);
@@ -101,6 +114,11 @@ namespace USerialization
                     return;
                 }
 
+                if (_stack >= MaxStack)
+                    throw new CircularReferenceException("Circular references are not suported!");
+
+                _stack++;
+
                 var track = output.BeginSizeTrack();
 
                 var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
@@ -110,6 +128,8 @@ namespace USerialization
                 }
 
                 output.WriteSizeTrack(track);
+
+                _stack--;
             }
 
             public override void ReadDelegate(void* fieldAddress, SerializerInput input)
