@@ -18,6 +18,8 @@ namespace USerialization
     {
         private Dictionary<Type, CustomDataSerializer> _instances;
 
+        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public void Initialize(USerializer serializer)
         {
             _instances = new Dictionary<Type, CustomDataSerializer>(512);
@@ -34,7 +36,7 @@ namespace USerialization
                 {
                     if (customSerializerType.IsAssignableFrom(attribute.SerializerType) == false)
                     {
-                        throw new Exception($"{attribute.SerializerType} does not inherit {nameof(CustomDataSerializer)}");
+                        _log.Error($"{attribute.SerializerType} does not inherit {nameof(CustomDataSerializer)}");
                         continue;
                     }
 

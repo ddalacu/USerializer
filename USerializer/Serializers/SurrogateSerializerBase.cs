@@ -16,18 +16,18 @@ namespace USerialization
 
         private DataSerializer _dataSerializer;
 
+        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public override DataType GetDataType() => _dataSerializer.GetDataType();
 
         public override bool TryInitialize(USerializer serializer)
         {
             _serializer = serializer;
-
             var type = typeof(TSurrogate);
             if (_serializer.TryGetDataSerializer(type, out _dataSerializer))
                 return true;
 
-            //Debug.LogError($"Could not get serialization data for {type}");
-            throw new NotImplementedException();
+            _log.Error($"Could not get serialization data for {type}");
             return false;
         }
 

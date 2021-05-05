@@ -124,25 +124,18 @@ namespace USerialization
                 }
             }
 
-
-            //Debug.Log($"Buffer range {_stream.Position - _availBytes} to {_stream.Position} jumped to {initialPosition}");
-            //Debug.Log(initialPosition);
-            //Debug.Log(_availBytes > _position);
-
             _stream.Position = initialPosition;
             _position = -1;
             _availBytes = -1;
 
-            return;
+            //var leftShifted = initialPosition - _buffer.Length / 2;
+            //if (leftShifted < 0)
+            //    leftShifted = 0;
 
-            var leftShifted = initialPosition - _buffer.Length / 2;
-            if (leftShifted < 0)
-                leftShifted = 0;
-
-            var delta = initialPosition - leftShifted;
-            _stream.Position = leftShifted;
-            _position = (int)delta;
-            _availBytes = _stream.Read(_buffer, 0, _buffer.Length);
+            //var delta = initialPosition - leftShifted;
+            //_stream.Position = leftShifted;
+            //_position = (int)delta;
+            //_availBytes = _stream.Read(_buffer, 0, _buffer.Length);
         }
 
 

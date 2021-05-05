@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using CommandLine;
 using Microcharts;
 using SkiaSharp;
 
+
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config")]
+
 namespace PerformanceTests
 {
-
-
 
     class Program
     {
@@ -22,6 +21,7 @@ namespace PerformanceTests
             [Option('c', "commit", Required = false, HelpText = "Commit.", Default = "UNKNOWN-ID")]
             public string Commit { get; set; }
         }
+
 
         static int Main(string[] args)
         {
@@ -41,6 +41,10 @@ namespace PerformanceTests
 
         private static void Execute(Options options)
         {
+            //var serializer = new USerializer(new UnitySerializationPolicy(), ProvidersUtils.GetDefaultProviders(),
+            //    new DataTypesDatabase());
+            //serializer.PreCacheType(typeof(BookShelf));
+
             var summary = BenchmarkRunner.Run<SerializationBenchmarks>();
 
             var directory = "public";
