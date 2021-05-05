@@ -97,13 +97,14 @@ namespace PerformanceTests
                 else
                     color = SKColor.Parse("#6666ff");
 
-                chartEntries.Add(new ChartEntry((float)(meanMs / maxValue))
+                var value = (float)(meanMs / maxValue);
+                chartEntries.Add(new ChartEntry(value)
                 {
                     ValueLabelColor = new SKColor(10, 10, 10),
                     TextColor = new SKColor(1, 10, 10),
                     Color = color,
                     Label = methodDisplayInfo,
-                    ValueLabel = meanMs.ToString("#.##  ms")
+                    ValueLabel = meanMs.ToString("#.##  ms "+ value.ToString())
                 });
             }
 
