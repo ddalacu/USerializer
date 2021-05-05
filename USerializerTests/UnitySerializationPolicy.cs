@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using USerialization;
 
 namespace USerializerTests
@@ -10,6 +8,7 @@ namespace USerializerTests
     {
 
     }
+
     public class FormerlySerializedAsAttribute : Attribute
     {
         public string OldName { get; }
@@ -33,9 +32,6 @@ namespace USerializerTests
         public bool ShouldSerialize(Type type)
         {
             if (type.IsAbstract)
-                return false;
-
-            if (type.IsGenericType)// Type<int>
                 return false;
 
             if (type.IsGenericTypeDefinition)// Type<>

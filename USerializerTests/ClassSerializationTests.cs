@@ -438,5 +438,36 @@ namespace USerializerTests
             });
         }
 
+        [Serializable]
+        public class GenericClass<T>
+        {
+            [SerializeField]
+            private T _field;
+
+            public T Value
+            {
+                get => _field;
+                set => value = _field;
+            }
+
+        }
+
+        [Test]
+        public void GenericSerialization()
+        {
+            var a = new GenericClass<DateTime>();
+            a.Value = DateTime.Now;
+
+            var stream = new MemoryStream();
+            var serialized = BinaryUtility.Serialize(a, stream);
+            Assert.True(serialized);
+            stream.Position = 0;
+
+            var deserialized = BinaryUtility.TryDeserialize(stream, out GenericClass<DateTime> result);
+
+            Assert.True(deserialized);
+
+            Assert.True(a.Value.ToBinary() == result.Value.ToBinary());
+        }
     }
 }

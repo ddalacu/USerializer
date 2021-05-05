@@ -33,7 +33,10 @@ This project is best used in cases where no code generation is allowed and you d
 
 [Performance.md](../gh-pages/performance.md)
 
-Performance comes close to MessagePackSerializer even if no code is generated!
+Performance comes close to MessagePackSerializer even if no code is generated(it uses object pinning and direct memory reading for accesing field data)!
 Ceras is slower in perf tests because version tolerance is set to VersionToleranceMode.Standard also ceras offers way more features than this library does
 
 For proper examples on how to use this system, please check the BinaryUtility.cs inside tests project
+
+When using in unity make sure you copy the link.xml from the project root inside your unity project
+Also when creating a custom DataSerializer make sure you mark it with unity's preserve attribute
