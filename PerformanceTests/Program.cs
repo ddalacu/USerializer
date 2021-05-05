@@ -38,10 +38,6 @@ namespace PerformanceTests
                 });
             return fail;
         }
-        static double ConvertNanosecondsToMilliseconds(double nanoseconds)
-        {
-            return nanoseconds * 0.000001;
-        }
 
         private static void Execute(Options options)
         {
@@ -68,6 +64,11 @@ namespace PerformanceTests
             WriteImage(options, summary, file);
         }
 
+        private static double ConvertNanosecondsToMilliseconds(double nanoseconds)
+        {
+            return nanoseconds * 0.000001;
+        }
+
         private static void WriteImage(Options options, Summary summary, string file)
         {
             var chartEntries = new List<ChartEntry>();
@@ -78,17 +79,25 @@ namespace PerformanceTests
             {
                 var meanMs = ConvertNanosecondsToMilliseconds(benchmarkReport.ResultStatistics.Mean);
 
+                if (meanMs > maxValue)
+                    maxValue = meanMs;
+            }
+
+
+            foreach (var benchmarkReport in summary.Reports)
+            {
+                var meanMs = ConvertNanosecondsToMilliseconds(benchmarkReport.ResultStatistics.Mean);
 
                 var methodDisplayInfo = benchmarkReport.BenchmarkCase.Descriptor.WorkloadMethodDisplayInfo;
 
-                SKColor color = default;
+                SKColor color;
 
                 if (methodDisplayInfo.Contains("Deserialize", StringComparison.OrdinalIgnoreCase))
                     color = SKColor.Parse("#ff944d");
                 else
                     color = SKColor.Parse("#6666ff");
 
-                chartEntries.Add(new ChartEntry((float)meanMs)
+                chartEntries.Add(new ChartEntry((float)(meanMs / maxValue))
                 {
                     ValueLabelColor = new SKColor(10, 10, 10),
                     TextColor = new SKColor(1, 10, 10),
@@ -96,9 +105,6 @@ namespace PerformanceTests
                     Label = methodDisplayInfo,
                     ValueLabel = meanMs.ToString("#.##  ms")
                 });
-
-                if (meanMs > maxValue)
-                    maxValue = meanMs;
             }
 
 
@@ -110,7 +116,7 @@ namespace PerformanceTests
                 IsAnimated = false,
                 LabelTextSize = 14,
                 Typeface = SKTypeface.Default,
-                MaxValue = (float) (maxValue * 1.2f),
+                MaxValue = 1.2f,
             };
 
             var width = 1400;
@@ -123,15 +129,9 @@ namespace PerformanceTests
                 SKCanvas canvas = surface.Canvas;
                 canvas.Clear(SKColors.Transparent);
 
-
-                //canvas.DrawColor(new SKColor(0, 0, 0), SKBlendMode.Src);
-
-                canvas.Translate(0,100);
-                chart.Draw(canvas, width, height);
+                canvas.Translate(0, 100);
+                chart.Draw(canvas, width, height - 100);
                 canvas.Translate(0, -100);
-
-                //canvas.Save();
-
 
                 var paint = new SKPaint
                 {
@@ -142,7 +142,6 @@ namespace PerformanceTests
                 };
 
                 canvas.DrawText($"{DateTime.Now.ToLongDateString()}  {options.Branch}", new SKPoint(50, 25), paint);
-                //canvas.DrawText(DateTime.Now.ToLongDateString(), new SKPoint(50, 100), paint);
 
                 canvas.Flush();
                 canvas.Save();
