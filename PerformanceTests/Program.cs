@@ -146,6 +146,7 @@ namespace PerformanceTests
                 canvas.DrawText($"{DateTime.Now.ToLongDateString()}  {options.Commit}", new SKPoint(50, 25), paint);
 
                 canvas.Flush();
+
                 canvas.Save();
 
                 var snapshot = surface.Snapshot();
