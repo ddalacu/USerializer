@@ -113,13 +113,14 @@ namespace PerformanceTests
                 Entries = chartEntries,
                 LabelOrientation = Orientation.Horizontal,
                 ValueLabelOrientation = Orientation.Horizontal,
-                IsAnimated = false,
                 LabelTextSize = 14,
                 Typeface = SKTypeface.Default,
                 MaxValue = 1.15f,
                 AnimationDuration = TimeSpan.Zero,
-                AnimationProgress = 1f
             };
+
+            chart.IsAnimated = true;
+            chart.IsAnimated = false;
 
             var width = 1400;
             var height = 700;
@@ -132,6 +133,7 @@ namespace PerformanceTests
                 canvas.Clear(SKColors.Transparent);
 
                 canvas.Translate(0, 100);
+
                 chart.DrawContent(canvas, width, height - 100);
                 canvas.Translate(0, -100);
 
