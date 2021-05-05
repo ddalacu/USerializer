@@ -118,9 +118,9 @@ namespace PerformanceTests
                 MaxValue = 1.15f,
                 AnimationDuration = TimeSpan.Zero,
             };
-
-            chart.IsAnimated = true;
-            chart.IsAnimated = false;
+            
+            chart.IsAnimated = true;//seems stupid but there is some strange bug when building on git actions where it tries to animate so do not remove this
+            chart.IsAnimated = false;//seems stupid but there is some strange bug when building on git actions where it tries to animate so do not remove this
 
             var width = 1400;
 
