@@ -19,8 +19,8 @@ namespace PerformanceTests
     {
         public class Options
         {
-            [Option('b', "branch", Required = false, HelpText = "Branch.", Default = "UNKNOWN-BRANCH")]
-            public string Branch { get; set; }
+            [Option('c', "commit", Required = false, HelpText = "Commit.", Default = "UNKNOWN-ID")]
+            public string Commit { get; set; }
         }
 
         static int Main(string[] args)
@@ -141,7 +141,7 @@ namespace PerformanceTests
                     TextSize = 20
                 };
 
-                canvas.DrawText($"{DateTime.Now.ToLongDateString()}  {options.Branch}", new SKPoint(50, 25), paint);
+                canvas.DrawText($"{DateTime.Now.ToLongDateString()}  {options.Commit}", new SKPoint(50, 25), paint);
 
                 canvas.Flush();
                 canvas.Save();

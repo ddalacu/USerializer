@@ -21,14 +21,14 @@ jobs:
         dotnet-version: 5.0.x
     - name: Restore dependencies
       run: dotnet restore
-    # - name: Build
-      # run: dotnet build --no-restore
+    - name: Build
+       run: dotnet build --no-restore
     # - name: Test
       # run: dotnet test --no-build --verbosity normal
     - name: DotnetPublish
       run: dotnet publish PerformanceTests --configuration Release -o Release
     - name: RunPerformanceTests
-      run: dotnet ./Release/PerformanceTests.dll --branch $(git rev-parse --short "$GITHUB_SHA")
+      run: dotnet ./Release/PerformanceTests.dll --commit $(git rev-parse --short "$GITHUB_SHA")
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
