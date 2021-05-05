@@ -104,7 +104,7 @@ namespace PerformanceTests
                     TextColor = new SKColor(1, 10, 10),
                     Color = color,
                     Label = methodDisplayInfo,
-                    ValueLabel = meanMs.ToString("#.##  ms "+ value.ToString())
+                    ValueLabel = meanMs.ToString("#.## ms")
                 });
             }
 
@@ -117,7 +117,7 @@ namespace PerformanceTests
                 IsAnimated = false,
                 LabelTextSize = 14,
                 Typeface = SKTypeface.Default,
-                MaxValue = 1.2f,
+                MaxValue = 1.15f,
             };
 
             var width = 1400;
@@ -131,7 +131,7 @@ namespace PerformanceTests
                 canvas.Clear(SKColors.Transparent);
 
                 canvas.Translate(0, 100);
-                chart.Draw(canvas, width, height - 100);
+                chart.DrawContent(canvas, width, height - 100);
                 canvas.Translate(0, -100);
 
                 var paint = new SKPaint
