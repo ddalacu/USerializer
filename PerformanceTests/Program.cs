@@ -108,7 +108,6 @@ namespace PerformanceTests
                 });
             }
 
-
             var chart = new BarChart
             {
                 Entries = chartEntries,
