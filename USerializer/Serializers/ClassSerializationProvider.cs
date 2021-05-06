@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
+
     public class CircularReferenceException : Exception
     {
         public CircularReferenceException(string message) : base(message)
@@ -72,28 +72,26 @@ namespace USerialization
         public sealed class ClassDataSerializer : DataSerializer
         {
             private readonly Type _type;
-            private readonly FieldsData _typeData;
+            private FieldsSerializer _fieldsSerializer;
             private readonly bool _haveCtor;
-            private DataTypesDatabase _dataTypesDatabase;
 
             private DataType _dataType;
 
             public override DataType GetDataType() => _dataType;
 
-            public ClassDataSerializer(Type type, FieldsData typeData, USerializer serializer)
+            public ClassDataSerializer(Type type, FieldsData fieldData, USerializer serializer)
             {
                 if (type.IsValueType)
                     throw new ArgumentException(nameof(type));
 
                 _type = type;
-                _typeData = typeData;
+
+                _fieldsSerializer = new FieldsSerializer(fieldData, serializer.DataTypesDatabase);
 
                 var ctor = _type.GetConstructor(Type.EmptyTypes);
                 _haveCtor = ctor != null;
 
-                _dataTypesDatabase = serializer.DataTypesDatabase;
-
-                if (_dataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
+                if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
                     _dataType = arrayDataTypeLogic.Value;
             }
 
@@ -119,9 +117,10 @@ namespace USerialization
                 var track = output.BeginSizeTrack();
 
                 var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
+
                 fixed (byte* objectAddress = &pinnable.Pinnable)
                 {
-                    _typeData.Fields.WriteFields(objectAddress, output);
+                    _fieldsSerializer.Write(objectAddress, output);
                 }
 
                 output.WriteSizeTrack(track);
@@ -146,7 +145,7 @@ namespace USerialization
                     var pinnable = Unsafe.As<object, PinnableObject>(ref instance);
                     fixed (byte* objectAddress = &pinnable.Pinnable)
                     {
-                        _typeData.Fields.ReadFields(objectAddress, input, _dataTypesDatabase);
+                        _fieldsSerializer.Read(objectAddress, input);
                     }
 
                     input.EndObject(end);

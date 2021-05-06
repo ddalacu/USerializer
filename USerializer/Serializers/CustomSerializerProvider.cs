@@ -70,8 +70,7 @@ namespace USerialization
             {
                 if (value.GetDataType() == DataType.None)
                 {
-                    throw new NotImplementedException();
-                    //Debug.LogError($"{value} should assign data type inside TryInitialize!");
+                    _log.Error($"{value} should assign data type inside TryInitialize!");
                 }
             }
         }
@@ -80,23 +79,11 @@ namespace USerialization
         {
             if (_instances.TryGetValue(type, out var instance))
             {
-                dataSerializer = instance;// new SerializationMethods(instance.Write, instance.Read, instance.DataType);
+                dataSerializer = instance;
                 return true;
             }
 
             dataSerializer = default;
-            return false;
-        }
-
-        public bool TryGetInstance<T>(Type serializedType, out T result) where T : class
-        {
-            if (_instances.TryGetValue(serializedType, out var instance))
-            {
-                result = instance as T;
-                return result != null;
-            }
-
-            result = default;
             return false;
         }
     }

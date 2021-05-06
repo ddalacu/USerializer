@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -22,36 +21,6 @@ namespace USerialization
 
         public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
-            if (type.IsArray)
-            {
-                type = type.GetElementType();
-                if (type.IsEnum == false)
-                {
-                    serializationMethods = default;
-                    return false;
-                }
-
-                var primitiveType = type.GetEnumUnderlyingType();
-                var makeArrayType = primitiveType.MakeArrayType();
-                return _serializer.TryGetDataSerializer(makeArrayType, out serializationMethods);
-            }
-
-            if (type.IsConstructedGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
-            {
-                type = type.GetGenericArguments()[0];
-
-                if (type.IsEnum == false)
-                {
-                    serializationMethods = default;
-                    return false;
-                }
-
-                var primitiveType = type.GetEnumUnderlyingType();
-                var makeListType = typeof(List<>).MakeGenericType(primitiveType);
-
-                return _serializer.TryGetDataSerializer(makeListType, out serializationMethods);
-            }
-
             if (type.IsEnum == false)
             {
                 serializationMethods = default;

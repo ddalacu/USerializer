@@ -54,18 +54,17 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public class StructDataSerializer : DataSerializer
         {
-            private FieldData[] _fields;
-            private DataTypesDatabase _dataTypesDatabase;
             private DataType _dataType;
+
+            private FieldsSerializer _fieldsSerializer;
 
             public override DataType GetDataType() => _dataType;
 
             public StructDataSerializer(FieldsData typeData, USerializer serializer)
             {
-                _fields = typeData.Fields;
-                _dataTypesDatabase = serializer.DataTypesDatabase;
+                _fieldsSerializer = new FieldsSerializer(typeData, serializer.DataTypesDatabase);
 
-                if (_dataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
+                if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
                     _dataType = arrayDataTypeLogic.Value;
             }
 
@@ -73,7 +72,7 @@ namespace USerialization
             {
                 var track = output.BeginSizeTrack();
 
-                _fields.WriteFields((byte*)fieldAddress, output);
+                _fieldsSerializer.Write((byte*)fieldAddress, output);
 
                 output.WriteSizeTrack(track);
             }
@@ -82,8 +81,7 @@ namespace USerialization
             {
                 if (input.BeginReadSize(out var end))
                 {
-                    _fields.ReadFields((byte*)fieldAddress, input, _dataTypesDatabase);
-
+                    _fieldsSerializer.Read((byte*)fieldAddress, input);
                     input.EndObject(end);
                 }
                 else

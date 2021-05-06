@@ -17,7 +17,7 @@ namespace USerialization
 
         protected USerializer Serializer => _serializer;
 
-        private MemberSerializerStruct[] _members;
+        private MemberSerializer _memberSerializer;
 
         private DataType _dataType;
 
@@ -32,17 +32,17 @@ namespace USerialization
         {
             _serializer = serializer;
 
-            var adder = new ClassMemberAdder<T>(serializer);
+            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic))
+            {
+                _dataType = objectDataTypeLogic.Value;
+                var adder = new ClassMemberAdder<T>(_serializer);
+                LocalInit(adder);
+                var members = adder.GetMembers();
+                _memberSerializer = new MemberSerializer(members, _serializer.DataTypesDatabase);
+                return true;
+            }
 
-            LocalInit(adder);
-
-            _members = adder.GetMembers();
-
-            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
-
-            _dataType = arrayDataTypeLogic.Value;
-            return true;
+            return false;
         }
 
 
@@ -57,7 +57,9 @@ namespace USerialization
             }
 
             var track = output.BeginSizeTrack();
-            _members.WriteFields((byte*)fieldAddress, output);
+
+            _memberSerializer.Write((byte*)fieldAddress, output);
+
             output.WriteSizeTrack(track);
         }
 
@@ -69,7 +71,7 @@ namespace USerialization
                 if (objectInstance == null)
                     objectInstance = Activator.CreateInstance(_type);
 
-                _members.ReadFields((byte*)fieldAddress, input, _serializer.DataTypesDatabase);
+                _memberSerializer.Read((byte*)fieldAddress, input);
 
                 input.EndObject(end);
             }
@@ -94,7 +96,7 @@ namespace USerialization
 
         protected USerializer Serializer => _serializer;
 
-        private MemberSerializerStruct[] _members;
+        private MemberSerializer _memberSerializer;
 
         private DataType _dataType;
 
@@ -109,15 +111,17 @@ namespace USerialization
         {
             _serializer = serializer;
 
-            var adder = new StructMemberAdder<T>(serializer);
-            LocalInit(adder);
-            _members = adder.GetMembers();
+            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataLogic))
+            {
+                _dataType = objectDataLogic.Value;
+                var adder = new StructMemberAdder<T>(_serializer);
+                LocalInit(adder);
+                var members = adder.GetMembers();
+                _memberSerializer = new MemberSerializer(members, _serializer.DataTypesDatabase);
+                return true;
+            }
 
-            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
-
-            _dataType = arrayDataTypeLogic.Value;
-            return true;
+            return false;
         }
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
@@ -125,7 +129,9 @@ namespace USerialization
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {
             var track = output.BeginSizeTrack();
-            _members.WriteFields((byte*)fieldAddress, output);
+
+            _memberSerializer.Write((byte*)fieldAddress, output);
+
             output.WriteSizeTrack(track);
         }
 
@@ -133,7 +139,8 @@ namespace USerialization
         {
             if (input.BeginReadSize(out var end))
             {
-                _members.ReadFields((byte*)fieldAddress, input, _serializer.DataTypesDatabase);
+                _memberSerializer.Read((byte*)fieldAddress, input);
+
                 input.EndObject(end);
             }
             else

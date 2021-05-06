@@ -35,7 +35,7 @@ namespace USerialization
             });
         }
 
-        public static bool GetAlternate(FieldData[] fields, DataType type, int field, out FieldData compatible)
+        public static bool GetAlternate(FieldData[] fields, DataType type, int field, out int compatibleIndex)
         {
             int fieldsLength = fields.Length;
 
@@ -55,13 +55,13 @@ namespace USerialization
                 {
                     if (field == alternateHashes[j])
                     {
-                        compatible = fieldData;
+                        compatibleIndex = index;
                         return true;
                     }
                 }
             }
 
-            compatible = default;
+            compatibleIndex = default;
             return false;
         }
 

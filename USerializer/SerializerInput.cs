@@ -25,6 +25,8 @@ namespace USerialization
 
         public byte[] Buffer => _buffer;
 
+        public int PositionInBuffer => _position;
+
         public long StreamPosition
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
