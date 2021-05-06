@@ -286,6 +286,24 @@ namespace USerialization
             _position += length;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteBoolsUnchecked(bool[] bytes, int length)//not so safe :|
+        {
+            fixed (void* ptr = bytes)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+#if DEBUG
+                    if (length < 0)
+                        throw new Exception("byteLength is negative!");
+#endif
+
+                    Unsafe.CopyBlock(bufferPtr + _position, ptr, (uint)length);
+                }
+            }
+            _position += length;
+        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte data)

@@ -329,6 +329,28 @@ namespace USerialization
             return read;
         }
 
+        public unsafe bool[] ReadBools(int count)
+        {
+            EnsureNext(count);
+
+            var read = new bool[count];
+
+            fixed (bool* readPtr = read)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+#if DEBUG
+                    if (count < 0)
+                        throw new Exception("Count is negative!");
+#endif
+
+                    Unsafe.CopyBlock(readPtr, bufferPtr + _position, (uint)count);
+                }
+            }
+
+            _position += (int)count;
+            return read;
+        }
 
         public unsafe void EnsureNext(int count)
         {

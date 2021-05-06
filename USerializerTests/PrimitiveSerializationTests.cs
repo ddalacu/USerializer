@@ -272,12 +272,6 @@ namespace USerializerTests
             var input = new bool[] { false, true, false, false };
             var result = TestUtils.SerializeDeserializeTest(input);
 
-            Console.WriteLine(input[0]);
-            Console.WriteLine(result[0]);
-
-            Console.WriteLine(input[1]);
-            Console.WriteLine(result[1]);
-
             Assert.True(TestUtils.EqualArrays(input, result));
         }
 
