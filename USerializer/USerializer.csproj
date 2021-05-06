@@ -14,7 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
 	<WeaverFiles Include="$(SolutionDir)USerializer.Fody\bin\$(Configuration)\netstandard2.0\USerializer.Fody.dll" WeaverClassNames="ModuleWeaver" />
   </ItemGroup>

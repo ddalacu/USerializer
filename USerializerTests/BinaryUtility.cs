@@ -9,11 +9,17 @@ namespace USerializerTests
         private static USerializer _uSerializer;
 
         public static USerializer USerializer => _uSerializer;
-
+        private class ConsoleLogger : ILogger
+        {
+            public void Error(string error)
+            {
+                Console.WriteLine("Error:" + error);
+            }
+        }
         static BinaryUtility()
         {
             var providers = ProvidersUtils.GetDefaultProviders();
-            _uSerializer = new USerializer(new UnitySerializationPolicy(), providers, new DataTypesDatabase());
+            _uSerializer = new USerializer(new UnitySerializationPolicy(), providers, new DataTypesDatabase(), new ConsoleLogger());
         }
 
         /// <summary>

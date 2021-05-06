@@ -16,8 +16,6 @@ namespace USerialization
 
         private DataSerializer _dataSerializer;
 
-        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         public override DataType GetDataType() => _dataSerializer.GetDataType();
 
         public override bool TryInitialize(USerializer serializer)
@@ -27,7 +25,7 @@ namespace USerialization
             if (_serializer.TryGetDataSerializer(type, out _dataSerializer))
                 return true;
 
-            _log.Error($"Could not get serialization data for {type}");
+            _serializer.Logger.Error($"Could not get serialization data for {type}");
             return false;
         }
 

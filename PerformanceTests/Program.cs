@@ -9,7 +9,6 @@ using Microcharts;
 using SkiaSharp;
 
 
-[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config")]
 
 namespace PerformanceTests
 {

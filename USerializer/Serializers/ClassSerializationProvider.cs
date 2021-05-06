@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
@@ -88,8 +89,9 @@ namespace USerialization
 
                 _fieldsSerializer = new FieldsSerializer(fieldData, serializer.DataTypesDatabase);
 
-                var ctor = _type.GetConstructor(Type.EmptyTypes);
-                _haveCtor = ctor != null;
+                var constructor = _type.GetConstructor(Type.EmptyTypes);
+
+                _haveCtor = constructor != null;
 
                 if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
                     _dataType = arrayDataTypeLogic.Value;
@@ -137,7 +139,9 @@ namespace USerialization
                     if (instance == null)
                     {
                         if (_haveCtor)
+                        {
                             instance = Activator.CreateInstance(_type);
+                        }
                         else
                             instance = FormatterServices.GetUninitializedObject(_type);
                     }

@@ -132,10 +132,18 @@ namespace PerformanceTests
 
         private SerializerInput _input;
 
+        private class ConsoleLogger : ILogger
+        {
+            public void Error(string error)
+            {
+                Console.WriteLine("Error:" + error);
+            }
+        }
+
         public USerializerBenchmark()
         {
             _uSerializer = new USerializer(new UnitySerializationPolicy(), ProvidersUtils.GetDefaultProviders(),
-                new DataTypesDatabase());
+                new DataTypesDatabase(), new ConsoleLogger());
 
             _output = new SerializerOutput(2048 * 10);
             _input = new SerializerInput(2048 * 10);

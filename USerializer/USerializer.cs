@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 
 namespace USerialization
 {
+    public interface ILogger
+    {
+        void Error(string error);
+    }
+
     public class USerializer
     {
         private readonly ISerializationProvider[] _providers;
@@ -17,12 +21,14 @@ namespace USerialization
 
         public DataTypesDatabase DataTypesDatabase { get; private set; }
 
-        public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers, DataTypesDatabase dataTypesDatabase)
+        public ILogger Logger { get; set; }
+
+        public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers, DataTypesDatabase dataTypesDatabase, ILogger logger)
         {
             SerializationPolicy = serializationPolicy;
             _providers = providers;
             DataTypesDatabase = dataTypesDatabase;
-
+            Logger = logger;
             foreach (var serializationProvider in _providers)
                 serializationProvider.Initialize(this);
 
