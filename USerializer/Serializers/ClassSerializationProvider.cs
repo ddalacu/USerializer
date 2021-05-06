@@ -64,9 +64,6 @@ namespace USerialization
 
         public DataSerializer GetSerializationMethods(Type type, TypeData typeData)
         {
-            //if (typeof(ISerializationCallbackReceiver).IsAssignableFrom(type))
-            //return new ClassWithEventsDataSerializer(type, typeData, _serializer);
-
             return new ClassDataSerializer(type, typeData, _serializer);
         }
 
@@ -160,89 +157,6 @@ namespace USerialization
                 }
             }
         }
-
-        //[Il2CppSetOption(Option.NullChecks, false)]
-        //[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        //public sealed class ClassWithEventsDataSerializer : DataSerializer
-        //{
-        //    private readonly Type _type;
-        //    private readonly TypeData _typeData;
-        //    private readonly bool _haveCtor;
-        //    private DataTypesDatabase _dataTypesDatabase;
-
-        //    private DataType _dataType;
-
-        //    public override DataType GetDataType() => _dataType;
-
-        //    public ClassWithEventsDataSerializer(Type type, TypeData typeData, USerializer serializer)
-        //    {
-        //        if (type.IsValueType)
-        //            throw new ArgumentException(nameof(type));
-
-        //        _type = type;
-        //        _typeData = typeData;
-
-        //        var ctor = _type.GetConstructor(Type.EmptyTypes);
-        //        _haveCtor = ctor != null;
-
-        //        _dataTypesDatabase = serializer.DataTypesDatabase;
-
-        //        if (_dataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
-        //            _dataType = arrayDataTypeLogic.Value;
-        //    }
-
-
-        //    public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
-        //    {
-        //        var obj = Unsafe.Read<object>(fieldAddress);
-
-        //        if (obj == null)
-        //        {
-        //            output.WriteNull();
-        //            return;
-        //        }
-
-        //        Unsafe.As<ISerializationCallbackReceiver>(obj).OnBeforeSerialize();
-
-        //        using (var objectPin = new ObjectPin(obj))
-        //        {
-        //            byte* objectAddress = (byte*) objectPin.Address;
-        //            var track = output.BeginSizeTrack();
-        //            _typeData.Fields.WriteFields(objectAddress, output);
-        //            output.WriteSizeTrack(track);
-        //        }
-        //    }
-
-        //    public override void ReadDelegate(void* fieldAddress, SerializerInput input)
-        //    {
-        //        ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
-
-        //        if (input.BeginReadSize(out var end))
-        //        {
-        //            if (instance == null)
-        //            {
-        //                if (_haveCtor)
-        //                    instance = Activator.CreateInstance(_type);
-        //                else
-        //                    instance = FormatterServices.GetUninitializedObject(_type);
-        //            }
-
-        //            using (var objectPin = new ObjectPin(instance))
-        //            {
-        //                byte* objectAddress = (byte*) objectPin.Address;
-        //                _typeData.Fields.ReadFields(objectAddress, input, _dataTypesDatabase);
-        //            }
-
-        //            Unsafe.As<ISerializationCallbackReceiver>(instance).OnAfterDeserialize();
-
-        //            input.EndObject(end);
-        //        }
-        //        else
-        //        {
-        //            instance = null;
-        //        }
-        //    }
-        //}
 
     }
 }

@@ -8,11 +8,10 @@
             {
                 new CustomSerializerProvider(),
                 new EnumSerializer(),
-                new ClassSerializationProvider(),
-                new StructSerializationProvider(),
                 new ArraySerializer(),
                 new ListSerializer(),
-                //new DictionarySerializer()
+                new ClassSerializationProvider(),
+                new StructSerializationProvider(),
             };
 
             if (additionalProviders == null) 

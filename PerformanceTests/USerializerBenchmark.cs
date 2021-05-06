@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -9,6 +10,16 @@ namespace PerformanceTests
     public class SerializeField : Attribute
     {
 
+    }
+
+    public class FormerlySerializedAsAttribute : Attribute
+    {
+        public string OldName { get; }
+
+        public FormerlySerializedAsAttribute(string oldName)
+        {
+            OldName = oldName;
+        }
     }
 
     public class UnitySerializationPolicy : ISerializationPolicy
@@ -26,9 +37,6 @@ namespace PerformanceTests
             if (type.IsAbstract)
                 return false;
 
-            if (type.IsGenericType)// Type<int>
-                return false;
-
             if (type.IsGenericTypeDefinition)// Type<>
                 return false;
 
@@ -38,10 +46,42 @@ namespace PerformanceTests
             if (type.IsClass)
             {
                 if (type.GetCustomAttribute(_serializableAttributeType) != null)
+                {
+                    if (type.IsGenericType)
+                    {
+                        if (ShouldTryToSerialize(type) == false)
+                            return false;
+                    }
+
                     return true;
+                }
             }
 
             return false;
+        }
+
+        private bool ShouldTryToSerialize(Type type)
+        {
+            foreach (var genericArgument in type.GetGenericArguments())
+            {
+                if (ShouldSerialize(genericArgument) == false)
+                    return false;
+            }
+
+            var genericTypeDefinition = type.GetGenericTypeDefinition();
+
+            if (genericTypeDefinition == typeof(Dictionary<,>))
+                return false;
+            if (genericTypeDefinition == typeof(HashSet<>))
+                return false;
+            if (genericTypeDefinition == typeof(Stack<>))
+                return false;
+            if (genericTypeDefinition == typeof(Queue<>))
+                return false;
+            if (genericTypeDefinition == typeof(List<>))
+                return false;
+
+            return true;
         }
 
         public bool ShouldSerialize(FieldInfo fieldInfo)
@@ -66,7 +106,21 @@ namespace PerformanceTests
 
         public string[] GetAlternateNames(FieldInfo fieldInfo)
         {
-            return null;
+            var formerly = (FormerlySerializedAsAttribute[])Attribute.GetCustomAttributes(fieldInfo, typeof(FormerlySerializedAsAttribute));
+
+            var length = formerly.Length;
+
+            if (length == 0)
+                return null;
+
+            var old = new string[length];
+
+            for (var index = 0; index < length; index++)
+            {
+                old[index] = formerly[index].OldName;
+            }
+
+            return old;
         }
     }
 
