@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using USerialization;
 
@@ -43,10 +44,42 @@ namespace USerializerTests
             if (type.IsClass)
             {
                 if (type.GetCustomAttribute(_serializableAttributeType) != null)
+                {
+                    if (type.IsGenericType)
+                    {
+                        if (ShouldTryToSerialize(type) == false)
+                            return false;
+                    }
+
                     return true;
+                }
             }
 
             return false;
+        }
+
+        private bool ShouldTryToSerialize(Type type)
+        {
+            foreach (var genericArgument in type.GetGenericArguments())
+            {
+                if (ShouldSerialize(genericArgument) == false)
+                    return false;
+            }
+
+            var genericTypeDefinition = type.GetGenericTypeDefinition();
+
+            if (genericTypeDefinition == typeof(Dictionary<,>))
+                return false;
+            if (genericTypeDefinition == typeof(HashSet<>))
+                return false;
+            if (genericTypeDefinition == typeof(Stack<>))
+                return false;
+            if (genericTypeDefinition == typeof(Queue<>))
+                return false;
+            if (genericTypeDefinition == typeof(List<>))
+                return false;
+
+            return true;
         }
 
         public bool ShouldSerialize(FieldInfo fieldInfo)
@@ -71,7 +104,7 @@ namespace USerializerTests
 
         public string[] GetAlternateNames(FieldInfo fieldInfo)
         {
-            var formerly = (FormerlySerializedAsAttribute[])Attribute.GetCustomAttributes(fieldInfo,typeof(FormerlySerializedAsAttribute));
+            var formerly = (FormerlySerializedAsAttribute[])Attribute.GetCustomAttributes(fieldInfo, typeof(FormerlySerializedAsAttribute));
 
             var length = formerly.Length;
 
@@ -88,5 +121,6 @@ namespace USerializerTests
             return old;
         }
     }
+
 
 }
