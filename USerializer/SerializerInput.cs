@@ -199,6 +199,14 @@ namespace USerialization
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int ReadIntUnchecked()
+        {
+            var value = _buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24;
+            //_position += 4;
+            return value;
+        }
+
         public int Read7BitEncodedInt()
         {
             int count = 0;

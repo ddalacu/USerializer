@@ -35,7 +35,6 @@ namespace USerialization
             var pinnable = Unsafe.As<List<T>, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-
                 count = *(int*) (listAddress + _sizeFieldOffset);
                 return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
             }

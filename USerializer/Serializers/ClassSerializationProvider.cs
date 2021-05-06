@@ -62,7 +62,7 @@ namespace USerialization
             return true;
         }
 
-        public DataSerializer GetSerializationMethods(Type type, TypeData typeData)
+        public DataSerializer GetSerializationMethods(Type type, FieldsData typeData)
         {
             return new ClassDataSerializer(type, typeData, _serializer);
         }
@@ -72,7 +72,7 @@ namespace USerialization
         public sealed class ClassDataSerializer : DataSerializer
         {
             private readonly Type _type;
-            private readonly TypeData _typeData;
+            private readonly FieldsData _typeData;
             private readonly bool _haveCtor;
             private DataTypesDatabase _dataTypesDatabase;
 
@@ -80,7 +80,7 @@ namespace USerialization
 
             public override DataType GetDataType() => _dataType;
 
-            public ClassDataSerializer(Type type, TypeData typeData, USerializer serializer)
+            public ClassDataSerializer(Type type, FieldsData typeData, USerializer serializer)
             {
                 if (type.IsValueType)
                     throw new ArgumentException(nameof(type));

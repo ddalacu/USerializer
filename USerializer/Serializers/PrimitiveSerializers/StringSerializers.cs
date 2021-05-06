@@ -218,12 +218,13 @@ namespace USerialization
                 var count = input.Read7BitEncodedInt();
 
                 list = new List<string>();
-                var array = new string[count];
-
-                ListHelpers.SetArray(list, array);
 
                 if (count > 0)
                 {
+                    var array = new string[count];
+
+                    ListHelpers.SetArray(list, array);
+
                     var type = (DataType)input.ReadByte();
 
                     if (type == _elementDataType)

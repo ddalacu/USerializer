@@ -206,17 +206,20 @@ namespace USerialization
             {
                 var count = input.Read7BitEncodedInt();
                 list = new List<int>();
-                var array = new int[count];
-
-                ListHelpers.SetArray(list, array);
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var array = new int[count];
+                    ListHelpers.SetArray(list, array);
+
+                    var type = (DataType) input.ReadByte();
+
                     if (type == _elementDataType)
                     {
+                        input.EnsureNext(count * sizeof(int));
+
                         for (var i = 0; i < count; i++)
-                            array[i] = input.ReadInt();
+                            array[i] = input.ReadIntUnchecked();
                     }
                 }
 

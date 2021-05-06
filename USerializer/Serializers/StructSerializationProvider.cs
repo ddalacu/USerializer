@@ -60,7 +60,7 @@ namespace USerialization
 
             public override DataType GetDataType() => _dataType;
 
-            public StructDataSerializer(TypeData typeData, USerializer serializer)
+            public StructDataSerializer(FieldsData typeData, USerializer serializer)
             {
                 _fields = typeData.Fields;
                 _dataTypesDatabase = serializer.DataTypesDatabase;

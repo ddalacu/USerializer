@@ -3,15 +3,9 @@ using System.Reflection;
 
 namespace USerialization
 {
-    public class TypeData
+    public class FieldsData
     {
-        public readonly Type Type;
         public FieldData[] Fields;
-
-        public TypeData(Type type)
-        {
-            Type = type;
-        }
 
         private static void OrderFields(FieldData[] fields)
         {

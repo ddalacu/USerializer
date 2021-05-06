@@ -99,7 +99,7 @@ namespace USerialization
 
                 if (deserialized == false)
                 {
-                    if (TypeData.GetAlternate(fieldDatas, type, field, out var alternate))
+                    if (FieldsData.GetAlternate(fieldDatas, type, field, out var alternate))
                     {
                         alternate.SerializationMethods.ReadDelegate(objectAddress + alternate.Offset, input);
                     }

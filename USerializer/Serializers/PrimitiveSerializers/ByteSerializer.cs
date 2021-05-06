@@ -129,7 +129,7 @@ namespace USerialization
                 }
                 else
                 {
-                    array = new byte[0];
+                    array = Array.Empty<byte>();
                 }
 
                 input.EndObject(end);
@@ -180,7 +180,7 @@ namespace USerialization
 
             var sizeTracker = output.BeginSizeTrack();
             {
-                var array = ListHelpers.GetArray<byte>(list, out var count);
+                var array = ListHelpers.GetArray(list, out var count);
 
                 if (count > 0)
                 {
@@ -220,10 +220,6 @@ namespace USerialization
                     {
                         ListHelpers.SetArray(list, new byte[count]);
                     }
-                }
-                else
-                {
-                    ListHelpers.SetArray(list, Array.Empty<byte>());
                 }
 
                 input.EndObject(end);
