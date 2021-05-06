@@ -160,6 +160,9 @@ namespace PerformanceTests
 
                 using (var data = snapshot.Encode(SKEncodedImageFormat.Png, 80))
                 {
+                    if(File.Exists(file))
+                        File.Delete(file);
+
                     using (var stream = File.OpenWrite(file))
                     {
                         data.SaveTo(stream);
