@@ -17,6 +17,7 @@ namespace USerialization
 
         public DataTypesDatabase()
         {
+            _counter = 0;
             _dataEntries = new Dictionary<DataType, IDataTypeLogic>(32);
             Register<ByteDataTypeLogic>();
             Register<SByteDataTypeLogic>();

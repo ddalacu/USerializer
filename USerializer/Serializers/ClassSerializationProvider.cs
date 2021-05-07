@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
-
     public class CircularReferenceException : Exception
     {
         public CircularReferenceException(string message) : base(message)
@@ -15,17 +13,16 @@ namespace USerialization
         }
     }
 
-
     public unsafe class ClassSerializationProvider : ISerializationProvider
     {
         private USerializer _serializer;
 
-        private TypeDataCache _typeDataCache;
+        private FieldDataCache _fieldDataCache;
 
         public void Initialize(USerializer serializer)
         {
             _serializer = serializer;
-            _typeDataCache = new TypeDataCache(512);
+            _fieldDataCache = new FieldDataCache(512);
         }
 
         public void Start(USerializer serializer)
@@ -35,37 +32,34 @@ namespace USerialization
 
         public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
-            if (type.IsArray)
-            {
-                serializationMethods = default;
+            serializationMethods = default;
+
+            if (_serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic) == false)
                 return false;
-            }
+
+            if (type.IsArray)
+                return false;
 
             if (type.IsValueType)
-            {
-                serializationMethods = default;
                 return false;
-            }
 
             if (type.IsPrimitive)
+                return false;
+
+            if (_serializer.SerializationPolicy.ShouldSerialize(type) == false)
+                return false;
+
+            if (_fieldDataCache.GetTypeData(type, _serializer, out var fieldsData) == false)
             {
                 serializationMethods = default;
                 return false;
             }
 
-            if (_typeDataCache.GetTypeData(type, _serializer, out var typeData) == false)
-            {
-                serializationMethods = default;
-                return false;
-            }
+            var fieldsSerializer = new FieldsSerializer(fieldsData, _serializer.DataTypesDatabase);
 
-            serializationMethods = GetSerializationMethods(type, typeData);
+            serializationMethods = new ClassDataSerializer(type, fieldsSerializer, objectDataTypeLogic.Value);
+
             return true;
-        }
-
-        public DataSerializer GetSerializationMethods(Type type, FieldsData typeData)
-        {
-            return new ClassDataSerializer(type, typeData, _serializer);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
@@ -76,25 +70,23 @@ namespace USerialization
             private FieldsSerializer _fieldsSerializer;
             private readonly bool _haveCtor;
 
-            private DataType _dataType;
+            private readonly DataType _dataType;
 
             public override DataType GetDataType() => _dataType;
 
-            public ClassDataSerializer(Type type, FieldsData fieldData, USerializer serializer)
+            public ClassDataSerializer(Type type, FieldsSerializer fieldsSerializer, DataType objectDataType)
             {
+                if (type == null)
+                    throw new ArgumentNullException(nameof(type));
+
                 if (type.IsValueType)
                     throw new ArgumentException(nameof(type));
 
                 _type = type;
-
-                _fieldsSerializer = new FieldsSerializer(fieldData, serializer.DataTypesDatabase);
-
+                _fieldsSerializer = fieldsSerializer;
                 var constructor = _type.GetConstructor(Type.EmptyTypes);
-
                 _haveCtor = constructor != null;
-
-                if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
-                    _dataType = arrayDataTypeLogic.Value;
+                _dataType = objectDataType;
             }
 
             private int _stack;

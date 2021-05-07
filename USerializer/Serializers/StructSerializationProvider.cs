@@ -7,12 +7,12 @@ namespace USerialization
     {
         private USerializer _serializer;
 
-        private TypeDataCache _typeDataCache;
+        private FieldDataCache _fieldDataCache;
 
         public void Initialize(USerializer serializer)
         {
             _serializer = serializer;
-            _typeDataCache = new TypeDataCache(512);
+            _fieldDataCache = new FieldDataCache(512);
         }
 
         public void Start(USerializer serializer)
@@ -22,31 +22,32 @@ namespace USerialization
 
         public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
-            if (type.IsArray)
-            {
-                serializationMethods = default;
+            serializationMethods = default;
+
+            if (_serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic dataTypeLogic) == false)
                 return false;
-            }
+
+            if (type.IsArray)
+                return false;
 
             if (type.IsValueType == false)
-            {
-                serializationMethods = default;
                 return false;
-            }
 
             if (type.IsPrimitive)
+                return false;
+
+            if (_serializer.SerializationPolicy.ShouldSerialize(type) == false)
+                return false;
+
+            if (_fieldDataCache.GetTypeData(type, _serializer, out var typeData) == false)
             {
                 serializationMethods = default;
                 return false;
             }
 
-            if (_typeDataCache.GetTypeData(type, _serializer, out var typeData) == false)
-            {
-                serializationMethods = default;
-                return false;
-            }
+            var fieldsSerializer = new FieldsSerializer(typeData, _serializer.DataTypesDatabase);
 
-            serializationMethods = new StructDataSerializer(typeData, _serializer);
+            serializationMethods = new StructDataSerializer(fieldsSerializer, dataTypeLogic.Value);
             return true;
         }
 
@@ -54,18 +55,16 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public class StructDataSerializer : DataSerializer
         {
-            private DataType _dataType;
+            private readonly DataType _dataType;
 
             private FieldsSerializer _fieldsSerializer;
 
             public override DataType GetDataType() => _dataType;
 
-            public StructDataSerializer(FieldsData typeData, USerializer serializer)
+            public StructDataSerializer(FieldsSerializer fieldsSerializer, DataType objectDataType)
             {
-                _fieldsSerializer = new FieldsSerializer(typeData, serializer.DataTypesDatabase);
-
-                if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic arrayDataTypeLogic))
-                    _dataType = arrayDataTypeLogic.Value;
+                _fieldsSerializer = fieldsSerializer;
+                _dataType = objectDataType;
             }
 
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -86,7 +85,7 @@ namespace USerialization
                 }
                 else
                 {
-                    //"Changed from nullable?"
+                    //"Changed from reference type?"
                 }
             }
         }

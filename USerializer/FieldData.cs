@@ -163,8 +163,11 @@ namespace USerialization
                 int searchStart = 0;
                 for (var i = 0; i < fieldCount; i++)
                 {
+                    dataTypes[i] = 0;
+
                     var field = buffer[position++] | buffer[position++] << 8 | buffer[position++] << 16 |
                                 buffer[position++] << 24;
+
                     var type = (DataType)buffer[position++];
 
                     var deserialized = false;
@@ -196,7 +199,6 @@ namespace USerialization
                         }
                         else
                         {
-                            indexes[i] = 255;
                             dataTypes[i] = type;
                         }
                     }
@@ -206,7 +208,7 @@ namespace USerialization
                 {
                     var index = indexes[i];
 
-                    if (index == 255)
+                    if ((byte)dataTypes[i] != 0)
                     {
                         _dataTypesDatabase.SkipData(dataTypes[i], input);
                         continue;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -23,6 +22,11 @@ namespace USerialization
 
         public bool TryGet(Type type, out DataSerializer serializationMethods)
         {
+            serializationMethods = default;
+
+            if (_serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
             if (type.IsArray == false)
             {
                 serializationMethods = default;
@@ -43,7 +47,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods = new ArrayDataSerializer(elementType, elementSerializer, _serializer);
+            serializationMethods = new ArrayDataSerializer(elementType, elementSerializer, arrayDataTypeLogic.Value);
             return true;
         }
 
@@ -63,30 +67,12 @@ namespace USerialization
             public override DataType GetDataType() => _dataType;
 
 
-            public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer, USerializer serializer)
+            public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer, DataType arrayDataType)
             {
-                if (elementType.IsValueType)
-                {
-                    var array = Array.CreateInstance(elementType, 2);
-                    var pinnable = Unsafe.As<Array, byte[]>(ref array);
-
-                    fixed (byte* address = pinnable)
-                    {
-                        var elementOne = Marshal.UnsafeAddrOfPinnedArrayElement(array, 0);
-                        var elementTwo = Marshal.UnsafeAddrOfPinnedArrayElement(array, 1);
-                        _size = (int)(elementTwo.ToInt64() - elementOne.ToInt64());
-                    }
-                }
-                else
-                    _size = sizeof(void*);
-
+                _size = UnsafeUtils.GetArrayElementSize(elementType);
                 _elementType = elementType;
                 _elementSerializer = elementSerializer;
-
-                var typeLogic = serializer.DataTypesDatabase;
-
-                if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic))
-                    _dataType = arrayDataTypeLogic.Value;
+                _dataType = arrayDataType;
             }
 
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -172,4 +158,6 @@ namespace USerialization
         }
 
     }
+
+
 }

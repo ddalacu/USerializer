@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
 
@@ -24,43 +23,54 @@ namespace USerialization
 
         }
 
+        public bool TryGet(Type type, out DataSerializer serializationMethods)
+        {
+            serializationMethods = default;
+
+            if (_serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
+            if (type.IsConstructedGenericType == false)
+                return false;
+
+            if (type.GetGenericTypeDefinition() != typeof(List<>))
+                return false;
+            
+            var elementType = type.GetGenericArguments()[0];
+
+            if (_serializer.TryGetDataSerializer(elementType, out var elementDataSerializer) == false)
+            {
+                serializationMethods = default;
+                return false;
+            }
+
+            serializationMethods = new ListDataSerializer(type, elementType, elementDataSerializer, arrayDataTypeLogic.Value);
+            return true;
+        }
+
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public class ListDataSerializer : DataSerializer
         {
             private readonly Type _elementType;
-            private readonly DataSerializer _elementSerializer;
-            private int _size;
-            private Type _fieldType;
 
-            private DataType _dataType;
+            private readonly DataSerializer _elementSerializer;
+
+            private readonly int _size;
+
+            private readonly Type _fieldType;
+
+            private readonly DataType _dataType;
 
             public override DataType GetDataType() => _dataType;
 
-            public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer, USerializer serializer)
+            public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer, DataType arrayDataType)
             {
                 _fieldType = fieldType;
                 _elementType = elementType;
                 _elementSerializer = elementSerializer;
-
-
-                if (elementType.IsValueType)
-                {
-                    var array = Array.CreateInstance(elementType, 2);
-                    var pinnable = Unsafe.As<Array, byte[]>(ref array);
-
-                    fixed (byte* address = pinnable)
-                    {
-                        var elementOne = Marshal.UnsafeAddrOfPinnedArrayElement(array, 0);
-                        var elementTwo = Marshal.UnsafeAddrOfPinnedArrayElement(array, 1);
-                        _size = (int)(elementTwo.ToInt64() - elementOne.ToInt64());
-                    }
-                }
-                else
-                    _size = sizeof(void*);
-
-                if (serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic))
-                    _dataType = arrayDataTypeLogic.Value;
+                _size = UnsafeUtils.GetArrayElementSize(elementType);
+                _dataType = arrayDataType;
             }
 
             public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
@@ -169,32 +179,6 @@ namespace USerialization
                 }
             }
         }
-
-        public bool TryGet(Type type, out DataSerializer serializationMethods)
-        {
-
-            if (type.IsConstructedGenericType == false)
-            {
-                serializationMethods = default;
-                return false;
-            }
-
-            if (type.GetGenericTypeDefinition() != typeof(List<>))
-            {
-                serializationMethods = default;
-                return false;
-            }
-
-            var elementType = type.GetGenericArguments()[0];
-
-            if (_serializer.TryGetDataSerializer(elementType, out var elementDataSerializer) == false)
-            {
-                serializationMethods = default;
-                return false;
-            }
-
-            serializationMethods = new ListDataSerializer(type, elementType, elementDataSerializer, _serializer);
-            return true;
-        }
     }
+
 }

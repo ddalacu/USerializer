@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
-
+using System.Runtime.CompilerServices;
 public class PinnableObject
 {
     public byte Pinnable;
@@ -34,6 +34,9 @@ public static class UnsafeUtils
 
     public static unsafe int GetFieldOffset(FieldInfo fi)
     {
+        if (fi == null)
+            throw new ArgumentNullException(nameof(fi));
+
         var handle = fi.FieldHandle;
 
         if (_isMono)
@@ -48,6 +51,27 @@ public static class UnsafeUtils
             FieldDesc* fd = (FieldDesc*)handle.Value;
             return fd->Offset;
         }
+    }
+
+    public static unsafe int GetArrayElementSize(Type type)
+    {
+        if (type == null) 
+            throw new ArgumentNullException(nameof(type));
+
+        if (type.IsValueType)
+        {
+            var array = Array.CreateInstance(type, 2);
+            var pinnable = Unsafe.As<Array, byte[]>(ref array);
+
+            fixed (byte* address = pinnable)
+            {
+                var elementOne = Marshal.UnsafeAddrOfPinnedArrayElement(array, 0);
+                var elementTwo = Marshal.UnsafeAddrOfPinnedArrayElement(array, 1);
+                return (int)(elementTwo.ToInt64() - elementOne.ToInt64());
+            }
+        }
+
+        return sizeof(void*);
     }
 
 }
