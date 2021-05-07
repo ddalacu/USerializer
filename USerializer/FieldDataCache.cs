@@ -11,17 +11,14 @@ namespace USerialization
             _datas = new TypeDictionary<FieldsData>(capacity);
         }
 
-        public bool GetTypeData(Type type, USerializer uSerializer, out FieldsData typeData)
+        public void GetTypeData(Type type, USerializer uSerializer, out FieldsData typeData)
         {
             if (_datas.TryGetValue(type, out typeData))
-                return typeData != null;
+                return;
 
             typeData = new FieldsData();
             _datas.Add(type, typeData);//to prevent recursion when GetFields
-
             typeData.Fields = FieldsData.GetFields(type, uSerializer);
-
-            return true;
         }
     }
 }

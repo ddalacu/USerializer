@@ -2,7 +2,7 @@
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(UInt16Serializer))]
+[assembly: CustomSerializer(typeof(UInt16), typeof(UInt16Serializer))]
 namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]

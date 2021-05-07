@@ -2,7 +2,7 @@
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(UIntSerializer))]
+[assembly: CustomSerializer(typeof(uint), typeof(UIntSerializer))]
 
 namespace USerialization
 {

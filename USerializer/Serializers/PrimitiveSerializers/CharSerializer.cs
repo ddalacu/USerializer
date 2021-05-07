@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(CharSerializer))]
+[assembly: CustomSerializer(typeof(char), typeof(CharSerializer))]
 
 namespace USerialization
 {

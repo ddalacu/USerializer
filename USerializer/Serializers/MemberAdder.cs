@@ -267,6 +267,11 @@ namespace USerialization
 
         public override DataType GetDataType() => _dataSerializer.GetDataType();
 
+        protected override void Initialize(USerializer serializer)
+        {
+            _dataSerializer.RootInitialize(serializer);
+        }
+
         public StructFieldWriter(DataSerializer dataSerializer, FieldInfo fieldInfo)
         {
             _fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
@@ -296,6 +301,11 @@ namespace USerialization
 
         private int _fieldOffset;
         public override DataType GetDataType() => _dataSerializer.GetDataType();
+
+        protected override void Initialize(USerializer serializer)
+        {
+            _dataSerializer.RootInitialize(serializer);
+        }
 
         public ClassFieldWriter(DataSerializer dataSerializer, FieldInfo fieldInfo)
         {
@@ -347,6 +357,11 @@ namespace USerialization
         private DataSerializer _dataSerializer;
         public override DataType GetDataType() => _dataSerializer.GetDataType();
 
+        protected override void Initialize(USerializer serializer)
+        {
+            _dataSerializer.RootInitialize(serializer);
+        }
+
         public PropertyWriter(DataSerializer dataSerializer, SetPropertyDelegate<T, TMember> set, GetPropertyDelegate<T, TMember> get)
         {
             _set = set;
@@ -382,6 +397,11 @@ namespace USerialization
         private readonly GetDelegate _get;
         private DataSerializer _dataSerializer;
         public override DataType GetDataType() => _dataSerializer.GetDataType();
+
+        protected override void Initialize(USerializer serializer)
+        {
+            _dataSerializer.RootInitialize(serializer);
+        }
 
         public ByRefFieldWriter(DataSerializer dataSerializer, SetDelegate set, GetDelegate get)
         {
@@ -431,6 +451,11 @@ namespace USerialization
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
+
+        protected override void Initialize(USerializer serializer)
+        {
+            _elementSerializer.RootInitialize(serializer);
+        }
 
         public FieldArrayWriter(DataSerializer elementSerializer,
             GetLengthDelegate getLengthDelegate,

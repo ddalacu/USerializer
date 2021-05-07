@@ -15,14 +15,9 @@ namespace USerialization
 
     public unsafe class ClassSerializationProvider : ISerializationProvider
     {
-        private USerializer _serializer;
-
-        private FieldDataCache _fieldDataCache;
-
         public void Initialize(USerializer serializer)
         {
-            _serializer = serializer;
-            _fieldDataCache = new FieldDataCache(512);
+
         }
 
         public void Start(USerializer serializer)
@@ -30,11 +25,11 @@ namespace USerialization
 
         }
 
-        public bool TryGet(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(USerializer serializer, Type type, out DataSerializer serializationMethods)
         {
             serializationMethods = default;
 
-            if (_serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic) == false)
+            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic) == false)
                 return false;
 
             if (type.IsArray)
@@ -46,18 +41,11 @@ namespace USerialization
             if (type.IsPrimitive)
                 return false;
 
-            if (_serializer.SerializationPolicy.ShouldSerialize(type) == false)
+            if (serializer.SerializationPolicy.ShouldSerialize(type) == false)
                 return false;
 
-            if (_fieldDataCache.GetTypeData(type, _serializer, out var fieldsData) == false)
-            {
-                serializationMethods = default;
-                return false;
-            }
 
-            var fieldsSerializer = new FieldsSerializer(fieldsData, _serializer.DataTypesDatabase);
-
-            serializationMethods = new ClassDataSerializer(type, fieldsSerializer, objectDataTypeLogic.Value);
+            serializationMethods = new ClassDataSerializer(type, objectDataTypeLogic.Value);
 
             return true;
         }
@@ -74,7 +62,15 @@ namespace USerialization
 
             public override DataType GetDataType() => _dataType;
 
-            public ClassDataSerializer(Type type, FieldsSerializer fieldsSerializer, DataType objectDataType)
+            protected override void Initialize(USerializer serializer)
+            {
+                var typeData = new FieldsData();
+                typeData.Fields = FieldsData.GetFields(_type, serializer);
+
+                _fieldsSerializer = new FieldsSerializer(typeData, serializer.DataTypesDatabase);
+            }
+
+            public ClassDataSerializer(Type type, DataType objectDataType)
             {
                 if (type == null)
                     throw new ArgumentNullException(nameof(type));
@@ -83,7 +79,6 @@ namespace USerialization
                     throw new ArgumentException(nameof(type));
 
                 _type = type;
-                _fieldsSerializer = fieldsSerializer;
                 var constructor = _type.GetConstructor(Type.EmptyTypes);
                 _haveCtor = constructor != null;
                 _dataType = objectDataType;

@@ -16,11 +16,11 @@ namespace USerialization
 
     public class CustomSerializerProvider : ISerializationProvider
     {
-        private Dictionary<Type, CustomDataSerializer> _instances;
+        private Dictionary<Type, Type> _map;
 
-        public void Initialize(USerializer serializer)
+        public CustomSerializerProvider(ILogger logger)
         {
-            _instances = new Dictionary<Type, CustomDataSerializer>(512);
+            _map = new Dictionary<Type, Type>(512);
 
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
@@ -34,44 +34,40 @@ namespace USerialization
                 {
                     if (customSerializerType.IsAssignableFrom(attribute.SerializerType) == false)
                     {
-                        serializer.Logger.Error($"{attribute.SerializerType} does not inherit {nameof(CustomDataSerializer)}");
+                        logger.Error($"{attribute.SerializerType} does not inherit {nameof(CustomDataSerializer)}");
                         continue;
                     }
 
-                    var instance = (CustomDataSerializer)Activator.CreateInstance(attribute.SerializerType);
-
-                    _instances.Add(instance.SerializedType, instance);
+                    _map.Add(attribute.SerializedType, attribute.SerializerType);
                 }
             }
+        }
+
+        public void Initialize(USerializer serializer)
+        {
+
         }
 
         public void Start(USerializer serializer)
         {
-            var toRemove = new List<Type>();
 
-            foreach (var entry in _instances)
-            {
-                if (entry.Value.TryInitialize(serializer) == false)
-                    toRemove.Add(entry.Key);
-            }
-
-            foreach (var type in toRemove)
-                _instances.Remove(type);
-
-            foreach (var value in _instances.Values)
-            {
-                if (value.GetDataType() == DataType.None)
-                {
-                    serializer.Logger.Error($"{value} should assign data type inside TryInitialize!");
-                }
-            }
         }
 
-        public bool TryGet(Type type, out DataSerializer dataSerializer)
+        public bool TryGet(USerializer serializer, Type type, out DataSerializer dataSerializer)
         {
-            if (_instances.TryGetValue(type, out var instance))
+            if (_map.TryGetValue(type, out var serializerType))
             {
+                var instance = (CustomDataSerializer)Activator.CreateInstance(serializerType);
+
                 dataSerializer = instance;
+
+                if (instance.TryInitialize(serializer) == false)
+                {
+                    dataSerializer = default;
+                    return false;
+                }
+
+                Console.WriteLine($"{instance} {instance.GetDataType()}");
                 return true;
             }
 

@@ -18,8 +18,11 @@ namespace USerializerTests
         }
         static BinaryUtility()
         {
-            var providers = ProvidersUtils.GetDefaultProviders();
-            _uSerializer = new USerializer(new UnitySerializationPolicy(), providers, new DataTypesDatabase(), new ConsoleLogger());
+            var consoleLogger = new ConsoleLogger();
+
+            var serializationProviders = ProvidersUtils.GetDefaultProviders(consoleLogger);
+
+            _uSerializer = new USerializer(new UnitySerializationPolicy(), serializationProviders, new DataTypesDatabase(), consoleLogger);
         }
 
         /// <summary>

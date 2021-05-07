@@ -4,9 +4,9 @@ using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(IntSerializer))]
-[assembly: CustomSerializer(typeof(IntArraySerializer))]
-[assembly: CustomSerializer(typeof(IntListSerializer))]
+[assembly: CustomSerializer(typeof(int), typeof(IntSerializer))]
+[assembly: CustomSerializer(typeof(int[]), typeof(IntArraySerializer))]
+[assembly: CustomSerializer(typeof(List<int>), typeof(IntListSerializer))]
 
 
 namespace USerialization

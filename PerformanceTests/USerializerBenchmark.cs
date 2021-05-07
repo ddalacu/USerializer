@@ -142,8 +142,12 @@ namespace PerformanceTests
 
         public USerializerBenchmark()
         {
-            _uSerializer = new USerializer(new UnitySerializationPolicy(), ProvidersUtils.GetDefaultProviders(),
-                new DataTypesDatabase(), new ConsoleLogger());
+            var consoleLogger = new ConsoleLogger();
+
+            var serializationProviders = ProvidersUtils.GetDefaultProviders(consoleLogger);
+
+            _uSerializer = new USerializer(new UnitySerializationPolicy(), serializationProviders,
+                new DataTypesDatabase(), consoleLogger);
 
             _output = new SerializerOutput(2048 * 10);
             _input = new SerializerInput(2048 * 10);

@@ -8,11 +8,10 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public unsafe class ArraySerializer : ISerializationProvider
     {
-        private USerializer _serializer;
 
         public void Initialize(USerializer serializer)
         {
-            _serializer = serializer;
+
         }
 
         public void Start(USerializer serializer)
@@ -20,11 +19,11 @@ namespace USerialization
 
         }
 
-        public bool TryGet(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(USerializer serializer, Type type, out DataSerializer serializationMethods)
         {
             serializationMethods = default;
 
-            if (_serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
+            if (serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
                 return false;
 
             if (type.IsArray == false)
@@ -41,7 +40,7 @@ namespace USerialization
 
             var elementType = type.GetElementType();
 
-            if (_serializer.TryGetDataSerializer(elementType, out var elementSerializer) == false)
+            if (serializer.TryGetDataSerializer(elementType, out var elementSerializer) == false)
             {
                 serializationMethods = default;
                 return false;
@@ -66,6 +65,10 @@ namespace USerialization
 
             public override DataType GetDataType() => _dataType;
 
+            protected override void Initialize(USerializer serializer)
+            {
+                _elementSerializer.RootInitialize(serializer);
+            }
 
             public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer, DataType arrayDataType)
             {

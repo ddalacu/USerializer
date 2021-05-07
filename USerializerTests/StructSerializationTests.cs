@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(USerializerTests.CustomStructSerializer))]
+[assembly: CustomSerializer(typeof(USerializerTests.CustomStruct), typeof(USerializerTests.CustomStructSerializer))]
 
 
 namespace USerializerTests

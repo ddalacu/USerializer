@@ -1,7 +1,7 @@
 ﻿using System;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(DateTimeSerializer))]
+[assembly: CustomSerializer(typeof(DateTime), typeof(DateTimeSerializer))]
 
 namespace USerialization
 {

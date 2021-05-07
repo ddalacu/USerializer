@@ -45,10 +45,13 @@ namespace USerialization
 
             foreach (var provider in _providers)
             {
-                if (provider.TryGet(type, out dataSerializer) == false)
+                if (provider.TryGet(this, type, out dataSerializer) == false)
                     continue;
 
                 _methods.Add(type, dataSerializer);
+
+                dataSerializer.RootInitialize(this);
+
                 return true;
             }
 
@@ -75,7 +78,7 @@ namespace USerialization
 
             foreach (var provider in _providers)
             {
-                if (provider.TryGet(type, out result) == false)
+                if (provider.TryGet(this, type, out result) == false)
                     continue;
 
                 _methods.Add(type, result);
@@ -96,7 +99,7 @@ namespace USerialization
                 && shouldUse(provider) == false)
                     continue;
 
-                if (provider.TryGet(type, out dataSerializer) == false)
+                if (provider.TryGet(this, type, out dataSerializer) == false)
                     continue;
 
                 return true;

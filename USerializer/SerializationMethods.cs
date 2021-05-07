@@ -11,6 +11,21 @@ namespace USerialization
 
         public abstract void ReadDelegate(void* fieldAddress, SerializerInput input);
 
+
+        private bool _initialized;
+
+        public void RootInitialize(USerializer serializer)
+        {
+            if(_initialized)
+                return;
+            _initialized = true;
+            Initialize(serializer);
+        }
+
+        protected virtual void Initialize(USerializer serializer)
+        {
+
+        }
     }
 
     public readonly unsafe struct TypedDataSerializer<T>

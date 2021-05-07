@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(Int16Serializer))]
+[assembly: CustomSerializer(typeof(short), typeof(Int16Serializer))]
 
 namespace USerialization
 {

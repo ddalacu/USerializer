@@ -2,7 +2,7 @@
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(SByteSerializer))]
+[assembly: CustomSerializer(typeof(sbyte), typeof(SByteSerializer))]
 
 namespace USerialization
 {

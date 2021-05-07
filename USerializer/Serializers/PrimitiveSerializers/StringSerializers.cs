@@ -4,9 +4,9 @@ using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(StringSerializer))]
-[assembly: CustomSerializer(typeof(StringArraySerializer))]
-[assembly: CustomSerializer(typeof(StringListSerializer))]
+[assembly: CustomSerializer(typeof(string), typeof(StringSerializer))]
+[assembly: CustomSerializer(typeof(string[]), typeof(StringArraySerializer))]
+[assembly: CustomSerializer(typeof(List<string>), typeof(StringListSerializer))]
 
 
 namespace USerialization

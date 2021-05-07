@@ -9,6 +9,6 @@ namespace USerialization
 
         void Start(USerializer serializer);
 
-        bool TryGet(Type type, out DataSerializer dataSerializer);
+        bool TryGet(USerializer serializer, Type type, out DataSerializer dataSerializer);
     }
 }

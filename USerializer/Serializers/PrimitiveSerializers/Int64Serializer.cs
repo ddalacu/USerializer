@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(Int64Serializer))]
+[assembly: CustomSerializer(typeof(Int64), typeof(Int64Serializer))]
 
 namespace USerialization
 {

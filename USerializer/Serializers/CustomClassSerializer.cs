@@ -11,11 +11,7 @@ namespace USerialization
     {
         public override Type SerializedType => _type;
 
-        private USerializer _serializer;
-
         private Type _type;
-
-        protected USerializer Serializer => _serializer;
 
         private MemberSerializer _memberSerializer;
 
@@ -30,15 +26,9 @@ namespace USerialization
 
         public override bool TryInitialize(USerializer serializer)
         {
-            _serializer = serializer;
-
             if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic))
             {
                 _dataType = objectDataTypeLogic.Value;
-                var adder = new ClassMemberAdder<T>(_serializer);
-                LocalInit(adder);
-                var members = adder.GetMembers();
-                _memberSerializer = new MemberSerializer(members, _serializer.DataTypesDatabase);
                 return true;
             }
 
@@ -47,6 +37,17 @@ namespace USerialization
 
 
         public abstract void LocalInit(ClassMemberAdder<T> adder);
+
+        protected override void Initialize(USerializer serializer)
+        {
+            var adder = new ClassMemberAdder<T>(serializer);
+            LocalInit(adder);
+            var members = adder.GetMembers();
+            _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
+
+            foreach (var member in _memberSerializer.Members)
+                member.DataSerializer.RootInitialize(serializer);
+        }
 
         public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
         {

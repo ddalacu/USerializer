@@ -4,9 +4,9 @@ using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(BoolSerializer))]
-[assembly: CustomSerializer(typeof(BoolArraySerializer))]
-[assembly: CustomSerializer(typeof(BoolListSerializer))]
+[assembly: CustomSerializer(typeof(bool), typeof(BoolSerializer))]
+[assembly: CustomSerializer(typeof(bool[]), typeof(BoolArraySerializer))]
+[assembly: CustomSerializer(typeof(List<bool>), typeof(BoolListSerializer))]
 
 
 namespace USerialization

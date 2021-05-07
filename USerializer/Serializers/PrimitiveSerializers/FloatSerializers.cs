@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(FloatSerializer))]
+[assembly: CustomSerializer(typeof(float), typeof(FloatSerializer))]
 
 namespace USerialization
 {

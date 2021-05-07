@@ -5,14 +5,9 @@ namespace USerialization
 {
     public unsafe class StructSerializationProvider : ISerializationProvider
     {
-        private USerializer _serializer;
-
-        private FieldDataCache _fieldDataCache;
-
         public void Initialize(USerializer serializer)
         {
-            _serializer = serializer;
-            _fieldDataCache = new FieldDataCache(512);
+
         }
 
         public void Start(USerializer serializer)
@@ -20,11 +15,11 @@ namespace USerialization
 
         }
 
-        public bool TryGet(Type type, out DataSerializer serializationMethods)
+        public bool TryGet(USerializer serializer, Type type, out DataSerializer serializationMethods)
         {
             serializationMethods = default;
 
-            if (_serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic dataTypeLogic) == false)
+            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic dataTypeLogic) == false)
                 return false;
 
             if (type.IsArray)
@@ -36,18 +31,10 @@ namespace USerialization
             if (type.IsPrimitive)
                 return false;
 
-            if (_serializer.SerializationPolicy.ShouldSerialize(type) == false)
+            if (serializer.SerializationPolicy.ShouldSerialize(type) == false)
                 return false;
 
-            if (_fieldDataCache.GetTypeData(type, _serializer, out var typeData) == false)
-            {
-                serializationMethods = default;
-                return false;
-            }
-
-            var fieldsSerializer = new FieldsSerializer(typeData, _serializer.DataTypesDatabase);
-
-            serializationMethods = new StructDataSerializer(fieldsSerializer, dataTypeLogic.Value);
+            serializationMethods = new StructDataSerializer(type, dataTypeLogic.Value);
             return true;
         }
 
@@ -55,15 +42,25 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public class StructDataSerializer : DataSerializer
         {
+            private readonly Type _type;
+
             private readonly DataType _dataType;
 
             private FieldsSerializer _fieldsSerializer;
 
             public override DataType GetDataType() => _dataType;
 
-            public StructDataSerializer(FieldsSerializer fieldsSerializer, DataType objectDataType)
+            protected override void Initialize(USerializer serializer)
             {
-                _fieldsSerializer = fieldsSerializer;
+                var typeData = new FieldsData();
+                typeData.Fields = FieldsData.GetFields(_type, serializer);
+
+                _fieldsSerializer = new FieldsSerializer(typeData, serializer.DataTypesDatabase);
+            }
+
+            public StructDataSerializer(Type type, DataType objectDataType)
+            {
+                _type = type;
                 _dataType = objectDataType;
             }
 

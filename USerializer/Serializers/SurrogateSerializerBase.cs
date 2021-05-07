@@ -18,6 +18,11 @@ namespace USerialization
 
         public override DataType GetDataType() => _dataSerializer.GetDataType();
 
+        protected override void Initialize(USerializer serializer)
+        {
+            _dataSerializer.RootInitialize(serializer);
+        }
+
         public override bool TryInitialize(USerializer serializer)
         {
             _serializer = serializer;

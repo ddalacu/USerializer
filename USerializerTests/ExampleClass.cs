@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using USerialization;
 using USerializerTests;
 
-[assembly: CustomSerializer(typeof(ExampleClassSerializer))]
+[assembly: CustomSerializer(typeof(ExampleClass), typeof(ExampleClassSerializer))]
 
 namespace USerializerTests
 {
@@ -16,12 +16,17 @@ namespace USerializerTests
             adder.AddField(3, (obj, val) => obj.Property = val, obj => obj.Property);
             adder.AddField(4, (obj, val) => obj.ValueProp = val, obj => obj.ValueProp);
             adder.AddBackingField(5, nameof(ExampleClass.Prop1));
+
+            adder.AddField(6, nameof(ExampleClass.Me));
+
         }
     }
 
     [Serializable]
     public class ExampleClass : IEquatable<ExampleClass>
     {
+        public ExampleClass Me;
+
         public ChildClass Property { get; set; }
 
         public ChildStruct ValueProp { get; set; }
