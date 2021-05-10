@@ -9,6 +9,7 @@ namespace USerializerTests
         private static USerializer _uSerializer;
 
         public static USerializer USerializer => _uSerializer;
+
         private class ConsoleLogger : ILogger
         {
             public void Error(string error)
@@ -16,6 +17,7 @@ namespace USerializerTests
                 Console.WriteLine("Error:" + error);
             }
         }
+
         static BinaryUtility()
         {
             var consoleLogger = new ConsoleLogger();

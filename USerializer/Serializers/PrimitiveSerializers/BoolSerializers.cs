@@ -15,8 +15,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class BoolSerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(bool);
-
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
@@ -49,8 +47,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class BoolArraySerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(bool[]);
-
         private DataType _elementDataType;
 
 
@@ -140,8 +136,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class BoolListSerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(List<bool>);
-
         private DataType _elementDataType;
 
 

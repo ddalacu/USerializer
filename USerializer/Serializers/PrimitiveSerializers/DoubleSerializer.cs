@@ -1,5 +1,4 @@
-﻿using System;
-using Unity.IL2CPP.CompilerServices;
+﻿using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(double), typeof(DoubleSerializer))]
@@ -11,8 +10,6 @@ namespace USerialization
     public sealed class DoubleSerializer : CustomDataSerializer
     {
         private DataType _dataType;
-
-        public override Type SerializedType => typeof(double);
 
         public override DataType GetDataType() => _dataType;
 

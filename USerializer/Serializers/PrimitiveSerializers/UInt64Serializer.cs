@@ -12,7 +12,6 @@ namespace USerialization
     public sealed class UInt64Serializer : CustomDataSerializer
     {
         private DataType _dataType;
-        public override Type SerializedType => typeof(ulong);
 
         public override DataType GetDataType() => _dataType;
 

@@ -9,8 +9,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class UInt16Serializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(ushort);
-
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
@@ -11,8 +10,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class Int16Serializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(short);
-
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;

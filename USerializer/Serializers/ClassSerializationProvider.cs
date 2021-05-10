@@ -57,7 +57,7 @@ namespace USerialization
 
         protected override void Initialize(USerializer serializer)
         {
-            var fields = FieldsData.GetFields(_type, serializer);
+            var fields = FieldData.GetFields(_type, serializer);
 
             _fieldsSerializer = new FieldsSerializer(fields, serializer.DataTypesDatabase);
 

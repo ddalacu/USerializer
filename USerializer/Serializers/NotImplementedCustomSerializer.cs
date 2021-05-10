@@ -8,8 +8,6 @@ namespace USerialization
     /// <typeparam name="T"></typeparam>
     public unsafe class NotImplementedCustomSerializer<T> : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(T);
-
         public override DataType GetDataType() => DataType.None;
 
         public override void WriteDelegate(void* fieldAddress, SerializerOutput output)

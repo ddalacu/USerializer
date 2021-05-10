@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
@@ -15,8 +14,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class StringSerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(string);
-
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
@@ -70,8 +67,6 @@ namespace USerialization
         private DataType _elementDataType;
 
         private DataType _dataType;
-
-        public override Type SerializedType => typeof(string[]);
 
         public override DataType GetDataType() => _dataType;
 
@@ -154,8 +149,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class StringListSerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(List<string>);
-
         private DataType _elementDataType;
 
         private DataType _dataType;

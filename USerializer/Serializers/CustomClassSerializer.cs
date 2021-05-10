@@ -9,8 +9,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public abstract class CustomClassSerializer<T> : CustomDataSerializer where T : class
     {
-        public override Type SerializedType => _type;
-
         private Type _type;
 
         private MemberSerializer _memberSerializer;
@@ -89,8 +87,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public abstract class CustomStructSerializer<T> : CustomDataSerializer where T : struct
     {
-        public override Type SerializedType => _type;
-
         private USerializer _serializer;
 
         private Type _type;

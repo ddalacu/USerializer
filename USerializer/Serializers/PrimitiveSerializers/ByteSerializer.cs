@@ -15,8 +15,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class ByteSerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(byte);
-
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
@@ -54,8 +52,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class ByteArraySerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(byte[]);
-
         private DataType _elementDataType;
 
 
@@ -145,8 +141,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class ByteListSerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(List<byte>);
-
         private DataType _elementDataType;
 
 

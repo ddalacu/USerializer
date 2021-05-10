@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
@@ -21,8 +20,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class IntSerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(int);
-
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
@@ -59,8 +56,6 @@ namespace USerialization
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
-
-        public override Type SerializedType => typeof(int[]);
 
         public override bool TryInitialize(USerializer serializer)
         {
@@ -142,8 +137,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class IntListSerializer : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(List<int>);
-
         private DataType _elementDataType;
 
         private DataType _dataType;

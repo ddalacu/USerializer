@@ -1,5 +1,4 @@
-﻿using System;
-using Unity.IL2CPP.CompilerServices;
+﻿using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(float), typeof(FloatSerializer))]
@@ -11,8 +10,6 @@ namespace USerialization
     public sealed class FloatSerializer : CustomDataSerializer
     {
         private DataType _dataType;
-
-        public override Type SerializedType => typeof(float);
 
         public override DataType GetDataType() => _dataType;
 

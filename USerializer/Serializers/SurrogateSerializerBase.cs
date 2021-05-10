@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -8,8 +7,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public abstract class SurrogateSerializerBase<T, TSurrogate> : CustomDataSerializer
     {
-        public override Type SerializedType => typeof(T);
-
         private USerializer _serializer;
 
         protected USerializer Serializer => _serializer;

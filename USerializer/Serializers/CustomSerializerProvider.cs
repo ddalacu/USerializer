@@ -6,8 +6,6 @@ namespace USerialization
 {
     public abstract class CustomDataSerializer : DataSerializer
     {
-        public abstract Type SerializedType { get; }
-
         protected override void Initialize(USerializer serializer)
         {
             
@@ -21,7 +19,7 @@ namespace USerialization
 
     public class CustomSerializerProvider : ISerializationProvider
     {
-        private Dictionary<Type, Type> _map;
+        private readonly Dictionary<Type, Type> _map;
 
         public CustomSerializerProvider(ILogger logger)
         {
@@ -54,14 +52,13 @@ namespace USerialization
             {
                 var instance = (CustomDataSerializer)Activator.CreateInstance(serializerType);
 
-                dataSerializer = instance;
-
                 if (instance.TryInitialize(serializer) == false)
                 {
                     dataSerializer = default;
                     return false;
                 }
 
+                dataSerializer = instance;
                 return true;
             }
 

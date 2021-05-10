@@ -1,5 +1,4 @@
-﻿using System;
-using Unity.IL2CPP.CompilerServices;
+﻿using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(sbyte), typeof(SByteSerializer))]
@@ -12,7 +11,6 @@ namespace USerialization
     public sealed class SByteSerializer : CustomDataSerializer
     {
         private DataType _dataType;
-        public override Type SerializedType => typeof(sbyte);
 
         public override DataType GetDataType() => _dataType;
 

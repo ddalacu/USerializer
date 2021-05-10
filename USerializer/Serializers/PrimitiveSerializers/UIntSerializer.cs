@@ -11,7 +11,6 @@ namespace USerialization
     public sealed class UIntSerializer : CustomDataSerializer
     {
         private DataType _dataType;
-        public override Type SerializedType => typeof(uint);
         public override DataType GetDataType() => _dataType;
 
         public override bool TryInitialize(USerializer serializer)

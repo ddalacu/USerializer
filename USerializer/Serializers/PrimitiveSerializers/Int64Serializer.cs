@@ -12,7 +12,6 @@ namespace USerialization
     public sealed class Int64Serializer : CustomDataSerializer
     {
         private DataType _dataType;
-        public override Type SerializedType => typeof(long);
 
         public override DataType GetDataType() => _dataType;
 
