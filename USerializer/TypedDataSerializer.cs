@@ -15,14 +15,14 @@ namespace USerialization
         public void Serialize(T item, SerializerOutput output)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.WriteDelegate(childAddress, output);
+            _methods.Write(childAddress, output);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Serialize(ref T item, SerializerOutput output)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.WriteDelegate(childAddress, output);
+            _methods.Write(childAddress, output);
         }
 
 
@@ -31,7 +31,7 @@ namespace USerialization
         {
             T item = default;
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.ReadDelegate(childAddress, input);
+            _methods.Read(childAddress, input);
             return item;
         }
 
@@ -39,7 +39,7 @@ namespace USerialization
         public void Deserialize(ref T item, SerializerInput input)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.ReadDelegate(childAddress, input);
+            _methods.Read(childAddress, input);
         }
     }
 

@@ -132,6 +132,8 @@ namespace PerformanceTests
 
         private SerializerInput _input;
 
+        private TypedDataSerializer<T> _serializer;
+
         private class ConsoleLogger : ILogger
         {
             public void Error(string error)
@@ -153,6 +155,15 @@ namespace PerformanceTests
             _input = new SerializerInput(2048 * 10);
 
             _uSerializer.PreCacheType(typeof(T));
+
+            if (_uSerializer.TryGetDataSerializer(typeof(T), out var dataSerializer))
+            {
+                _serializer = dataSerializer.GetTyped<T>();
+            }
+            else
+            {
+                throw new Exception($"Cannot serialize {typeof(T)}");
+            }
         }
 
 
@@ -160,7 +171,7 @@ namespace PerformanceTests
         protected override void Serialize(T obj, Stream stream)
         {
             _output.SetStream(stream);
-            _uSerializer.Serialize(_output, obj);
+            _serializer.Serialize(obj, _output);
             _output.Flush();
         }
 
@@ -169,7 +180,7 @@ namespace PerformanceTests
         protected override T Deserialize(Stream stream)
         {
             _input.SetStream(stream);
-            _uSerializer.TryDeserialize(_input, out T result);
+            var result = _serializer.Deserialize(_input);
             _input.FinishRead();
             return result;
         }

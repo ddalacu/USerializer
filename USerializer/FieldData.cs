@@ -207,17 +207,16 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(byte* objectAddress, SerializerOutput output)
         {
-            var typeDataFields = _fields;
-
-            var fieldsLength = typeDataFields.Length;
-
             output.WriteBytes(_headerData, _headerData.Length);
+
+            var typeDataFields = _fields;
+            var fieldsLength = typeDataFields.Length;
 
             for (var index = 0; index < fieldsLength; index++)
             {
                 var fieldData = typeDataFields[index];
                 var dataSerializer = fieldData.SerializationMethods;
-                dataSerializer.WriteDelegate(objectAddress + fieldData.Offset, output);
+                dataSerializer.Write(objectAddress + fieldData.Offset, output);
             }
         }
 
@@ -226,7 +225,6 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Read(byte* objectAddress, SerializerInput input)
         {
-            var fieldDatas = _fields;
 
             var fieldCount = input.ReadByte();
             var size = fieldCount * 5;
@@ -236,6 +234,8 @@ namespace USerialization
             var buffer = input.Buffer;
             var offset = input.PositionInBuffer - size;
 
+            var fieldDatas = _fields;
+
             if (SameHeader(buffer, offset, size))
             {
                 for (int i = 0; i < fieldCount; i++)
@@ -243,7 +243,7 @@ namespace USerialization
                     var fieldData = fieldDatas[i];
                     var fieldDataOffset = objectAddress + fieldData.Offset;
                     var dataSerializer = fieldData.SerializationMethods;
-                    dataSerializer.ReadDelegate(fieldDataOffset, input);
+                    dataSerializer.Read(fieldDataOffset, input);
                 }
             }
             else
@@ -312,7 +312,7 @@ namespace USerialization
                     var fieldData = fieldDatas[index];
                     var fieldDataOffset = objectAddress + fieldData.Offset;
                     var dataSerializer = fieldData.SerializationMethods;
-                    dataSerializer.ReadDelegate(fieldDataOffset, input);
+                    dataSerializer.Read(fieldDataOffset, input);
                 }
             }
         }

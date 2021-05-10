@@ -47,7 +47,7 @@ namespace USerialization
                 member.DataSerializer.RootInitialize(serializer);
         }
 
-        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             if (Unsafe.Read<object>(fieldAddress) == null)
             {
@@ -62,7 +62,7 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             if (input.BeginReadSize(out var end))
             {
@@ -123,7 +123,7 @@ namespace USerialization
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
 
-        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var track = output.BeginSizeTrack();
 
@@ -132,7 +132,7 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             if (input.BeginReadSize(out var end))
             {

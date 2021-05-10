@@ -24,13 +24,13 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = *(float*)(fieldAddress);
             output.WriteFloat(value);
         }
 
-        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             var value = (float*)(fieldAddress);
             *value = input.ReadFloat();

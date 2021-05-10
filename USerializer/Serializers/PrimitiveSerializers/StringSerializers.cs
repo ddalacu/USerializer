@@ -29,13 +29,13 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var obj = Unsafe.Read<string>(fieldAddress);
             output.WriteString(obj);
         }
 
-        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var value = ref Unsafe.AsRef<string>(fieldAddress);
             value = input.ReadString();
@@ -85,7 +85,7 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<string[]>(fieldAddress);
             if (array != null)
@@ -116,7 +116,7 @@ namespace USerialization
             }
         }
 
-        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var array = ref Unsafe.AsRef<string[]>(fieldAddress);
 
@@ -170,7 +170,7 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var list = Unsafe.Read<List<string>>(fieldAddress);
             if (list != null)
@@ -202,7 +202,7 @@ namespace USerialization
             }
         }
 
-        public override unsafe void ReadDelegate(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             ref var list = ref Unsafe.AsRef<List<string>>(fieldAddress);
 

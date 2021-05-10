@@ -51,9 +51,18 @@ namespace USerialization
 
         public override DataType GetDataType() => _dataType;
 
+        private DataType _elementDataType;
+
         protected override void Initialize(USerializer serializer)
         {
             _elementSerializer.RootInitialize(serializer);
+
+            _elementDataType = _elementSerializer.GetDataType();
+
+            if (_elementDataType == DataType.None)
+            {
+                serializer.Logger.Error("Element data type is none, something went wrong!");
+            }
         }
 
         public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer, DataType arrayDataType)
@@ -65,7 +74,7 @@ namespace USerialization
             _dataType = arrayDataType;
         }
 
-        public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output)
         {
             var list = Unsafe.Read<object>(fieldAddress);
 
@@ -83,7 +92,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6);
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
+                    output.WriteByteUnchecked((byte)_elementDataType);
 
                     var pinnable = Unsafe.As<Array, byte[]>(ref array);
 
@@ -93,7 +102,7 @@ namespace USerialization
 
                         for (var index = 0; index < count; index++)
                         {
-                            _elementSerializer.WriteDelegate(tempAddress, output);
+                            _elementSerializer.Write(tempAddress, output);
                             tempAddress += _size;
                         }
                     }
@@ -107,7 +116,7 @@ namespace USerialization
             output.WriteSizeTrack(sizeTracker);
         }
 
-        public override void ReadDelegate(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input)
         {
             ref var list = ref Unsafe.AsRef<object>(fieldAddress);
 
@@ -146,7 +155,7 @@ namespace USerialization
                 if (count > 0)
                 {
                     var type = (DataType)input.ReadByte();
-                    if (type == _elementSerializer.GetDataType())
+                    if (type == _elementDataType)
                     {
                         var pinnable = Unsafe.As<Array, byte[]>(ref array);
 
@@ -156,7 +165,7 @@ namespace USerialization
 
                             for (var i = 0; i < count; i++)
                             {
-                                _elementSerializer.ReadDelegate(tempAddress, input);
+                                _elementSerializer.Read(tempAddress, input);
                                 tempAddress += _size;
                             }
                         }

@@ -100,13 +100,13 @@ namespace USerialization
                     var pinnable = Unsafe.As<object, PinnableObject>(ref o);
                     fixed (byte* objectAddress = &pinnable.Pinnable)
                     {
-                        serializationMethods.WriteDelegate(objectAddress, output);
+                        serializationMethods.Write(objectAddress, output);
                     }
                 }
                 else
                 {
                     var fieldAddress = Unsafe.AsPointer(ref o);
-                    serializationMethods.WriteDelegate(fieldAddress, output);
+                    serializationMethods.Write(fieldAddress, output);
                 }
 
                 return true;
@@ -125,7 +125,7 @@ namespace USerialization
             if (TryGetDataSerializer(type, out var serializationMethods))
             {
                 var fieldAddress = Unsafe.AsPointer(ref value);
-                serializationMethods.WriteDelegate(fieldAddress, output);
+                serializationMethods.Write(fieldAddress, output);
                 return true;
             }
 
@@ -141,7 +141,7 @@ namespace USerialization
             if (TryGetDataSerializer(typeof(T), out var serializationMethods))
             {
                 result = default;
-                serializationMethods.ReadDelegate(Unsafe.AsPointer(ref result), input);
+                serializationMethods.Read(Unsafe.AsPointer(ref result), input);
                 return true;
             }
 
@@ -171,7 +171,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods.ReadDelegate(Unsafe.AsPointer(ref result), input);
+            serializationMethods.Read(Unsafe.AsPointer(ref result), input);
             return true;
         }
 
@@ -188,7 +188,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods.ReadDelegate(Unsafe.AsPointer(ref obj), input);
+            serializationMethods.Read(Unsafe.AsPointer(ref obj), input);
             return true;
         }
 

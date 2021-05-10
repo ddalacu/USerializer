@@ -6,9 +6,9 @@
 
         public abstract DataType GetDataType();
 
-        public abstract void WriteDelegate(void* fieldAddress, SerializerOutput output);
+        public abstract void Write(void* fieldAddress, SerializerOutput output);
 
-        public abstract void ReadDelegate(void* fieldAddress, SerializerInput input);
+        public abstract void Read(void* fieldAddress, SerializerInput input);
 
 
         public void RootInitialize(USerializer serializer)

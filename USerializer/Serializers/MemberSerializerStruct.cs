@@ -98,7 +98,7 @@ namespace USerialization
             {
                 var fieldData = typeDataFields[index];
                 var dataSerializer = fieldData.DataSerializer;
-                dataSerializer.WriteDelegate(objectAddress, output);
+                dataSerializer.Write(objectAddress, output);
             }
         }
 
@@ -126,7 +126,7 @@ namespace USerialization
                 {
                     var fieldData = fieldDatas[i];
                     var dataSerializer = fieldData.DataSerializer;
-                    dataSerializer.ReadDelegate(objectAddress, input);
+                    dataSerializer.Read(objectAddress, input);
                 }
             }
             else
@@ -192,7 +192,7 @@ namespace USerialization
 
                     var fieldData = fieldDatas[index];
                     var dataSerializer = fieldData.DataSerializer;
-                    dataSerializer.ReadDelegate(objectAddress, input);
+                    dataSerializer.Read(objectAddress, input);
                 }
             }
         }
@@ -215,7 +215,7 @@ namespace USerialization
                 var fieldDataSerializer = field.DataSerializer;
                 output.WriteIntUnchecked(field.Hash);
                 output.WriteByteUnchecked((byte)fieldDataSerializer.GetDataType());
-                fieldDataSerializer.WriteDelegate(fieldAddress, output);
+                fieldDataSerializer.Write(fieldAddress, output);
             }
         }
 
@@ -245,7 +245,7 @@ namespace USerialization
                     {
                         if (type == dataSerializer.GetDataType())
                         {
-                            dataSerializer.ReadDelegate(fieldAddress, input);
+                            dataSerializer.Read(fieldAddress, input);
                             deserialized = true;
                         }
 

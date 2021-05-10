@@ -83,7 +83,7 @@ namespace USerialization
 
         private const int MaxStack = 32;
 
-        public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output)
         {
             var obj = Unsafe.Read<object>(fieldAddress);
 
@@ -112,7 +112,7 @@ namespace USerialization
             _stack--;
         }
 
-        public override void ReadDelegate(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input)
         {
             ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
 
