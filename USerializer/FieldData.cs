@@ -37,11 +37,11 @@ namespace USerialization
         }
     }
 
-    public unsafe struct FieldsSerializer
+    public readonly unsafe struct FieldsSerializer
     {
         private readonly DataTypesDatabase _dataTypesDatabase;
-        private byte[] _headerData;
-        private FieldData[] _fields;
+        private readonly byte[] _headerData;
+        private readonly FieldData[] _fields;
 
         public FieldsSerializer(FieldData[] fields, DataTypesDatabase dataTypesDatabase)
         {

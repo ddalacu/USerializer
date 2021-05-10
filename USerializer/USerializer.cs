@@ -34,9 +34,7 @@ namespace USerialization
         public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer)
         {
             if (_methods.TryGetValue(type, out dataSerializer))
-            {
                 return true;
-            }
 
             foreach (var provider in _providers)
             {
@@ -55,37 +53,6 @@ namespace USerialization
             return false;
         }
 
-        public bool TryGetDataSerializer<T>(out TypedDataSerializer<T> methods)
-        {
-            var type = typeof(T);
-
-            if (_methods.TryGetValue(type, out var result))
-            {
-                if (result != null)
-                {
-                    methods = new TypedDataSerializer<T>(result);
-                    return true;
-                }
-
-                methods = default;
-                return false;
-            }
-
-            foreach (var provider in _providers)
-            {
-                if (provider.TryGet(this, type, out result) == false)
-                    continue;
-
-                _methods.Add(type, result);
-                methods = new TypedDataSerializer<T>(result);
-                return true;
-            }
-
-            methods = default;
-            _methods.Add(type, result);
-            return false;
-        }
-
         public bool TryGetNonCachedSerializationMethods(Type type, out DataSerializer dataSerializer, Func<ISerializationProvider, bool> shouldUse = null)
         {
             foreach (var provider in _providers)
@@ -96,6 +63,8 @@ namespace USerialization
 
                 if (provider.TryGet(this, type, out dataSerializer) == false)
                     continue;
+
+                dataSerializer.RootInitialize(this);
 
                 return true;
             }
