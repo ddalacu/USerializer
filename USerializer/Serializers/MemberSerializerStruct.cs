@@ -16,17 +16,19 @@ namespace USerialization
 
     }
 
-    public unsafe struct MemberSerializer
+    public readonly unsafe struct MemberSerializer
     {
         public readonly MemberSerializerStruct[] Members;
+
         private readonly DataTypesDatabase _dataTypesDatabase;
-        private byte[] _headerData;
+
+        private readonly byte[] _headerData;
 
         public MemberSerializer(MemberSerializerStruct[] members, DataTypesDatabase dataTypesDatabase)
         {
             Members = members;
             _dataTypesDatabase = dataTypesDatabase;
-            _headerData = null;
+            _headerData = CreateHeaderData(Members);
         }
 
         private static byte[] CreateHeaderData(MemberSerializerStruct[] datas)
@@ -85,9 +87,6 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(byte* objectAddress, SerializerOutput output)
         {
-            if (_headerData == null)
-                _headerData = CreateHeaderData(Members);
-
             var typeDataFields = Members;
 
             var fieldsLength = typeDataFields.Length;
@@ -107,9 +106,6 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Read(byte* objectAddress, SerializerInput input)
         {
-            if (_headerData == null)
-                _headerData = CreateHeaderData(Members);
-
             var fieldDatas = Members;
 
             var fieldCount = input.ReadByte();

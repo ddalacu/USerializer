@@ -1,26 +1,18 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
-
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public abstract class CustomClassSerializer<T> : CustomDataSerializer where T : class
+    public abstract class CustomStructSerializer<T> : CustomDataSerializer where T : struct
     {
-        private Type _type;
 
         private MemberSerializer _memberSerializer;
 
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
-
-        protected CustomClassSerializer()
-        {
-            _type = typeof(T);//cache typeof to improve il2cpp perf
-        }
 
         public override bool TryInitialize(USerializer serializer)
         {
@@ -33,12 +25,9 @@ namespace USerialization
             return false;
         }
 
-
-        public abstract void LocalInit(ClassMemberAdder<T> adder);
-
         protected override void Initialize(USerializer serializer)
         {
-            var adder = new ClassMemberAdder<T>(serializer);
+            var adder = new StructMemberAdder<T>(serializer);
             LocalInit(adder);
             var members = adder.GetMembers();
             _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
@@ -47,14 +36,10 @@ namespace USerialization
                 member.DataSerializer.RootInitialize(serializer);
         }
 
+        public abstract void LocalInit(StructMemberAdder<T> adder);
+
         public override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
-            if (Unsafe.Read<object>(fieldAddress) == null)
-            {
-                output.WriteNull();
-                return;
-            }
-
             var track = output.BeginSizeTrack();
 
             _memberSerializer.Write((byte*)fieldAddress, output);
@@ -66,21 +51,15 @@ namespace USerialization
         {
             if (input.BeginReadSize(out var end))
             {
-                ref var objectInstance = ref Unsafe.AsRef<object>(fieldAddress);
-                if (objectInstance == null)
-                    objectInstance = Activator.CreateInstance(_type);
-
                 _memberSerializer.Read((byte*)fieldAddress, input);
 
                 input.EndObject(end);
             }
             else
             {
-                ref var objectInstance = ref Unsafe.AsRef<object>(fieldAddress);
-                objectInstance = null;
+                ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
+                instance = default;
             }
-
         }
     }
 }
-

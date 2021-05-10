@@ -70,24 +70,5 @@ namespace USerializerTests
 
             return ob;
         }
-
-        //public static bool CompareSerializedContents<T>(IList<T> a, IList<T> b)
-        //{
-        //    if (a.Count != b.Count)
-        //        return false;
-
-        //    for (int i = 0; i < a.Count; i++)
-        //    {
-        //        var elementA = a[i];
-        //        var elementB = b[i];
-
-        //        if (JsonUtility.ToJson(elementA) != JsonUtility.ToJson(elementB))
-        //            return false;
-        //    }
-
-        //    return true;
-        //}
-
-
     }
 }
