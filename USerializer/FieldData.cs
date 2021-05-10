@@ -39,15 +39,15 @@ namespace USerialization
 
     public unsafe struct FieldsSerializer
     {
-        private readonly FieldsData _fieldsData;
         private readonly DataTypesDatabase _dataTypesDatabase;
         private byte[] _headerData;
+        private FieldData[] _fields;
 
-        public FieldsSerializer(FieldsData fieldsData, DataTypesDatabase dataTypesDatabase)
+        public FieldsSerializer(FieldData[] fields, DataTypesDatabase dataTypesDatabase)
         {
-            _fieldsData = fieldsData;
+            _fields = fields;
             _dataTypesDatabase = dataTypesDatabase;
-            _headerData = null;
+            _headerData = CreateHeaderData(fields);
         }
 
         private static byte[] CreateHeaderData(FieldData[] datas)
@@ -106,10 +106,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(byte* objectAddress, SerializerOutput output)
         {
-            var typeDataFields = _fieldsData.Fields;
-
-            if (_headerData == null)
-                _headerData = CreateHeaderData(typeDataFields);
+            var typeDataFields = _fields;
 
             var fieldsLength = typeDataFields.Length;
 
@@ -128,10 +125,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Read(byte* objectAddress, SerializerInput input)
         {
-            var fieldDatas = _fieldsData.Fields;
-
-            if (_headerData == null)
-                _headerData = CreateHeaderData(fieldDatas);
+            var fieldDatas = _fields;
 
             var fieldCount = input.ReadByte();
             var size = fieldCount * 5;

@@ -4,27 +4,11 @@ using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public unsafe class ArraySerializer : ISerializationProvider
+    public class ArraySerializer : ISerializationProvider
     {
-
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public void Start(USerializer serializer)
-        {
-
-        }
-
         public bool TryGet(USerializer serializer, Type type, out DataSerializer serializationMethods)
         {
             serializationMethods = default;
-
-            if (serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
 
             if (type.IsArray == false)
             {
@@ -38,6 +22,9 @@ namespace USerialization
                 return false;
             }
 
+            if (serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
+                return false;
+
             var elementType = type.GetElementType();
 
             if (serializer.TryGetDataSerializer(elementType, out var elementSerializer) == false)
@@ -49,118 +36,115 @@ namespace USerialization
             serializationMethods = new ArrayDataSerializer(elementType, elementSerializer, arrayDataTypeLogic.Value);
             return true;
         }
+    }
 
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    public sealed unsafe class ArrayDataSerializer : DataSerializer
+    {
+        private readonly Type _elementType;
 
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public class ArrayDataSerializer : DataSerializer
+        private readonly DataSerializer _elementSerializer;
+
+        private readonly int _size;
+
+        private readonly DataType _dataType;
+
+        public override DataType GetDataType() => _dataType;
+
+        protected override void Initialize(USerializer serializer)
         {
-            private readonly Type _elementType;
+            _elementSerializer.RootInitialize(serializer);
+        }
 
-            private readonly DataSerializer _elementSerializer;
+        public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer, DataType arrayDataType)
+        {
+            _size = UnsafeUtils.GetArrayElementSize(elementType);
+            _elementType = elementType;
+            _elementSerializer = elementSerializer;
+            _dataType = arrayDataType;
+        }
 
-            private readonly int _size;
+        public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
+        {
+            var array = Unsafe.Read<Array>(fieldAddress);
 
-            private readonly DataType _dataType;
-
-            public override DataType GetDataType() => _dataType;
-
-            protected override void Initialize(USerializer serializer)
+            if (array == null)
             {
-                _elementSerializer.RootInitialize(serializer);
+                output.WriteNull();
+                return;
             }
 
-            public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer, DataType arrayDataType)
+            var count = array.Length;
+
+            var sizeTracker = output.BeginSizeTrack();
             {
-                _size = UnsafeUtils.GetArrayElementSize(elementType);
-                _elementType = elementType;
-                _elementSerializer = elementSerializer;
-                _dataType = arrayDataType;
-            }
-
-            public override void WriteDelegate(void* fieldAddress, SerializerOutput output)
-            {
-                var array = Unsafe.Read<Array>(fieldAddress);
-
-                if (array == null)
+                if (count > 0)
                 {
-                    output.WriteNull();
-                    return;
-                }
+                    output.EnsureNext(6);
+                    output.Write7BitEncodedIntUnchecked(count);
+                    output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
 
-                var count = array.Length;
+                    var pinnable = Unsafe.As<Array, byte[]>(ref array);
 
-                var sizeTracker = output.BeginSizeTrack();
-                {
-                    if (count > 0)
+                    fixed (byte* address = pinnable)
                     {
-                        output.EnsureNext(6);
-                        output.Write7BitEncodedIntUnchecked(count);
-                        output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
+                        var tempAddress = address;
 
+                        for (var index = 0; index < count; index++)
+                        {
+                            _elementSerializer.WriteDelegate(tempAddress, output);
+                            tempAddress += _size;
+                        }
+                    }
+                }
+                else
+                {
+                    output.WriteByte(0);
+                }
+            }
+            output.WriteSizeTrack(sizeTracker);
+        }
+
+        public override void ReadDelegate(void* fieldAddress, SerializerInput input)
+        {
+            ref var array = ref Unsafe.AsRef<Array>(fieldAddress);
+
+            if (input.BeginReadSize(out var end))
+            {
+                var count = input.Read7BitEncodedInt();
+
+                if (array == null || array.Length != count)
+                    array = Array.CreateInstance(_elementType, count);
+
+                if (count > 0)
+                {
+                    var type = (DataType)input.ReadByte();
+
+                    if (type == _elementSerializer.GetDataType())
+                    {
                         var pinnable = Unsafe.As<Array, byte[]>(ref array);
 
                         fixed (byte* address = pinnable)
                         {
                             var tempAddress = address;
 
-                            for (var index = 0; index < count; index++)
+                            for (var i = 0; i < count; i++)
                             {
-                                _elementSerializer.WriteDelegate(tempAddress, output);
+                                _elementSerializer.ReadDelegate(tempAddress, input);
                                 tempAddress += _size;
                             }
                         }
                     }
-                    else
-                    {
-                        output.WriteByte(0);
-                    }
                 }
-                output.WriteSizeTrack(sizeTracker);
+
+                input.EndObject(end);
             }
-
-            public override void ReadDelegate(void* fieldAddress, SerializerInput input)
+            else
             {
-                ref var array = ref Unsafe.AsRef<Array>(fieldAddress);
-
-                if (input.BeginReadSize(out var end))
-                {
-                    var count = input.Read7BitEncodedInt();
-
-                    if (array == null || array.Length != count)
-                        array = Array.CreateInstance(_elementType, count);
-
-                    if (count > 0)
-                    {
-                        var type = (DataType)input.ReadByte();
-
-                        if (type == _elementSerializer.GetDataType())
-                        {
-                            var pinnable = Unsafe.As<Array, byte[]>(ref array);
-
-                            fixed (byte* address = pinnable)
-                            {
-                                var tempAddress = address;
-
-                                for (var i = 0; i < count; i++)
-                                {
-                                    _elementSerializer.ReadDelegate(tempAddress, input);
-                                    tempAddress += _size;
-                                }
-                            }
-                        }
-                    }
-
-                    input.EndObject(end);
-                }
-                else
-                {
-                    array = null;
-                }
+                array = null;
             }
         }
-
     }
-
 
 }

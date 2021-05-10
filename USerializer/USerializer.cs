@@ -29,18 +29,13 @@ namespace USerialization
             _providers = providers;
             DataTypesDatabase = dataTypesDatabase;
             Logger = logger;
-            foreach (var serializationProvider in _providers)
-                serializationProvider.Initialize(this);
-
-            foreach (var serializationProvider in _providers)
-                serializationProvider.Start(this);
         }
 
         public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer)
         {
             if (_methods.TryGetValue(type, out dataSerializer))
             {
-                return dataSerializer != null;
+                return true;
             }
 
             foreach (var provider in _providers)

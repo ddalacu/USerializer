@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace USerialization
 {
@@ -22,10 +21,7 @@ namespace USerialization
             Initialize(serializer);
         }
 
-        protected virtual void Initialize(USerializer serializer)
-        {
-
-        }
+        protected abstract void Initialize(USerializer serializer);
     }
 
     public readonly unsafe struct TypedDataSerializer<T>

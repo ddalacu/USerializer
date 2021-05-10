@@ -8,6 +8,11 @@ namespace USerialization
     {
         public abstract Type SerializedType { get; }
 
+        protected override void Initialize(USerializer serializer)
+        {
+            
+        }
+
         public virtual bool TryInitialize(USerializer serializer)
         {
             return true;
@@ -43,16 +48,6 @@ namespace USerialization
             }
         }
 
-        public void Initialize(USerializer serializer)
-        {
-
-        }
-
-        public void Start(USerializer serializer)
-        {
-
-        }
-
         public bool TryGet(USerializer serializer, Type type, out DataSerializer dataSerializer)
         {
             if (_map.TryGetValue(type, out var serializerType))
@@ -67,7 +62,6 @@ namespace USerialization
                     return false;
                 }
 
-                Console.WriteLine($"{instance} {instance.GetDataType()}");
                 return true;
             }
 
