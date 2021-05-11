@@ -208,20 +208,17 @@ namespace USerialization
             if (value == null)
             {
                 //Write7BitEncodedInt(0);
-
                 EnsureNext(1);
                 _buffer[_position++] = 0;//instead of calling encode method we write 0 directly
-
                 return;
             }
 
             var valueLength = value.Length;
 
-            Write7BitEncodedInt(valueLength + 1);
-
             var byteLength = valueLength * sizeof(char);
+            EnsureNext(byteLength + 5); //5 if from the max size of Write7BitEncodedIntUnchecked
 
-            EnsureNext(byteLength);
+            Write7BitEncodedIntUnchecked(valueLength + 1);
 
             fixed (void* textPtr = value)
             {
