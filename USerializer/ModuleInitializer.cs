@@ -7,7 +7,9 @@ namespace USerialization
     {
         public static void Initialize()
         {
-            var localInits = (LocalModuleInitializeAttribute[])typeof(ModuleInitializer).Assembly.GetCustomAttributes(typeof(LocalModuleInitializeAttribute), false);
+            var localInits = (LocalModuleInitializeAttribute[])typeof(ModuleInitializer).Assembly.GetCustomAttributes(typeof(LocalModuleInitializeAttribute), true);
+
+            Array.Sort(localInits, (a, b) => b.Order - a.Order);
 
             foreach (var localInit in localInits)
             {

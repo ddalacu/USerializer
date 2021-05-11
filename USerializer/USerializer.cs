@@ -9,11 +9,13 @@ namespace USerialization
     {
         public Type TargetType { get; }
         public string Method { get; }
+        public int Order { get; }
 
-        public LocalModuleInitializeAttribute(Type targetType, string method)
+        public LocalModuleInitializeAttribute(Type targetType, string method, int order = 0)
         {
             TargetType = targetType;
             Method = method;
+            Order = order;
         }
     }
 

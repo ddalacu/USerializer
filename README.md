@@ -26,6 +26,7 @@ Limitations and downsides:<br/>
 - No support for Dictionaries :( (can be implemented but would require a AOT generation step)
 - Throws exception in case of circular references
 - Properties won't serialize auttomaticaly (add custom serializers and serialize properties too,for examples on how to do this check ExampleClassSerializer inside tests project)
+- If a object is referenced multiple times then the object would be serialized each time, so after deserialization you would get multiple objects
 
 This project is best used in cases where no code generation is allowed and you don't want to run any AOT generation, i use this as a dirrect replacement for unity's JsonUtillity
 

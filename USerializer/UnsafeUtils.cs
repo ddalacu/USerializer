@@ -3,9 +3,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
-[assembly:
-    USerialization.LocalModuleInitialize(typeof(USerialization.UnsafeUtils),
-        nameof(USerialization.UnsafeUtils.LocalInitialize))]
+[assembly: USerialization.LocalModuleInitialize(typeof(USerialization.UnsafeUtils),
+    nameof(USerialization.UnsafeUtils.LocalInitialize), 999)]
 
 
 namespace USerialization
@@ -18,6 +17,8 @@ namespace USerialization
     public static unsafe class UnsafeUtils
     {
         private static bool _isMono;
+
+        public static bool IsMono => _isMono;
 
         internal static void LocalInitialize()
         {
@@ -33,14 +34,14 @@ namespace USerialization
 
             if (_isMono)
             {
-                MonoClassField* fd = (MonoClassField*) handle.Value;
+                MonoClassField* fd = (MonoClassField*)handle.Value;
                 var offset = fd->Offset;
                 offset -= 2 * sizeof(void*);
                 return offset;
             }
             else
             {
-                FieldDesc* fd = (FieldDesc*) handle.Value;
+                FieldDesc* fd = (FieldDesc*)handle.Value;
                 return fd->Offset;
             }
         }
@@ -59,7 +60,7 @@ namespace USerialization
                 {
                     var elementOne = Marshal.UnsafeAddrOfPinnedArrayElement(array, 0);
                     var elementTwo = Marshal.UnsafeAddrOfPinnedArrayElement(array, 1);
-                    return (int) (elementTwo.ToInt64() - elementOne.ToInt64());
+                    return (int)(elementTwo.ToInt64() - elementOne.ToInt64());
                 }
             }
 
