@@ -249,6 +249,10 @@ namespace USerializerTests
             public int IntValue2;
             public string IntValue1 = "wtt";
             public string Test;
+            public int[] ArrayToSkip;
+            public List<double> ListToSkip;
+
+            public SkipFieldClass1 ObjectToSkip;
         }
 
         [Serializable]
@@ -265,7 +269,8 @@ namespace USerializerTests
             {
                 IntValue = 1234,
                 IntValue2 = 223,
-                Test = "Lol"
+                Test = "Lol",
+                ObjectToSkip = new SkipFieldClass1()
             };
 
             var stream = new MemoryStream();

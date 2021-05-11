@@ -86,9 +86,10 @@ namespace USerialization
 
             var count = array.Length;
 
-            var sizeTracker = output.BeginSizeTrack();
+
+            if (count > 0)
             {
-                if (count > 0)
+                var sizeTracker = output.BeginSizeTrack();
                 {
                     output.EnsureNext(6);
                     output.Write7BitEncodedIntUnchecked(count);
@@ -107,12 +108,15 @@ namespace USerialization
                         }
                     }
                 }
-                else
-                {
-                    output.WriteByte(0);
-                }
+                output.WriteSizeTrack(sizeTracker);
             }
-            output.WriteSizeTrack(sizeTracker);
+            else
+            {
+                output.EnsureNext(5);
+                output.WriteIntUnchecked(1); //size tracker
+                output.WriteByteUnchecked(0);
+            }
+
         }
 
         public override void Read(void* fieldAddress, SerializerInput input)

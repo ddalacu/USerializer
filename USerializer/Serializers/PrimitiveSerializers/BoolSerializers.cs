@@ -72,29 +72,32 @@ namespace USerialization
         public override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var array = Unsafe.Read<bool[]>(fieldAddress);
-            if (array != null)
+            if (array == null)
+            {
+                output.WriteNull();
+                return;
+            }
+
+            var count = array.Length;
+
+            if (count > 0)
             {
                 var sizeTracker = output.BeginSizeTrack();
                 {
-                    var count = array.Length;
-                    if (count > 0)
-                    {
-                        output.EnsureNext(6 + (count * sizeof(bool)));
-                        output.Write7BitEncodedIntUnchecked(count);
-                        output.WriteByteUnchecked((byte)_elementDataType);
-                        output.WriteBoolsUnchecked(array, count);
-                    }
-                    else
-                    {
-                        output.WriteByte(0);
-                    }
+                    output.EnsureNext(6 + (count * sizeof(bool)));
+                    output.Write7BitEncodedIntUnchecked(count);
+                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteBoolsUnchecked(array, count);
                 }
                 output.WriteSizeTrack(sizeTracker);
             }
             else
             {
-                output.WriteNull();
+                output.EnsureNext(5);
+                output.WriteIntUnchecked(1); //size tracker
+                output.WriteByteUnchecked(0);
             }
+
         }
 
         public override unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -167,11 +170,11 @@ namespace USerialization
                 return;
             }
 
-            var sizeTracker = output.BeginSizeTrack();
-            {
-                var array = ListHelpers.GetArray(list, out var count);
+            var array = ListHelpers.GetArray(list, out var count);
 
-                if (count > 0)
+            if (count > 0)
+            {
+                var sizeTracker = output.BeginSizeTrack();
                 {
                     output.EnsureNext(6 + (count * sizeof(bool)));
 
@@ -179,13 +182,15 @@ namespace USerialization
                     output.WriteByteUnchecked((byte)_elementDataType);
                     output.WriteBoolsUnchecked(array, count);
                 }
-                else
-                {
-                    output.WriteByte(0);
-                }
-            }
 
-            output.WriteSizeTrack(sizeTracker);
+                output.WriteSizeTrack(sizeTracker);
+            }
+            else
+            {
+                output.EnsureNext(5);
+                output.WriteIntUnchecked(1); //size tracker
+                output.WriteByteUnchecked(0);
+            }
         }
 
         public override unsafe void Read(void* fieldAddress, SerializerInput input)
