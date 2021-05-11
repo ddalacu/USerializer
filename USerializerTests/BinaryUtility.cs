@@ -56,13 +56,13 @@ namespace USerializerTests
         /// <param name="result"></param>
         /// <param name="bufferSize"></param>
         /// <returns>false if type is not serializable</returns>
-        public static bool TryDeserialize<T>(Stream stream, out T result, int bufferSize = 4096 * 2)
+        public static bool TryDeserialize<T>(Stream stream, ref T result, int bufferSize = 4096 * 2)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
             var serializerInput = new SerializerInput(bufferSize, stream);
-            var tryDeserialize = _uSerializer.TryDeserialize<T>(serializerInput, out result);
+            var tryDeserialize = _uSerializer.TryDeserialize<T>(serializerInput, ref result);
             serializerInput.FinishRead();
             return tryDeserialize;
         }

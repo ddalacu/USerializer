@@ -234,7 +234,9 @@ namespace USerializerTests
 
             stream.Position = 0;
 
-            BinaryUtility.TryDeserialize(stream, out FormerlyClass2 class2);
+            FormerlyClass2 class2 = default;
+
+            BinaryUtility.TryDeserialize(stream, ref class2);
 
             Assert.True(class1.IntValue == class2.Form);
         }
@@ -273,7 +275,10 @@ namespace USerializerTests
             var end = stream.Position;
             stream.Position = 0;
 
-            BinaryUtility.TryDeserialize(stream, out SkipFieldClass2 class2);
+            SkipFieldClass2 class2 = default;
+
+            BinaryUtility.TryDeserialize(stream, ref class2);
+
             Assert.True(stream.Position == end);
 
             Assert.True(class1.IntValue == class2.IntValue);
@@ -355,7 +360,8 @@ namespace USerializerTests
             var stream = new MemoryStream();
             BinaryUtility.Serialize(inst, stream);
             stream.Position = 0;
-            BinaryUtility.TryDeserialize(stream, out A result);
+            A result = default;
+            BinaryUtility.TryDeserialize(stream, ref result);
 
             Assert.True(result.Value == inst.Value);
             Assert.True(result.Ref.Value == inst.Ref.Value);
@@ -389,7 +395,8 @@ namespace USerializerTests
 
 
             memStream.Position = 0;
-            var deser = BinaryUtility.TryDeserialize(memStream, out ExampleClass result);
+            ExampleClass result = default;
+            var deser = BinaryUtility.TryDeserialize(memStream, ref result);
             Assert.True(deser);
             Assert.True(EqualityComparer<ExampleClass.ChildClass>.Default.Equals(exampleClass.Property, result.Property));
             Assert.True(EqualityComparer<ExampleClass.ChildStruct>.Default.Equals(exampleClass.ValueProp, result.ValueProp));
@@ -410,7 +417,8 @@ namespace USerializerTests
             BinaryUtility.Serialize(nested, memStream);
 
             memStream.Position = 0;
-            deser = BinaryUtility.TryDeserialize(memStream, out NestedCustom nestedResult);
+            NestedCustom nestedResult = default;
+            deser = BinaryUtility.TryDeserialize(memStream, ref nestedResult);
             Assert.True(deser);
 
             Assert.True(EqualityComparer<NestedCustom>.Default.Equals(nested, nestedResult));
@@ -462,8 +470,8 @@ namespace USerializerTests
             var serialized = BinaryUtility.Serialize(a, stream);
             Assert.True(serialized);
             stream.Position = 0;
-
-            var deserialized = BinaryUtility.TryDeserialize(stream, out GenericClass<DateTime> result);
+            GenericClass<DateTime> result = default;
+            var deserialized = BinaryUtility.TryDeserialize(stream, ref result);
 
             Assert.True(deserialized);
 

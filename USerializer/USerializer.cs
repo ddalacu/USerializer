@@ -4,6 +4,19 @@ using System.Runtime.CompilerServices;
 
 namespace USerialization
 {
+    [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+    public class LocalModuleInitializeAttribute : Attribute
+    {
+        public Type TargetType { get; }
+        public string Method { get; }
+
+        public LocalModuleInitializeAttribute(Type targetType, string method)
+        {
+            TargetType = targetType;
+            Method = method;
+        }
+    }
+
     public interface ILogger
     {
         void Error(string error);
@@ -133,19 +146,18 @@ namespace USerialization
         }
 
 
-        public unsafe bool TryDeserialize<T>(SerializerInput input, out T result)
+        public unsafe bool TryDeserialize<T>(SerializerInput input, ref T result)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
             if (TryGetDataSerializer(typeof(T), out var serializationMethods))
             {
-                result = default;
                 serializationMethods.Read(Unsafe.AsPointer(ref result), input);
                 return true;
             }
-
-            result = default;
+            else
+                result = default;
             return false;
         }
 

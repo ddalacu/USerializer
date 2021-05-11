@@ -43,7 +43,10 @@ namespace USerializerTests
             var initial = initialSerialize.Position;
 
             initialSerialize.Position = 0;
-            var deserialized = BinaryUtility.TryDeserialize<T>(initialSerialize, out var deserialize);
+
+            T deserialize = default;
+
+            var deserialized = BinaryUtility.TryDeserialize<T>(initialSerialize, ref deserialize);
 
             Assert.True(deserialized);
 

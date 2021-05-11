@@ -4,14 +4,16 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 
+[assembly: USerialization.LocalModuleInitialize(typeof(USerialization.ListHelpers), nameof(USerialization.ListHelpers.LocalInitialize))]
+
 namespace USerialization
 {
     public static class ListHelpers
     {
-        private static readonly int _itemsFieldOffset;
-        private static readonly int _sizeFieldOffset;
+        private static int _itemsFieldOffset;
+        private static int _sizeFieldOffset;
 
-        static ListHelpers()
+        internal static void LocalInitialize()
         {
             var listType = typeof(List<object>);
             var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -35,7 +37,7 @@ namespace USerialization
             var pinnable = Unsafe.As<List<T>, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*) (listAddress + _sizeFieldOffset);
+                count = *(int*)(listAddress + _sizeFieldOffset);
                 return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
             }
         }
@@ -79,7 +81,7 @@ namespace USerialization
             var pinnable = Unsafe.As<object, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*) (listAddress + _sizeFieldOffset);
+                count = *(int*)(listAddress + _sizeFieldOffset);
                 return Unsafe.Read<Array>(listAddress + _itemsFieldOffset);
             }
         }
@@ -90,7 +92,7 @@ namespace USerialization
             var pinnable = Unsafe.As<object, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*) (listAddress + _sizeFieldOffset);
+                count = *(int*)(listAddress + _sizeFieldOffset);
                 return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
             }
         }
