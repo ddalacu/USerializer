@@ -41,3 +41,6 @@ For proper examples on how to use this system, please check the BinaryUtility.cs
 
 When using in unity make sure you copy the link.xml from the project root inside your unity project
 Also when creating a custom DataSerializer make sure you mark it with unity's preserve attribute
+
+Note that if you want to add this inside unity you will need System.Runtime.CompilerServices.Unsafe.
+To get it please add the scoped registry found at https://github.com/xoofx/UnityNuGet and then use package manager to add System.Runtime.CompilerServices.Unsafe. 
