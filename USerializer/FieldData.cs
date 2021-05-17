@@ -117,6 +117,9 @@ namespace USerialization
                     if (uSerializer.TryGetDataSerializer(fieldInfo.FieldType, out var serializationMethods) == false)
                         continue;
 
+                    if (serializationMethods == null)
+                        throw new Exception($"Returned null serializer for {fieldInfo.FieldType}");
+
                     var fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
                     if (fieldOffset > short.MaxValue)
                         throw new Exception("Field offset way to big!");

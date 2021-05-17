@@ -49,7 +49,7 @@ namespace USerialization
         public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer)
         {
             if (_methods.TryGetValue(type, out dataSerializer))
-                return true;
+                return dataSerializer != null;
 
             foreach (var provider in _providers)
             {

@@ -21,7 +21,6 @@ namespace PerformanceTests
             public string Commit { get; set; }
         }
 
-
         static int Main(string[] args)
         {
             var fail = 0;

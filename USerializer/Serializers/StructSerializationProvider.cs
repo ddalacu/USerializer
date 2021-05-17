@@ -44,11 +44,10 @@ namespace USerialization
         protected override void Initialize(USerializer serializer)
         {
             var fields = FieldData.GetFields(_type, serializer);
-
-            _fieldsSerializer = new FieldsSerializer(fields, serializer.DataTypesDatabase);
-
             foreach (var fieldData in fields)
                 fieldData.SerializationMethods.RootInitialize(serializer);
+
+            _fieldsSerializer = new FieldsSerializer(fields, serializer.DataTypesDatabase);
         }
 
         public StructDataSerializer(Type type, DataType objectDataType)
