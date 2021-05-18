@@ -46,7 +46,7 @@ namespace USerialization
             Logger = logger;
         }
 
-        public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer)
+        public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer, bool initializeDataSerializer = true)
         {
             if (_methods.TryGetValue(type, out dataSerializer))
                 return dataSerializer != null;
@@ -58,7 +58,8 @@ namespace USerialization
 
                 _methods.Add(type, dataSerializer);
 
-                dataSerializer.RootInitialize(this);
+                if (initializeDataSerializer)
+                    dataSerializer.RootInitialize(this);
 
                 return true;
             }

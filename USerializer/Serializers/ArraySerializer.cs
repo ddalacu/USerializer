@@ -27,7 +27,7 @@ namespace USerialization
 
             var elementType = type.GetElementType();
 
-            if (serializer.TryGetDataSerializer(elementType, out var elementSerializer) == false)
+            if (serializer.TryGetDataSerializer(elementType, out var elementSerializer, false) == false)
             {
                 serializationMethods = default;
                 return false;

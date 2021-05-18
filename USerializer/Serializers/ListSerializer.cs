@@ -23,7 +23,7 @@ namespace USerialization
 
             var elementType = type.GetGenericArguments()[0];
 
-            if (serializer.TryGetDataSerializer(elementType, out var elementDataSerializer) == false)
+            if (serializer.TryGetDataSerializer(elementType, out var elementDataSerializer, false) == false)
             {
                 serializationMethods = default;
                 return false;

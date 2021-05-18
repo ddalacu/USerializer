@@ -24,7 +24,7 @@ namespace USerialization
         {
             _serializer = serializer;
             var type = typeof(TSurrogate);
-            if (_serializer.TryGetDataSerializer(type, out _dataSerializer))
+            if (_serializer.TryGetDataSerializer(type, out _dataSerializer, false))
                 return true;
 
             _serializer.Logger.Error($"Could not get serialization data for {type}");

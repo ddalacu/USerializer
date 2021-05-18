@@ -9,7 +9,7 @@ namespace USerialization
             if (type.IsEnum)
             {
                 var enumType = type.GetEnumUnderlyingType();
-                return serializer.TryGetDataSerializer(enumType, out serializationMethods);
+                return serializer.TryGetDataSerializer(enumType, out serializationMethods, false);
             }
 
             serializationMethods = default;

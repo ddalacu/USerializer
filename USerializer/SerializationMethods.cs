@@ -1,4 +1,6 @@
-﻿namespace USerialization
+﻿using System;
+
+namespace USerialization
 {
     public abstract unsafe class DataSerializer
     {

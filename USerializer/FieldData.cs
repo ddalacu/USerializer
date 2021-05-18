@@ -97,7 +97,7 @@ namespace USerialization
             return false;
         }
 
-        public static FieldData[] GetFields(Type type, USerializer uSerializer)
+        public static FieldData[] GetFields(Type type, USerializer uSerializer, bool initializeDataSerializer = true)
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
@@ -114,7 +114,9 @@ namespace USerialization
                     if (uSerializer.SerializationPolicy.ShouldSerialize(fieldInfo) == false)
                         continue;
 
-                    if (uSerializer.TryGetDataSerializer(fieldInfo.FieldType, out var serializationMethods) == false)
+                    if (uSerializer.TryGetDataSerializer(fieldInfo.FieldType,
+                        out var serializationMethods,
+                        initializeDataSerializer) == false)
                         continue;
 
                     if (serializationMethods == null)
@@ -173,7 +175,12 @@ namespace USerialization
                 headerData[position++] = (byte)(hash >> 16);
                 headerData[position++] = (byte)(hash >> 24);
                 var dataSerializer = fieldData.SerializationMethods;
-                headerData[position++] = (byte)dataSerializer.GetDataType();
+                var dataType = dataSerializer.GetDataType();
+
+                headerData[position++] = (byte)dataType;
+
+                if (dataType == DataType.None)
+                    throw new Exception("Data type is none!");
             }
 
             return headerData;

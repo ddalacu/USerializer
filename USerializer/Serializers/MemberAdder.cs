@@ -52,7 +52,7 @@ namespace USerialization
             FieldArrayWriter<T, TElement>.SetLengthDelegate setLength, FieldArrayWriter<T, TElement>.SetElementDelegate setElement)
         {
             var memberType = typeof(TElement);
-            if (_serializer.TryGetDataSerializer(memberType, out var elementSerializer) == false)
+            if (_serializer.TryGetDataSerializer(memberType, out var elementSerializer, false) == false)
             {
                 _serializer.Logger.Error($"{typeof(T)} custom serializer, cannot get serialization methods for element of type {memberType}");
                 return false;
@@ -79,7 +79,7 @@ namespace USerialization
                 throw new ArgumentNullException(nameof(get));
 
             var memberType = typeof(TMember);
-            if (Serializer.TryGetDataSerializer(memberType, out var methods) == false)
+            if (Serializer.TryGetDataSerializer(memberType, out var methods, false) == false)
             {
                 _serializer.Logger.Error($"{typeof(T)} custom serializer, cannot get serialization methods for field of type {memberType}");
                 return false;
@@ -95,7 +95,7 @@ namespace USerialization
             var memberType = typeof(TMember);
             var type = typeof(T);
 
-            if (Serializer.TryGetDataSerializer(memberType, out var methods) == false)
+            if (Serializer.TryGetDataSerializer(memberType, out var methods, false) == false)
             {
                 _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {memberType}");
                 return;
@@ -132,7 +132,7 @@ namespace USerialization
                 return false;
             }
 
-            if (Serializer.TryGetDataSerializer(field.FieldType, out var methods) == false)
+            if (Serializer.TryGetDataSerializer(field.FieldType, out var methods, false) == false)
             {
                 _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
                 return false;
@@ -160,7 +160,7 @@ namespace USerialization
                 return false;
             }
 
-            if (Serializer.TryGetDataSerializer(field.FieldType, out var methods) == false)
+            if (Serializer.TryGetDataSerializer(field.FieldType, out var methods, false) == false)
             {
                 _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
                 return false;
@@ -188,7 +188,7 @@ namespace USerialization
                 throw new ArgumentNullException(nameof(get));
 
             var memberType = typeof(TMember);
-            if (Serializer.TryGetDataSerializer(memberType, out var methods) == false)
+            if (Serializer.TryGetDataSerializer(memberType, out var methods, false) == false)
             {
                 _serializer.Logger.Error($"{typeof(T)} custom serializer, cannot get serialization methods for field of type {memberType}");
                 return false;
@@ -214,7 +214,7 @@ namespace USerialization
                 return false;
             }
 
-            if (Serializer.TryGetDataSerializer(field.FieldType, out var methods) == false)
+            if (Serializer.TryGetDataSerializer(field.FieldType, out var methods, false) == false)
             {
                 _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
                 return false;
@@ -242,7 +242,7 @@ namespace USerialization
                 return false;
             }
 
-            if (Serializer.TryGetDataSerializer(field.FieldType, out var methods) == false)
+            if (Serializer.TryGetDataSerializer(field.FieldType, out var methods, false) == false)
             {
                 _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
                 return false;
