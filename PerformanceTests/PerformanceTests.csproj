@@ -18,10 +18,4 @@
     <ProjectReference Include="..\USerializer\USerializer.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="log4net.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
