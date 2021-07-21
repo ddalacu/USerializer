@@ -1,10 +1,10 @@
 ``` ini
 
 BenchmarkDotNet=v0.12.1, OS=ubuntu 20.04
-Intel Xeon Platinum 8171M CPU 2.60GHz, 1 CPU, 2 logical and 2 physical cores
-.NET Core SDK=5.0.301
-  [Host]   : .NET Core 5.0.7 (CoreCLR 5.0.721.25508, CoreFX 5.0.721.25508), X64 RyuJIT
-  ShortRun : .NET Core 5.0.7 (CoreCLR 5.0.721.25508, CoreFX 5.0.721.25508), X64 RyuJIT
+Intel Xeon CPU E5-2673 v3 2.40GHz, 1 CPU, 2 logical and 2 physical cores
+.NET Core SDK=5.0.302
+  [Host]   : .NET Core 5.0.8 (CoreCLR 5.0.821.31504, CoreFX 5.0.821.31504), X64 RyuJIT
+  ShortRun : .NET Core 5.0.8 (CoreCLR 5.0.821.31504, CoreFX 5.0.821.31504), X64 RyuJIT
 
 Job=ShortRun  IterationCount=3  LaunchCount=1  
 WarmupCount=3  
@@ -12,9 +12,9 @@ WarmupCount=3
 ```
 |                 Method |      Mean |     Error |    StdDev |
 |----------------------- |----------:|----------:|----------:|
-|   USerializerSerialize |  8.387 ms | 0.5029 ms | 0.0276 ms |
-| USerializerDeserialize | 27.658 ms | 2.8502 ms | 0.1562 ms |
-|   MessagePackSerialize |  9.552 ms | 0.1173 ms | 0.0064 ms |
-| MessagePackDeserialize | 29.916 ms | 7.4578 ms | 0.4088 ms |
-|         CerasSerialize | 58.814 ms | 5.1625 ms | 0.2830 ms |
-|       CerasDeserialize | 55.627 ms | 3.4787 ms | 0.1907 ms |
+|   USerializerSerialize |  7.533 ms |  1.406 ms | 0.0771 ms |
+| USerializerDeserialize | 25.232 ms | 11.274 ms | 0.6180 ms |
+|   MessagePackSerialize |  8.894 ms |  2.916 ms | 0.1598 ms |
+| MessagePackDeserialize | 27.181 ms |  8.238 ms | 0.4515 ms |
+|         CerasSerialize | 51.822 ms | 20.975 ms | 1.1497 ms |
+|       CerasDeserialize | 52.231 ms |  7.643 ms | 0.4190 ms |
