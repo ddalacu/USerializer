@@ -41,10 +41,11 @@ namespace USerialization
             var adder = new ClassMemberAdder<T>(serializer);
             LocalInit(adder);
             var members = adder.GetMembers();
-            _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
 
-            foreach (var member in _memberSerializer.Members)
+            foreach (var member in members)
                 member.DataSerializer.RootInitialize(serializer);
+
+            _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
         }
 
         public override unsafe void Write(void* fieldAddress, SerializerOutput output)

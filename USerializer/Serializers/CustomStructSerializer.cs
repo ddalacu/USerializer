@@ -30,10 +30,11 @@ namespace USerialization
             var adder = new StructMemberAdder<T>(serializer);
             LocalInit(adder);
             var members = adder.GetMembers();
-            _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
 
-            foreach (var member in _memberSerializer.Members)
+            foreach (var member in members)
                 member.DataSerializer.RootInitialize(serializer);
+
+            _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
         }
 
         public abstract void LocalInit(StructMemberAdder<T> adder);

@@ -51,7 +51,12 @@ namespace USerialization
                 headerData[position++] = (byte)(hash >> 16);
                 headerData[position++] = (byte)(hash >> 24);
                 var dataSerializer = fieldData.DataSerializer;
-                headerData[position++] = (byte)dataSerializer.GetDataType();
+                var dataType = dataSerializer.GetDataType();
+
+                headerData[position++] = (byte)dataType;
+
+                if (dataType == DataType.None)
+                    throw new Exception("Data type is none!");
             }
 
             return headerData;
