@@ -280,18 +280,18 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output)
+        protected override void Write(void* fieldAddress, SerializerOutput output)
         {
             var address = (byte*)fieldAddress + _fieldOffset;
-            _dataSerializer.Write(address, output);
+            _dataSerializer.WriteMethod.Invoke(address, output);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Read(void* fieldAddress, SerializerInput input)
+        protected override void Read(void* fieldAddress, SerializerInput input)
         {
             var address = (byte*)fieldAddress + _fieldOffset;
-            _dataSerializer.Read(address, input);
+            _dataSerializer.ReadMethod.Invoke(address, input);
         }
     }
 
@@ -324,27 +324,27 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output)
+        protected override void Write(void* fieldAddress, SerializerOutput output)
         {
             var obj = Unsafe.Read<object>(fieldAddress);//obj should not be null here
 
             var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
             fixed (byte* objectAddress = &pinnable.Pinnable)
             {
-                _dataSerializer.Write(objectAddress + _fieldOffset, output);
+                _dataSerializer.WriteMethod.Invoke(objectAddress + _fieldOffset, output);
             }
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Read(void* fieldAddress, SerializerInput input)
+        protected override void Read(void* fieldAddress, SerializerInput input)
         {
             var obj = Unsafe.Read<object>(fieldAddress);//obj should not be null here
 
             var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
             fixed (byte* objectAddress = &pinnable.Pinnable)
             {
-                _dataSerializer.Read(objectAddress + _fieldOffset, input);
+                _dataSerializer.ReadMethod.Invoke(objectAddress + _fieldOffset, input);
             }
         }
     }
@@ -371,19 +371,19 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output)
+        protected override void Write(void* fieldAddress, SerializerOutput output)
         {
             var value = _get(Unsafe.Read<T>(fieldAddress));
-            _dataSerializer.Write(Unsafe.AsPointer(ref value), output);
+            _dataSerializer.WriteMethod.Invoke(Unsafe.AsPointer(ref value), output);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Read(void* fieldAddress, SerializerInput input)
+        protected override void Read(void* fieldAddress, SerializerInput input)
         {
             TMember def = default;
             var ptr = Unsafe.AsPointer(ref def);
-            _dataSerializer.Read(ptr, input);
+            _dataSerializer.ReadMethod.Invoke(ptr, input);
             _set(Unsafe.Read<T>(fieldAddress), def);
         }
     }
@@ -412,22 +412,22 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output)
+        protected override void Write(void* fieldAddress, SerializerOutput output)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
             var value = _get(ref instance);
-            _dataSerializer.Write(Unsafe.AsPointer(ref value), output);
+            _dataSerializer.WriteMethod.Invoke(Unsafe.AsPointer(ref value), output);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Read(void* fieldAddress, SerializerInput input)
+        protected override void Read(void* fieldAddress, SerializerInput input)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
 
             TMember def = default;
             var ptr = Unsafe.AsPointer(ref def);
-            _dataSerializer.Read(ptr, input);
+            _dataSerializer.ReadMethod.Invoke(ptr, input);
             _set(ref instance, def);
         }
     }
@@ -477,7 +477,7 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output)
+        protected override void Write(void* fieldAddress, SerializerOutput output)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
 
@@ -499,7 +499,7 @@ namespace USerialization
                 {
                     var element = _getElementDelegate(ref instance, index);
                     var itemAddress = Unsafe.AsPointer(ref element);
-                    _elementSerializer.Write(itemAddress, output);
+                    _elementSerializer.WriteMethod.Invoke(itemAddress, output);
                 }
             }
             output.WriteSizeTrack(sizeTracker);
@@ -507,7 +507,7 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Read(void* fieldAddress, SerializerInput input)
+        protected override void Read(void* fieldAddress, SerializerInput input)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
 
@@ -525,7 +525,7 @@ namespace USerialization
                     {
                         TElement def = default;
                         var ptr = Unsafe.AsPointer(ref def);
-                        _elementSerializer.Read(ptr, input);
+                        _elementSerializer.ReadMethod.Invoke(ptr, input);
                         _setElementDelegate(ref instance, index, ref def);
                     }
                 }

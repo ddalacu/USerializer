@@ -4,6 +4,32 @@ using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
+    public readonly struct FinalMemberSerializerStruct
+    {
+        public readonly int Hash;
+        public readonly InstanceWriteMethodPointer Writer;
+        public readonly InstanceReadMethodPointer Reader;
+        public readonly DataType DataType;
+
+        public FinalMemberSerializerStruct(MemberSerializerStruct serializerStruct)
+        {
+            Hash = serializerStruct.Hash;
+            var dataSerializer = serializerStruct.DataSerializer;
+            Writer = dataSerializer.WriteMethod;
+            Reader = dataSerializer.ReadMethod;
+
+            if (Writer.IsValid == false)
+                throw new Exception();
+            if (Reader.IsValid == false)
+                throw new Exception();
+
+            DataType = dataSerializer.GetDataType();
+
+            if (DataType == DataType.None)
+                throw new Exception();
+        }
+    }
+
     public readonly struct MemberSerializerStruct
     {
         public readonly int Hash;
@@ -14,12 +40,11 @@ namespace USerialization
             Hash = hash;
             DataSerializer = dataSerializer;
         }
-
     }
 
     public readonly unsafe struct MemberSerializer
     {
-        public readonly MemberSerializerStruct[] Members;
+        public readonly FinalMemberSerializerStruct[] Members;
 
         private readonly DataTypesDatabase _dataTypesDatabase;
 
@@ -27,12 +52,17 @@ namespace USerialization
 
         public MemberSerializer(MemberSerializerStruct[] members, DataTypesDatabase dataTypesDatabase)
         {
-            Members = members;
+            var final = new FinalMemberSerializerStruct[members.Length];
+            for (var i = 0; i < members.Length; i++)
+                final[i] = new FinalMemberSerializerStruct(members[i]);
+
+            Members = final;
+
             _dataTypesDatabase = dataTypesDatabase;
             _headerData = CreateHeaderData(Members);
         }
 
-        private static byte[] CreateHeaderData(MemberSerializerStruct[] datas)
+        private static byte[] CreateHeaderData(FinalMemberSerializerStruct[] datas)
         {
             var fieldsLength = datas.Length;
 
@@ -50,8 +80,8 @@ namespace USerialization
                 headerData[position++] = (byte)(hash >> 8);
                 headerData[position++] = (byte)(hash >> 16);
                 headerData[position++] = (byte)(hash >> 24);
-                var dataSerializer = fieldData.DataSerializer;
-                var dataType = dataSerializer.GetDataType();
+
+                var dataType = fieldData.DataType;
 
                 headerData[position++] = (byte)dataType;
 
@@ -99,8 +129,7 @@ namespace USerialization
             for (var index = 0; index < fieldsLength; index++)
             {
                 var fieldData = typeDataFields[index];
-                var dataSerializer = fieldData.DataSerializer;
-                dataSerializer.Write(objectAddress, output);
+                fieldData.Writer.Invoke(objectAddress, output);
             }
         }
 
@@ -124,8 +153,7 @@ namespace USerialization
                 for (int i = 0; i < fieldCount; i++)
                 {
                     var fieldData = fieldDatas[i];
-                    var dataSerializer = fieldData.DataSerializer;
-                    dataSerializer.Read(objectAddress, input);
+                    fieldData.Reader.Invoke(objectAddress, input);
                 }
             }
             else
@@ -152,9 +180,7 @@ namespace USerialization
 
                         if (field == fieldData.Hash)
                         {
-                            var dataSerializer = fieldData.DataSerializer;
-
-                            if (type == dataSerializer.GetDataType())
+                            if (type == fieldData.DataType)
                             {
                                 indexes[i] = (byte)searchIndex;
                                 deserialized = true;
@@ -190,8 +216,7 @@ namespace USerialization
                     }
 
                     var fieldData = fieldDatas[index];
-                    var dataSerializer = fieldData.DataSerializer;
-                    dataSerializer.Read(objectAddress, input);
+                    fieldData.Reader.Invoke(objectAddress, input);
                 }
             }
         }

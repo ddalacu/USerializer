@@ -57,8 +57,14 @@ namespace USerialization
 
         protected override void Initialize(USerializer serializer)
         {
-            var fields = FieldData.GetFields(_type, serializer);
-            _fieldsSerializer = new FieldsSerializer(fields, serializer.DataTypesDatabase);
+            var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer);
+            _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
+
+            var writeAddress = ILUtils.GetAddress<ClassDataSerializer>(nameof(Write));
+            WriteMethod = new InstanceWriteMethodPointer(writeAddress, this);
+
+            var readAddress = ILUtils.GetAddress<ClassDataSerializer>(nameof(Read));
+            ReadMethod = new InstanceReadMethodPointer(readAddress, this);
         }
 
         public ClassDataSerializer(Type type, DataType objectDataType)
@@ -79,7 +85,7 @@ namespace USerialization
 
         private const int MaxStack = 32;
 
-        public override void Write(void* fieldAddress, SerializerOutput output)
+        protected override void Write(void* fieldAddress, SerializerOutput output)
         {
             var obj = Unsafe.Read<object>(fieldAddress);
 
@@ -108,7 +114,7 @@ namespace USerialization
             _stack--;
         }
 
-        public override void Read(void* fieldAddress, SerializerInput input)
+        protected override void Read(void* fieldAddress, SerializerInput input)
         {
             ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
 

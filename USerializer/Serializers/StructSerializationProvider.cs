@@ -43,8 +43,14 @@ namespace USerialization
 
         protected override void Initialize(USerializer serializer)
         {
-            var fields = FieldData.GetFields(_type, serializer);
-            _fieldsSerializer = new FieldsSerializer(fields, serializer.DataTypesDatabase);
+            var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer);
+            _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
+
+            var writeAddress = ILUtils.GetAddress<StructDataSerializer>(nameof(Write));
+            WriteMethod = new InstanceWriteMethodPointer(writeAddress, this);
+
+            var readAddress = ILUtils.GetAddress<StructDataSerializer>(nameof(Read));
+            ReadMethod = new InstanceReadMethodPointer(readAddress, this);
         }
 
         public StructDataSerializer(Type type, DataType objectDataType)
@@ -53,7 +59,7 @@ namespace USerialization
             _dataType = objectDataType;
         }
 
-        public override void Write(void* fieldAddress, SerializerOutput output)
+        protected override void Write(void* fieldAddress, SerializerOutput output)
         {
             var track = output.BeginSizeTrack();
 
@@ -62,7 +68,7 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override void Read(void* fieldAddress, SerializerInput input)
+        protected override void Read(void* fieldAddress, SerializerInput input)
         {
             if (input.BeginReadSize(out var end))
             {

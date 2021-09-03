@@ -48,7 +48,7 @@ namespace USerialization
             _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
         }
 
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output)
+        protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             if (Unsafe.Read<object>(fieldAddress) == null)
             {
@@ -63,7 +63,7 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void Read(void* fieldAddress, SerializerInput input)
+        protected override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             if (input.BeginReadSize(out var end))
             {

@@ -39,7 +39,7 @@ namespace USerialization
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
 
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output)
+        protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
             var track = output.BeginSizeTrack();
 
@@ -48,7 +48,7 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void Read(void* fieldAddress, SerializerInput input)
+        protected override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
             if (input.BeginReadSize(out var end))
             {

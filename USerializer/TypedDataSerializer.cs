@@ -1,28 +1,38 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace USerialization
 {
     public readonly unsafe struct TypedDataSerializer<T>
     {
-        private readonly DataSerializer _methods;
+        //private readonly DataSerializer _methods;
+        private readonly InstanceWriteMethodPointer _write;
+        private readonly InstanceReadMethodPointer _read;
+
 
         public TypedDataSerializer(DataSerializer methods)
         {
-            _methods = methods;
+            //_methods = methods;
+            _write = methods.WriteMethod;
+            if (_write.IsValid == false)
+                throw new Exception();
+            _read = methods.ReadMethod;
+            if (_read.IsValid == false)
+                throw new Exception();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Serialize(T item, SerializerOutput output)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.Write(childAddress, output);
+            _write.Invoke(childAddress, output);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Serialize(ref T item, SerializerOutput output)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.Write(childAddress, output);
+            _write.Invoke(childAddress, output);
         }
 
 
@@ -31,7 +41,7 @@ namespace USerialization
         {
             T item = default;
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.Read(childAddress, input);
+            _read.Invoke(childAddress, input);
             return item;
         }
 
@@ -39,7 +49,7 @@ namespace USerialization
         public void Deserialize(ref T item, SerializerInput input)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _methods.Read(childAddress, input);
+            _read.Invoke(childAddress, input);
         }
     }
 

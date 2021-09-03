@@ -116,13 +116,13 @@ namespace USerialization
                     var pinnable = Unsafe.As<object, PinnableObject>(ref o);
                     fixed (byte* objectAddress = &pinnable.Pinnable)
                     {
-                        serializationMethods.Write(objectAddress, output);
+                        serializationMethods.WriteMethod.Invoke(objectAddress, output);
                     }
                 }
                 else
                 {
                     var fieldAddress = Unsafe.AsPointer(ref o);
-                    serializationMethods.Write(fieldAddress, output);
+                    serializationMethods.WriteMethod.Invoke(fieldAddress, output);
                 }
 
                 return true;
@@ -141,7 +141,7 @@ namespace USerialization
             if (TryGetDataSerializer(type, out var serializationMethods))
             {
                 var fieldAddress = Unsafe.AsPointer(ref value);
-                serializationMethods.Write(fieldAddress, output);
+                serializationMethods.WriteMethod.Invoke(fieldAddress, output);
                 return true;
             }
 
@@ -156,7 +156,8 @@ namespace USerialization
 
             if (TryGetDataSerializer(typeof(T), out var serializationMethods))
             {
-                serializationMethods.Read(Unsafe.AsPointer(ref result), input);
+                serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref result), input);
+                //serializationMethods.Read(Unsafe.AsPointer(ref result), input);
                 return true;
             }
             else
@@ -186,7 +187,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods.Read(Unsafe.AsPointer(ref result), input);
+            serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref result), input);
             return true;
         }
 
@@ -203,7 +204,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods.Read(Unsafe.AsPointer(ref obj), input);
+            serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref obj), input);
             return true;
         }
 

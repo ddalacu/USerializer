@@ -10,12 +10,12 @@ namespace USerialization
     {
         public override DataType GetDataType() => DataType.None;
 
-        public override void Write(void* fieldAddress, SerializerOutput output)
+        protected override void Write(void* fieldAddress, SerializerOutput output)
         {
             throw new NotImplementedException();
         }
 
-        public override void Read(void* fieldAddress, SerializerInput input)
+        protected override void Read(void* fieldAddress, SerializerInput input)
         {
             throw new NotImplementedException();
         }
