@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿#if DEBUG
+using System;
+#endif
+using System.IO;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
