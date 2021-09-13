@@ -139,6 +139,7 @@ namespace PerformanceTests
             public void Error(string error)
             {
                 Console.WriteLine("Error:" + error);
+                throw new Exception(error);
             }
         }
 
@@ -165,7 +166,6 @@ namespace PerformanceTests
                 throw new Exception($"Cannot serialize {typeof(T)}");
             }
         }
-
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         protected override void Serialize(T obj, Stream stream)

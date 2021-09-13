@@ -71,12 +71,6 @@ namespace USerialization
             {
                 serializer.Logger.Error("Element data type is none, something went wrong!");
             }
-
-            //var writeAddress = ILUtils.GetAddress<ArrayDataSerializer>(nameof(Write));
-            //WriteMethod = new InstanceWriteMethodPointer(writeAddress, this);
-
-            //var readAddress = ILUtils.GetAddress<ArrayDataSerializer>(nameof(Read));
-            //ReadMethod = new InstanceReadMethodPointer(readAddress, this);
         }
 
         public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer, DataType arrayDataType)

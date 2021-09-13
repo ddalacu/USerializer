@@ -59,12 +59,6 @@ namespace USerialization
         {
             var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer);
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
-
-            var writeAddress = ILUtils.GetAddress<ClassDataSerializer>(nameof(Write));
-            WriteMethod = new InstanceWriteMethodPointer(writeAddress, this);
-
-            var readAddress = ILUtils.GetAddress<ClassDataSerializer>(nameof(Read));
-            ReadMethod = new InstanceReadMethodPointer(readAddress, this);
         }
 
         public ClassDataSerializer(Type type, DataType objectDataType)
@@ -96,7 +90,7 @@ namespace USerialization
             }
 
             if (_stack >= MaxStack)
-                throw new CircularReferenceException("Circular references are not suported!");
+                throw new CircularReferenceException("Circular references are not supported!");
 
             _stack++;
 

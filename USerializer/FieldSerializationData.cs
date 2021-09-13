@@ -69,17 +69,6 @@ namespace USerialization
             var fieldsLength = fields.Length;
             if (fieldsLength > 255)
                 throw new Exception();
-            for (var i = 0; i < fieldsLength; i++)
-            {
-                for (var j = 0; j < fieldsLength; j++)
-                {
-                    if (i == j)
-                        continue;
-
-                    if (fields[i].Meta.FieldNameHash == fields[j].Meta.FieldNameHash)
-                        throw new Exception("Field hash collision!");
-                }
-            }
 
             //important
             Array.Sort(fields, (a, b) =>
@@ -90,6 +79,12 @@ namespace USerialization
                     return -1;
                 return 0;
             });
+
+            for (var i = 0; i < fieldsLength - 1; i++)
+            {
+                if (fields[i].Meta.FieldNameHash == fields[i + 1].Meta.FieldNameHash)
+                    throw new Exception("Field hash collision!");
+            }
         }
 
         public static bool GetAlternate(FieldMetaData[] metas, DataType type, int field, out int compatibleIndex)

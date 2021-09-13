@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 
@@ -24,6 +25,8 @@ namespace USerialization
         void Error(string error);
     }
 
+    public delegate IntPtr GetFunctionPointerDelegate(MethodInfo methodInfo);
+
     public class USerializer
     {
         private readonly ISerializationProvider[] _providers;
@@ -38,12 +41,20 @@ namespace USerialization
 
         public ILogger Logger { get; set; }
 
+        public GetFunctionPointerDelegate GetFunctionPointer { get; set; }
+
         public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers, DataTypesDatabase dataTypesDatabase, ILogger logger)
         {
             SerializationPolicy = serializationPolicy;
             _providers = providers;
             DataTypesDatabase = dataTypesDatabase;
             Logger = logger;
+            GetFunctionPointer = DefaultGetFunctionPointer;
+        }
+
+        private static IntPtr DefaultGetFunctionPointer(MethodInfo methodinfo)
+        {
+            return methodinfo.MethodHandle.GetFunctionPointer();
         }
 
         public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer, bool initializeDataSerializer = true)

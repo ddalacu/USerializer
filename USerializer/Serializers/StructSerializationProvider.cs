@@ -45,12 +45,6 @@ namespace USerialization
         {
             var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer);
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
-
-            var writeAddress = ILUtils.GetAddress<StructDataSerializer>(nameof(Write));
-            WriteMethod = new InstanceWriteMethodPointer(writeAddress, this);
-
-            var readAddress = ILUtils.GetAddress<StructDataSerializer>(nameof(Read));
-            ReadMethod = new InstanceReadMethodPointer(readAddress, this);
         }
 
         public StructDataSerializer(Type type, DataType objectDataType)

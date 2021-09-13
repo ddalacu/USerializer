@@ -15,6 +15,7 @@ namespace USerializerTests
             public void Error(string error)
             {
                 Console.WriteLine("Error:" + error);
+                throw new Exception(error);
             }
         }
 
