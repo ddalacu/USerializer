@@ -85,6 +85,9 @@ namespace USerialization
 
         public bool TryGetNonCachedSerializationMethods(Type type, out DataSerializer dataSerializer, Func<ISerializationProvider, bool> shouldUse = null)
         {
+            if (type == null) 
+                throw new ArgumentNullException(nameof(type));
+            
             foreach (var provider in _providers)
             {
                 if (shouldUse != null
