@@ -50,7 +50,10 @@ namespace USerialization
         public void SetStream(Stream stream)
         {
             _stream = stream;
-            _cachedStreamPosition = stream.Position;
+            if (stream != null)
+                _cachedStreamPosition = stream.Position;
+            else
+                _cachedStreamPosition = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
