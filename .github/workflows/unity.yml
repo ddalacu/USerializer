@@ -23,21 +23,18 @@ jobs:
       run: dotnet test USerializer --verbosity normal
     - name: DotnetPublish
       run: dotnet publish USerializer --configuration Release -o PublishDirectory
-    - name: Cache Build output
-      uses: actions/cache@v2
+    - uses: actions/upload-artifact@v2
       with:
+        name: UserializerPublished
         path: PublishDirectory
-        key: ${{ runner.os }}-Build
   copyToUnityRepo:
     if: "!contains(github.event.commits[0].message, '[skip unity ci]')"
     needs: build
     runs-on: ubuntu-latest 
     steps:
-    - name: Cache Build output
-      uses: actions/cache@v2
+    - uses: actions/download-artifact@v2
       with:
-        path: PublishDirectory
-        key: ${{ runner.os }}-Build
+        name: UserializerPublished
     - name: Pushes to another repository
       uses: darkquasar/github-action-push-to-another-repository@master
       env:
@@ -49,3 +46,7 @@ jobs:
           user-email: ddalacu@yahoo.com
           target-branch: master
           target-directory: 'Plugins'
+    - name: Pushes to another repository
+      uses: geekyeggo/delete-artifact@v1
+      with:
+        name: UserializerPublished
