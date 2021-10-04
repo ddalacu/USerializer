@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    if: "!contains(github.event.commits[0].message, '[skip ci]')"
+    if: "!contains(github.event.commits[0].message, '[skip inity ci]')"
     runs-on: ubuntu-latest
 
     steps:
@@ -34,3 +34,5 @@ jobs:
           destination-github-username: 'ddalacu'
           destination-repository-name: 'USerializerUnity'
           user-email: ddalacu@yahoo.com
+          target-branch: master
+          target-directory: 'Plugins'
