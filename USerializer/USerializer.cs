@@ -44,8 +44,6 @@ namespace USerialization
 
         public GetFunctionPointerDelegate GetFunctionPointer { get; set; }
         
-        public ILogger TestOnly { get; set; }
-        
         public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers, DataTypesDatabase dataTypesDatabase, ILogger logger)
         {
             SerializationPolicy = serializationPolicy;
