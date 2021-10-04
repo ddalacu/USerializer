@@ -28,9 +28,9 @@ jobs:
     - name: Pushes to another repository
       uses: darkquasar/github-action-push-to-another-repository@master
       env:
-          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+          API_TOKEN_GITHUB: ${{ secrets.GITHUB_TOKEN }}
       with:
           source-directory: 'Release'
-          destination-github-username: 'diacpaulalexandru'
+          destination-github-username: 'ddalacu'
           destination-repository-name: 'USerializerUnity'
           user-email: ddalacu@yahoo.com
