@@ -20,7 +20,7 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Test
-      run: dotnet test USerializer --no-build --verbosity normal
+      run: dotnet test USerializer --verbosity normal
     - name: DotnetPublish
       run: dotnet publish USerializer --configuration Release -o PublishDirectory
     - name: Cache Build output

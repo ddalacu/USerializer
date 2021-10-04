@@ -27,6 +27,7 @@ namespace USerialization
 
     public delegate IntPtr GetFunctionPointerDelegate(MethodInfo methodInfo);
 
+    
     public class USerializer
     {
         private readonly ISerializationProvider[] _providers;
