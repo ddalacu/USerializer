@@ -26,7 +26,7 @@ jobs:
     - name: Cache Build output
       uses: actions/cache@v2
       with:
-        path: PublishDirectory/
+        path: PublishDirectory
         key: ${{ runner.os }}-Build
   copyToUnityRepo:
     if: "!contains(github.event.commits[0].message, '[skip unity ci]')"
@@ -36,7 +36,7 @@ jobs:
     - name: Cache Build output
       uses: actions/cache@v2
       with:
-        path: PublishDirectory/
+        path: PublishDirectory
         key: ${{ runner.os }}-Build
     - name: Pushes to another repository
       uses: darkquasar/github-action-push-to-another-repository@master
