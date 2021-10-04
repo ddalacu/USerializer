@@ -24,13 +24,13 @@ jobs:
     - name: Test
       run: dotnet test USerializer --no-build --verbosity normal
     - name: DotnetPublish
-      run: dotnet publish USerializer --configuration Release -o Release
+      run: dotnet publish USerializer --configuration Release -o PublishDirectory
     - name: Pushes to another repository
       uses: darkquasar/github-action-push-to-another-repository@master
       env:
           API_TOKEN_GITHUB: ${{ secrets.GITHUB_TOKEN }}
       with:
-          source-directory: 'Release'
+          source-directory: 'PublishDirectory'
           destination-github-username: 'ddalacu'
           destination-repository-name: 'USerializerUnity'
           user-email: ddalacu@yahoo.com
