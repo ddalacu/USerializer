@@ -10,7 +10,6 @@ on:
     
 jobs:
   TestAndBuild:
-    if: "!contains(github.event.commits[0].message, '[skip unity ci]')"
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
@@ -28,7 +27,6 @@ jobs:
         name: UserializerPublished
         path: PublishDirectory
   CopyToUnityRepo:
-    if: "!contains(github.event.commits[0].message, '[skip unity ci]')"
     needs: TestAndBuild
     runs-on: ubuntu-latest 
     steps:
