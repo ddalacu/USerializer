@@ -82,7 +82,7 @@ namespace USerializerTests
                 throw new ArgumentNullException(nameof(stream));
 
             var serializerInput = new SerializerInput(bufferSize, stream);
-            var tryPopulateObject = _uSerializer.TryPopulateObject(serializerInput, ref ob);
+            var tryPopulateObject = _uSerializer.TryDeserialize(serializerInput, ref ob);
             serializerInput.FinishRead();
             return tryPopulateObject;
         }

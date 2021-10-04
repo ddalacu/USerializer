@@ -27,7 +27,7 @@ namespace USerialization
 
     public delegate IntPtr GetFunctionPointerDelegate(MethodInfo methodInfo);
 
-    
+
     public class USerializer
     {
         private readonly ISerializationProvider[] _providers;
@@ -43,8 +43,9 @@ namespace USerialization
         public ILogger Logger { get; set; }
 
         public GetFunctionPointerDelegate GetFunctionPointer { get; set; }
-        
-        public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers, DataTypesDatabase dataTypesDatabase, ILogger logger)
+
+        public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers,
+            DataTypesDatabase dataTypesDatabase, ILogger logger)
         {
             SerializationPolicy = serializationPolicy;
             _providers = providers;
@@ -58,11 +59,12 @@ namespace USerialization
             return methodinfo.MethodHandle.GetFunctionPointer();
         }
 
-        public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer, bool initializeDataSerializer = true)
+        public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer,
+            bool initializeDataSerializer = true)
         {
-            if (type == null) 
+            if (type == null)
                 throw new ArgumentNullException(nameof(type));
-            
+
             if (_methods.TryGetValue(type, out dataSerializer))
                 return dataSerializer != null;
 
@@ -84,15 +86,16 @@ namespace USerialization
             return false;
         }
 
-        public bool TryGetNonCachedSerializationMethods(Type type, out DataSerializer dataSerializer, Func<ISerializationProvider, bool> shouldUse = null)
+        public bool TryGetNonCachedSerializationMethods(Type type, out DataSerializer dataSerializer,
+            Func<ISerializationProvider, bool> shouldUse = null)
         {
-            if (type == null) 
+            if (type == null)
                 throw new ArgumentNullException(nameof(type));
-            
+
             foreach (var provider in _providers)
             {
                 if (shouldUse != null
-                && shouldUse(provider) == false)
+                    && shouldUse(provider) == false)
                     continue;
 
                 if (provider.TryGet(this, type, out dataSerializer) == false)
@@ -149,12 +152,12 @@ namespace USerialization
             return false;
         }
 
-        public unsafe bool SerializeTyped<T>(SerializerOutput output, T value) where T : struct
+        public unsafe bool Serialize<T>(SerializerOutput output, ref T value) where T : struct
         {
             if (output == null)
                 throw new ArgumentNullException(nameof(output));
 
-            var type = value.GetType();
+            var type = typeof(T);
 
             if (TryGetDataSerializer(type, out var serializationMethods))
             {
@@ -165,68 +168,33 @@ namespace USerialization
 
             return true;
         }
-
-
+        
         public unsafe bool TryDeserialize<T>(SerializerInput input, ref T result)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
-            if (TryGetDataSerializer(typeof(T), out var serializationMethods))
-            {
-                serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref result), input);
-                //serializationMethods.Read(Unsafe.AsPointer(ref result), input);
-                return true;
-            }
-            else
-                result = default;
-            return false;
-        }
-
-        public bool TryPopulateObject<T>(SerializerInput input, ref T result)
-        {
-            return TryPopulateObject(input, typeof(T), ref result);
-        }
-
-        public unsafe bool TryPopulateObject<T>(SerializerInput input, Type type, ref T result)
-        {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
-
-            if (typeof(T).IsAssignableFrom(type) == false)
-            {
-                throw new Exception($"You are try to use a serializer:{type}  on a non compatible type {typeof(T)}");
-                //return false;
-            }
-
-            if (TryGetDataSerializer(type, out var serializationMethods) == false)
-            {
-                //Debug.LogError($"Could not find serialization data for {type}");
+            if (TryGetDataSerializer(typeof(T), out var serializationMethods) == false)
                 return false;
-            }
 
             serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref result), input);
             return true;
         }
 
-        public unsafe bool TryPopulateObject(SerializerInput input, object obj)
+        public unsafe bool TryDeserialize<T>(SerializerInput input, Type type, ref T result)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
-            var type = obj.GetType();
+            if (typeof(T).IsAssignableFrom(type) == false)
+                throw new Exception($"You are try to use a serializer:{type}  on a non compatible type {typeof(T)}");
 
             if (TryGetDataSerializer(type, out var serializationMethods) == false)
-            {
-                //Debug.LogError($"Could not find serialization data for {type}");
                 return false;
-            }
 
-            serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref obj), input);
+            serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref result), input);
             return true;
         }
-
-
 
         public bool TryGetProvider<T>(out T result) where T : ISerializationProvider
         {

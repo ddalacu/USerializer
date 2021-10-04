@@ -24,11 +24,6 @@ namespace USerializerTests
             return obj is CustomStruct other && Equals(other);
         }
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Field, Property, Property2);
-        }
-
         public static bool operator ==(CustomStruct left, CustomStruct right)
         {
             return left.Equals(right);
@@ -56,7 +51,7 @@ namespace USerializerTests
     public class StructSerializationTests
     {
         [Serializable]
-        public struct SimpleStruct : IEqualityComparer<SimpleStruct>, IEquatable<SimpleStruct>
+        public struct SimpleStruct : IEquatable<SimpleStruct>
         {
             public int IntValue;
             public float FloatValue;
@@ -77,11 +72,6 @@ namespace USerializerTests
                        && EqualityComparer<ToBeReferenced>.Default.Equals(x.Reference, y.Reference);
             }
 
-            public int GetHashCode(SimpleStruct obj)
-            {
-                return HashCode.Combine(obj.IntValue, obj.FloatValue, obj.BoolValue, obj.StringValue, obj.Strings, obj.Reference);
-            }
-
             public bool Equals(SimpleStruct other)
             {
                 return IntValue == other.IntValue &&
@@ -95,11 +85,6 @@ namespace USerializerTests
             public override bool Equals(object obj)
             {
                 return obj is SimpleStruct other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(IntValue, FloatValue, BoolValue, StringValue, Strings, Reference);
             }
 
             public static bool operator ==(SimpleStruct left, SimpleStruct right)
@@ -155,11 +140,6 @@ namespace USerializerTests
                 if (ReferenceEquals(this, obj)) return true;
                 if (obj.GetType() != this.GetType()) return false;
                 return Equals((ToBeReferenced) obj);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(IntValue, FloatValue, BoolValue, StringValue, Strings);
             }
 
             public static bool operator ==(ToBeReferenced left, ToBeReferenced right)
