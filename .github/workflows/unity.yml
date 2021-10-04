@@ -9,7 +9,7 @@ on:
     branches: [ master ]
     
 jobs:
-  build:
+  TestAndBuild:
     if: "!contains(github.event.commits[0].message, '[skip unity ci]')"
     runs-on: ubuntu-latest
     steps:
@@ -21,22 +21,22 @@ jobs:
         dotnet-version: 5.0.x
     - name: Test
       run: dotnet test USerializer --verbosity normal
-    - name: DotnetPublish
+    - name: Publish
       run: dotnet publish USerializer --configuration Release -o PublishDirectory
     - uses: actions/upload-artifact@v2
       with:
         name: UserializerPublished
         path: PublishDirectory
-  copyToUnityRepo:
+  CopyToUnityRepo:
     if: "!contains(github.event.commits[0].message, '[skip unity ci]')"
-    needs: build
+    needs: TestAndBuild
     runs-on: ubuntu-latest 
     steps:
     - uses: actions/download-artifact@v2
       with:
         name: UserializerPublished
         path: PublishDirectory
-    - name: Pushes to another repository
+    - name: Push to USerializerUnity
       uses: darkquasar/github-action-push-to-another-repository@master
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
