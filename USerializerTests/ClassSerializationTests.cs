@@ -6,7 +6,6 @@ using USerialization;
 
 namespace USerializerTests
 {
-
     public class ClassSerializationTests
     {
         public enum TestEnum
@@ -19,8 +18,7 @@ namespace USerializerTests
         [Serializable]
         public class SimpleClass : IEquatable<SimpleClass>
         {
-            [FormerlySerializedAs("IntValue")]
-            public int IntValue;
+            [FormerlySerializedAs("IntValue")] public int IntValue;
 
             public float FloatValue;
             public bool BoolValue;
@@ -51,12 +49,13 @@ namespace USerializerTests
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
                 if (obj.GetType() != this.GetType()) return false;
-                return Equals((SimpleClass)obj);
+                return Equals((SimpleClass) obj);
             }
 
             public override int GetHashCode()
             {
-                return HashCode.Combine(IntValue, FloatValue, BoolValue, StringValue, Strings, Reference, (int)EnumValue, EnumArray);
+                return HashCode.Combine(IntValue, FloatValue, BoolValue, StringValue, Strings, Reference,
+                    (int) EnumValue, EnumArray);
             }
 
             public static bool operator ==(SimpleClass left, SimpleClass right)
@@ -209,8 +208,7 @@ namespace USerializerTests
         [Serializable]
         public class FormerlyClass2
         {
-            [SerializeField]
-            [FormerlySerializedAs("IntValue")]
+            [SerializeField] [FormerlySerializedAs("IntValue")]
             private int _changedForm;
 
             public int Form
@@ -311,7 +309,7 @@ namespace USerializerTests
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
                 if (obj.GetType() != this.GetType()) return false;
-                return Equals((NestedCustom)obj);
+                return Equals((NestedCustom) obj);
             }
 
             public override int GetHashCode()
@@ -398,13 +396,14 @@ namespace USerializerTests
             BinaryUtility.Serialize(exampleClass, memStream);
 
 
-
             memStream.Position = 0;
             ExampleClass result = default;
             var deser = BinaryUtility.TryDeserialize(memStream, ref result);
             Assert.True(deser);
-            Assert.True(EqualityComparer<ExampleClass.ChildClass>.Default.Equals(exampleClass.Property, result.Property));
-            Assert.True(EqualityComparer<ExampleClass.ChildStruct>.Default.Equals(exampleClass.ValueProp, result.ValueProp));
+            Assert.True(
+                EqualityComparer<ExampleClass.ChildClass>.Default.Equals(exampleClass.Property, result.Property));
+            Assert.True(
+                EqualityComparer<ExampleClass.ChildStruct>.Default.Equals(exampleClass.ValueProp, result.ValueProp));
             Assert.True(exampleClass.Val == result.Val);
             Assert.True(exampleClass.Val2 == result.Val2);
             Assert.True(exampleClass.Prop1 == result.Prop1);
@@ -454,15 +453,13 @@ namespace USerializerTests
         [Serializable]
         public class GenericClass<T>
         {
-            [SerializeField]
-            private T _field;
+            [SerializeField] private T _field;
 
             public T Value
             {
                 get => _field;
-                set => value = _field;
+                set => _field = value;
             }
-
         }
 
         [Test]
@@ -480,7 +477,7 @@ namespace USerializerTests
 
             Assert.True(deserialized);
 
-            Assert.True(a.Value.ToBinary() == result.Value.ToBinary());
+            Assert.True(a.Value == result.Value);
         }
     }
 }
