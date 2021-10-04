@@ -23,19 +23,19 @@ jobs:
       run: dotnet test USerializer --no-build --verbosity normal
     - name: DotnetPublish
       run: dotnet publish USerializer --configuration Release -o PublishDirectory
-      cache:
-        key: build-cache
-        paths:
-          - PublishDirectory/
+    - name: Cache Build output
+      uses: actions/cache@v2
+      with:
+        path: PublishDirectory/
   copyToUnityRepo:
     if: "!contains(github.event.commits[0].message, '[skip unity ci]')"
     runs-on: ubuntu-latest 
     steps:
+    - name: Cache Build output
+      uses: actions/cache@v2
+      with:
+        path: PublishDirectory/
     - name: Pushes to another repository
-      cache:
-        key: build-cache
-        paths:
-          - PublishDirectory/
       uses: darkquasar/github-action-push-to-another-repository@master
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
