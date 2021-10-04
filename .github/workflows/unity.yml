@@ -30,6 +30,7 @@ jobs:
         key: ${{ runner.os }}-Build
   copyToUnityRepo:
     if: "!contains(github.event.commits[0].message, '[skip unity ci]')"
+    needs: build
     runs-on: ubuntu-latest 
     steps:
     - name: Cache Build output
