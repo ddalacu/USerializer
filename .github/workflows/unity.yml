@@ -1,0 +1,36 @@
+name: .NET
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+    - 'README.md'
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    if: "!contains(github.event.commits[0].message, '[skip ci]')"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Restore dependencies
+      run: dotnet restore USerializer
+    - name: Test
+      run: dotnet test USerializer --no-build --verbosity normal
+    - name: DotnetPublish
+      run: dotnet publish USerializer --configuration Release -o Release
+    - name: Pushes to another repository
+      uses: darkquasar/github-action-push-to-another-repository@master
+      env:
+          API_TOKEN_GITHUB: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          source-directory: 'Release'
+          destination-github-username: 'diacpaulalexandru'
+          destination-repository-name: 'USerializerUnity'
+          user-email: ddalacu@yahoo.com
