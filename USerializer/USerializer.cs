@@ -59,6 +59,9 @@ namespace USerialization
 
         public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer, bool initializeDataSerializer = true)
         {
+            if (type == null) 
+                throw new ArgumentNullException(nameof(type));
+            
             if (_methods.TryGetValue(type, out dataSerializer))
                 return dataSerializer != null;
 
