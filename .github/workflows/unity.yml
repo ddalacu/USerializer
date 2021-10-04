@@ -35,6 +35,7 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: UserializerPublished
+        path: PublishDirectory
     - name: Pushes to another repository
       uses: darkquasar/github-action-push-to-another-repository@master
       env:
