@@ -32,10 +32,8 @@ namespace USerialization
 
         public byte[] Buffer => _buffer;
 
-        public long StreamPosition => _cachedStreamPosition + _position;
-
-        private long _cachedStreamPosition;
-
+        public long StreamPosition => _stream.Position + _position;
+        
         public SerializerOutput(int capacity)
         {
             _buffer = new byte[capacity];
@@ -50,10 +48,6 @@ namespace USerialization
         public void SetStream(Stream stream)
         {
             _stream = stream;
-            if (stream != null)
-                _cachedStreamPosition = stream.Position;
-            else
-                _cachedStreamPosition = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -76,7 +70,6 @@ namespace USerialization
         public void Flush()
         {
             _stream.Write(_buffer, 0, _position);
-            _cachedStreamPosition = _stream.Position;
             _position = 0;
         }
 
@@ -85,7 +78,7 @@ namespace USerialization
         {
             EnsureNext(4);
             _position += 4;
-            return (SizeTracker)(_cachedStreamPosition + _position);
+            return (SizeTracker)(_stream.Position + _position);
         }
 
 
@@ -94,7 +87,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSizeTrack(SizeTracker tracker)
         {
-            var streamPos = _cachedStreamPosition;
+            var streamPos = _stream.Position;
             int length = (int)((streamPos + _position) - tracker);
 
             if ((int)tracker <= streamPos)
@@ -125,13 +118,13 @@ namespace USerialization
         {
             EnsureNext(4);
             _position += 4;
-            return (LateWrite)(_cachedStreamPosition + _position);
+            return (LateWrite)(_stream.Position + _position);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndLateWriteInt(LateWrite lateWrite, int value)
         {
-            var streamPos = _cachedStreamPosition;
+            var streamPos = _stream.Position;
 
             if ((int)lateWrite <= streamPos)
             {
