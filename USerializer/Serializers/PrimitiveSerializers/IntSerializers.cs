@@ -12,7 +12,6 @@ namespace USerialization
 {
     public sealed class Int32DataTypeLogic : UnmanagedDataTypeLogic<int>
     {
-
     }
 
 
@@ -37,13 +36,13 @@ namespace USerialization
 
         protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
-            var value = *(int*)(fieldAddress);
+            var value = *(int*) (fieldAddress);
             output.WriteInt(value);
         }
 
         protected override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
-            var value = (int*)(fieldAddress);
+            var value = (int*) (fieldAddress);
             *value = input.ReadInt();
         }
     }
@@ -91,7 +90,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6 + (count * sizeof(int)));
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
 
                     for (var i = 0; i < count; i++)
                         output.WriteIntUnchecked(array[i]);
@@ -117,7 +116,7 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var type = (DataType) input.ReadByte();
                     if (type == _elementDataType)
                     {
                         for (var i = 0; i < count; i++)
@@ -170,7 +169,6 @@ namespace USerialization
                 return;
             }
 
-
             var count = list.Count;
 
             if (count > 0)
@@ -179,7 +177,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6 + (count * sizeof(int)));
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
 
                     for (var i = 0; i < count; i++)
                         output.WriteIntUnchecked(list[i]);
@@ -193,7 +191,6 @@ namespace USerialization
                 output.WriteIntUnchecked(1); //size tracker
                 output.WriteByteUnchecked(0);
             }
-
         }
 
         protected override unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -203,22 +200,30 @@ namespace USerialization
             if (input.BeginReadSize(out var end))
             {
                 var count = input.Read7BitEncodedInt();
-                list = new List<int>();
 
                 if (count > 0)
                 {
-                    var array = new int[count];
-                    ListHelpers.SetArray(list, array);
+                    var array = ListHelpers.PrepareArray(ref list, count);
 
-                    var type = (DataType)input.ReadByte();
+                    var type = (DataType) input.ReadByte();
 
                     if (type == _elementDataType)
                     {
                         input.EnsureNext(count * sizeof(int));
-
                         for (var i = 0; i < count; i++)
                             array[i] = input.ReadIntUnchecked();
                     }
+                    else
+                    {
+                        ArrayHelpers.CleanArray(array, 0, (uint) count);
+                    }
+                }
+                else
+                {
+                    if (list == null)
+                        list = new List<int>();
+                    else
+                        ListHelpers.SetCount(list, 0);
                 }
 
                 input.EndObject(end);

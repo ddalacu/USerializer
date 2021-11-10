@@ -32,13 +32,13 @@ namespace USerialization
 
         protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
-            var value = *(byte*)(fieldAddress);
+            var value = *(byte*) (fieldAddress);
             output.WriteByte(value);
         }
 
         protected override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
-            var value = (byte*)(fieldAddress);
+            var value = (byte*) (fieldAddress);
             *value = input.ReadByte();
         }
     }
@@ -86,7 +86,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6 + (count * sizeof(bool)));
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
                     output.WriteBoolsUnchecked(array, count);
                 }
                 output.WriteSizeTrack(sizeTracker);
@@ -97,7 +97,6 @@ namespace USerialization
                 output.WriteIntUnchecked(1); //size tracker
                 output.WriteByteUnchecked(0);
             }
-
         }
 
         protected override unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -110,7 +109,7 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var type = (DataType) input.ReadByte();
 
                     if (type == _elementDataType)
                     {
@@ -179,7 +178,7 @@ namespace USerialization
                     output.EnsureNext(6 + (count * sizeof(bool)));
 
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
                     output.WriteBoolsUnchecked(array, count);
                 }
 
@@ -200,20 +199,28 @@ namespace USerialization
             if (input.BeginReadSize(out var end))
             {
                 var count = input.Read7BitEncodedInt();
-                list = new List<bool>();
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var array = ListHelpers.PrepareArray(ref list, count);
+
+                    var type = (DataType) input.ReadByte();
 
                     if (type == _elementDataType)
                     {
-                        ListHelpers.SetArray(list, input.ReadBools(count));
+                        input.ReadBools(array, count);
                     }
                     else
                     {
-                        ListHelpers.SetArray(list, new bool[count]);
+                        ArrayHelpers.CleanArray(array, 0, (uint) count);
                     }
+                }
+                else
+                {
+                    if (list == null)
+                        list = new List<bool>();
+                    else
+                        ListHelpers.SetCount(list, 0);
                 }
 
                 input.EndObject(end);

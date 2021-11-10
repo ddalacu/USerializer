@@ -29,7 +29,8 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods = new ListDataSerializer(type, elementType, elementDataSerializer, arrayDataTypeLogic.Value);
+            serializationMethods =
+                new ListDataSerializer(type, elementType, elementDataSerializer, arrayDataTypeLogic.Value);
             return true;
         }
     }
@@ -73,7 +74,8 @@ namespace USerialization
             //ReadMethod = _elementSerializer.ReadMethod;
         }
 
-        public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer, DataType arrayDataType)
+        public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer,
+            DataType arrayDataType)
         {
             _fieldType = fieldType;
             _elementType = elementType;
@@ -100,7 +102,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6);
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
 
                     var pinnable = Unsafe.As<Array, byte[]>(ref array);
 
@@ -144,18 +146,24 @@ namespace USerialization
                 else
                 {
                     array = ListHelpers.GetArray(list, out var currentCount);
+                    var len = array.Length;
 
-                    if (currentCount < count)//if we need more elements in the array then we allocate a array
+                    if (len < count) //if we need more elements in the array then we allocate a array
                     {
                         array = Array.CreateInstance(_elementType, count);
                         ListHelpers.SetArray(list, array, count);
                     }
                     else
                     {
-                        if (currentCount != count)//if we need less elements in the array then we clear the items we don't need
+                        if (currentCount !=
+                            count) //if we need less elements in the array then we clear the items we don't need
                         {
                             var remaining = currentCount - count;
-                            Array.Clear(array, count, remaining);
+                            //Array.Clear(array, count, remaining);
+
+                            if (remaining > 0)
+                                ArrayHelpers.CleanArray(array, (uint) count, (uint) remaining, (uint) _size);
+                            
                             ListHelpers.SetCount(list, count);
                         }
                     }
@@ -163,7 +171,7 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var type = (DataType) input.ReadByte();
                     if (type == _elementDataType)
                     {
                         var pinnable = Unsafe.As<Array, byte[]>(ref array);
@@ -178,6 +186,10 @@ namespace USerialization
                                 tempAddress += _size;
                             }
                         }
+                    }
+                    else
+                    {
+                        ArrayHelpers.CleanArray(array, 0, (uint) count, (uint) _size);
                     }
                 }
 

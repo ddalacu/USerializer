@@ -52,7 +52,7 @@ namespace USerialization
 
             chars -= 1;
 
-            if (chars == -1)//null
+            if (chars == -1) //null
                 return;
 
             input.Skip(chars * sizeof(char));
@@ -102,7 +102,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6);
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
 
                     for (var i = 0; i < count; i++)
                         output.WriteString(array[i]);
@@ -127,7 +127,7 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var type = (DataType) input.ReadByte();
                     array = new string[count];
 
                     if (type == _elementDataType)
@@ -189,7 +189,7 @@ namespace USerialization
                     output.EnsureNext(6);
                     output.Write7BitEncodedIntUnchecked(count);
 
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
 
                     for (var i = 0; i < count; i++)
                         output.WriteString(list[i]);
@@ -202,7 +202,6 @@ namespace USerialization
                 output.WriteIntUnchecked(1); //size tracker
                 output.WriteByteUnchecked(0);
             }
-
         }
 
         protected override unsafe void Read(void* fieldAddress, SerializerInput input)
@@ -213,23 +212,30 @@ namespace USerialization
             {
                 var count = input.Read7BitEncodedInt();
 
-                list = new List<string>();
-
                 if (count > 0)
                 {
-                    var array = new string[count];
+                    var array = ListHelpers.PrepareArray(ref list, count);
 
-                    ListHelpers.SetArray(list, array);
-
-                    var type = (DataType)input.ReadByte();
+                    var type = (DataType) input.ReadByte();
 
                     if (type == _elementDataType)
                     {
                         for (var i = 0; i < count; i++)
                             array[i] = input.ReadString();
                     }
+                    else
+                    {
+                        for (var i = 0; i < count; i++)
+                            array[i] = default;
+                    }
                 }
-
+                else
+                {
+                    if (list == null)
+                        list = new List<string>();
+                    else
+                        ListHelpers.SetCount(list, 0);
+                }
 
                 input.EndObject(end);
             }
@@ -239,5 +245,4 @@ namespace USerialization
             }
         }
     }
-
 }

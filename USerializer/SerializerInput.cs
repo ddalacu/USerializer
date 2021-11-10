@@ -330,7 +330,27 @@ namespace USerialization
             _position += (int)count;
             return read;
         }
+        
+        public unsafe void ReadBytes(byte[] read,int count)
+        {
+            EnsureNext(count);
 
+            fixed (byte* readPtr = read)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+#if DEBUG
+                    if (count < 0)
+                        throw new Exception("Count is negative!");
+#endif
+
+                    Unsafe.CopyBlock(readPtr, bufferPtr + _position, (uint)count);
+                }
+            }
+
+            _position += (int)count;
+        }
+        
         public unsafe bool[] ReadBools(int count)
         {
             EnsureNext(count);
@@ -354,6 +374,26 @@ namespace USerialization
             return read;
         }
 
+        public unsafe void ReadBools(bool[] read,int count)
+        {
+            EnsureNext(count);
+            
+            fixed (bool* readPtr = read)
+            {
+                fixed (byte* bufferPtr = _buffer)
+                {
+#if DEBUG
+                    if (count < 0)
+                        throw new Exception("Count is negative!");
+#endif
+
+                    Unsafe.CopyBlock(readPtr, bufferPtr + _position, (uint)count);
+                }
+            }
+
+            _position += (int)count;
+        }
+        
         public unsafe void EnsureNext(int count)
         {
             var end = _position + count;

@@ -32,20 +32,19 @@ namespace USerialization
 
         protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
         {
-            var value = *(byte*)(fieldAddress);
+            var value = *(byte*) (fieldAddress);
             output.WriteByte(value);
         }
 
         protected override unsafe void Read(void* fieldAddress, SerializerInput input)
         {
-            var value = (byte*)(fieldAddress);
+            var value = (byte*) (fieldAddress);
             *value = input.ReadByte();
         }
     }
 
     public sealed class ByteDataTypeLogic : UnmanagedDataTypeLogic<byte>
     {
-
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
@@ -114,7 +113,7 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var type = (DataType) input.ReadByte();
 
                     if (type == _elementDataType)
                     {
@@ -182,7 +181,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6 + count);
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
                     output.WriteBytesUnchecked(array, count);
                 }
                 output.WriteSizeTrack(sizeTracker);
@@ -202,20 +201,28 @@ namespace USerialization
             if (input.BeginReadSize(out var end))
             {
                 var count = input.Read7BitEncodedInt();
-                list = new List<byte>();
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var array = ListHelpers.PrepareArray(ref list, count);
+
+                    var type = (DataType) input.ReadByte();
 
                     if (type == _elementDataType)
                     {
-                        ListHelpers.SetArray(list, input.ReadBytes(count));
+                        input.ReadBytes(array, count);
                     }
                     else
                     {
-                        ListHelpers.SetArray(list, new byte[count]);
+                        ArrayHelpers.CleanArray(array, 0, (uint) count);
                     }
+                }
+                else
+                {
+                    if (list == null)
+                        list = new List<byte>();
+                    else
+                        ListHelpers.SetCount(list, 0);
                 }
 
                 input.EndObject(end);

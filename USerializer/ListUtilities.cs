@@ -4,7 +4,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 
-[assembly: USerialization.LocalModuleInitialize(typeof(USerialization.ListHelpers), nameof(USerialization.ListHelpers.LocalInitialize))]
+[assembly:
+    USerialization.LocalModuleInitialize(typeof(USerialization.ListHelpers),
+        nameof(USerialization.ListHelpers.LocalInitialize))]
 
 namespace USerialization
 {
@@ -37,9 +39,38 @@ namespace USerialization
             var pinnable = Unsafe.As<List<T>, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*)(listAddress + _sizeFieldOffset);
+                count = *(int*) (listAddress + _sizeFieldOffset);
                 return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T[] PrepareArray<T>(ref List<T> list, int count)
+        {
+            T[] array;
+
+            if (list == null)
+            {
+                list = new List<T>();
+                array = new T[count];
+                SetArray(list, array, count);
+            }
+            else
+            {
+                array = GetArray(list, out _);
+
+                if (array.Length < count)
+                {
+                    array = new T[count];
+                    SetArray(list, array, count);
+                }
+                else
+                {
+                    SetCount(list, count);
+                }
+            }
+
+            return array;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -81,7 +112,7 @@ namespace USerialization
             var pinnable = Unsafe.As<object, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*)(listAddress + _sizeFieldOffset);
+                count = *(int*) (listAddress + _sizeFieldOffset);
                 return Unsafe.Read<Array>(listAddress + _itemsFieldOffset);
             }
         }
@@ -92,8 +123,29 @@ namespace USerialization
             var pinnable = Unsafe.As<object, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*)(listAddress + _sizeFieldOffset);
+                count = *(int*) (listAddress + _sizeFieldOffset);
                 return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
+            }
+        }
+    }
+
+    public static class ArrayHelpers
+    {
+        public static unsafe void CleanArray<T>(T[] array, uint start, uint count) where T : unmanaged
+        {
+            fixed (void* addr = array)
+            {
+                Unsafe.InitBlock(((byte*) addr) + (start * sizeof(T)), 0, (uint) (count * sizeof(T)));
+            }
+        }
+
+        public static unsafe void CleanArray(Array array, uint start, uint count, uint elementSize)
+        {
+            var pinnable = Unsafe.As<Array, byte[]>(ref array);
+
+            fixed (byte* addr = pinnable)
+            {
+                Unsafe.InitBlock(addr + (start * elementSize), 0, (count * elementSize));
             }
         }
     }
