@@ -35,7 +35,7 @@ namespace USerialization
 
         private readonly TypeDictionary<DataSerializer> _methods =
             new TypeDictionary<DataSerializer>(512);
-        
+
         public ISerializationProvider[] Providers => _providers;
 
         public ISerializationPolicy SerializationPolicy { get; }
@@ -79,7 +79,7 @@ namespace USerialization
 
             var unlock = false;
 
-            if (Monitor.IsEntered(_lock) == false)//allow only one thread at a time to get data serializer
+            if (Monitor.IsEntered(_lock) == false) //allow only one thread at a time to get data serializer
             {
                 Monitor.Enter(_lock);
                 unlock = true;
@@ -209,8 +209,28 @@ namespace USerialization
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
-            if (TryGetDataSerializer(typeof(T), out var serializationMethods) == false)
-                return false;
+            DataSerializer serializationMethods;
+
+            var type = typeof(T);
+            
+            if (result == null)
+            {
+                if (TryGetDataSerializer(type, out serializationMethods) == false)
+                    return false;
+            }
+            else
+            {
+                if (type.IsValueType)
+                {
+                    if (TryGetDataSerializer(type, out serializationMethods) == false)
+                        return false;
+                }
+                else
+                {
+                    if (TryGetDataSerializer(result.GetType(), out serializationMethods) == false)
+                        return false;
+                }
+            }
 
             serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref result), input);
             return true;
