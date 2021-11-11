@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 
 namespace USerialization
@@ -32,8 +33,9 @@ namespace USerialization
     {
         private readonly ISerializationProvider[] _providers;
 
-        private readonly TypeDictionary<DataSerializer> _methods = new TypeDictionary<DataSerializer>(1024);
-
+        private readonly TypeDictionary<DataSerializer> _methods =
+            new TypeDictionary<DataSerializer>(512);
+        
         public ISerializationProvider[] Providers => _providers;
 
         public ISerializationPolicy SerializationPolicy { get; }
@@ -59,31 +61,64 @@ namespace USerialization
             return methodinfo.MethodHandle.GetFunctionPointer();
         }
 
+        private readonly object _lock = new object();
+
+        public void Clear()
+        {
+            lock (_lock)
+            {
+                _methods.Clear();
+            }
+        }
+
         public bool TryGetDataSerializer(Type type, out DataSerializer dataSerializer,
             bool initializeDataSerializer = true)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
 
-            if (_methods.TryGetValue(type, out dataSerializer))
-                return dataSerializer != null;
+            var unlock = false;
 
-            foreach (var provider in _providers)
+            if (Monitor.IsEntered(_lock) == false)//allow only one thread at a time to get data serializer
             {
-                if (provider.TryGet(this, type, out dataSerializer) == false)
-                    continue;
-
-                _methods.Add(type, dataSerializer);
-
-                if (initializeDataSerializer)
-                    dataSerializer.RootInitialize(this);
-
-                return true;
+                Monitor.Enter(_lock);
+                unlock = true;
             }
 
-            dataSerializer = default;
-            _methods.Add(type, dataSerializer);
-            return false;
+            try
+            {
+                if (_methods.TryGetValue(type, out dataSerializer))
+                {
+                    if (initializeDataSerializer)
+                        dataSerializer.RootInitialize(this);
+
+                    return dataSerializer != null;
+                }
+
+                foreach (var provider in _providers)
+                {
+                    if (provider.TryGet(this, type, out dataSerializer) == false)
+                        continue;
+
+                    _methods.Add(type, dataSerializer);
+
+                    if (initializeDataSerializer)
+                        dataSerializer.RootInitialize(this);
+
+                    return true;
+                }
+
+                dataSerializer = default;
+                _methods.Add(type, dataSerializer);
+                return false;
+            }
+            finally
+            {
+                if (unlock)
+                {
+                    Monitor.Exit(_lock);
+                }
+            }
         }
 
         public bool TryGetNonCachedSerializationMethods(Type type, out DataSerializer dataSerializer,
@@ -168,7 +203,7 @@ namespace USerialization
 
             return true;
         }
-        
+
         public unsafe bool TryDeserialize<T>(SerializerInput input, ref T result)
         {
             if (input == null)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -39,7 +40,6 @@ namespace USerialization
                 AlternateHashes = null;
             }
         }
-
     }
 
     [StructLayout(LayoutKind.Auto)]
@@ -58,20 +58,20 @@ namespace USerialization
             Reader = serializationMethods.ReadMethod;
 
             if (Writer.IsValid == false)
-                throw new Exception();
+                throw new Exception("Writer is invalid!");
             if (Reader.IsValid == false)
-                throw new Exception();
+                throw new Exception("Reader is invalid!");
         }
 
 
-        private static void OrderFields((FieldMetaData Meta, FieldSerializationData SerializationData)[] fields)
+        private static void OrderFields(List<(FieldMetaData Meta, FieldSerializationData SerializationData)> fields)
         {
-            var fieldsLength = fields.Length;
+            var fieldsLength = fields.Count;
             if (fieldsLength > 255)
                 throw new Exception();
-
+            
             //important
-            Array.Sort(fields, (a, b) =>
+            fields.Sort((a, b) =>
             {
                 if (a.Meta.FieldNameHash > b.Meta.FieldNameHash)
                     return 1;
@@ -117,62 +117,59 @@ namespace USerialization
             return false;
         }
 
-        public static (FieldMetaData[] Metas, FieldSerializationData[] SerializationDatas) GetFields(Type type, USerializer uSerializer, bool initializeDataSerializer = true)
+        public static (FieldMetaData[] Metas, FieldSerializationData[] SerializationDatas) GetFields(Type type,
+            USerializer uSerializer, bool initializeDataSerializer = true)
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-            using (var fieldsIterator = new TypeFieldsIterator(8))
+            using var fieldsIterator = new TypeFieldsIterator(type, bindingFlags);
+            
+            var fields = new List<(FieldMetaData, FieldSerializationData)>(32);
+
+            while (fieldsIterator.MoveNext(out var fieldInfo))
             {
-                var size = fieldsIterator.Fill(type, bindingFlags);
-                var fields = new (FieldMetaData, FieldSerializationData)[size];
-                var index = 0;
+                if (uSerializer.SerializationPolicy.ShouldSerialize(fieldInfo) == false)
+                    continue;
 
-                for (var i = 0; i < size; i++)
-                {
-                    var fieldInfo = fieldsIterator[i];
+                if (uSerializer.TryGetDataSerializer(fieldInfo.FieldType,
+                    out var serializationMethods,
+                    initializeDataSerializer) == false)
+                    continue;
 
-                    if (uSerializer.SerializationPolicy.ShouldSerialize(fieldInfo) == false)
-                        continue;
+                if (serializationMethods == null)
+                    throw new Exception($"Returned null serializer for {fieldInfo.FieldType}");
 
-                    if (uSerializer.TryGetDataSerializer(fieldInfo.FieldType,
-                        out var serializationMethods,
-                        initializeDataSerializer) == false)
-                        continue;
+                if (serializationMethods.WriteMethod.IsValid == false)
+                    throw new Exception($"{fieldInfo.FieldType} Writer is invalid!");
+                if (serializationMethods.ReadMethod.IsValid == false)
+                    throw new Exception($"{fieldInfo.FieldType} Reader is invalid!");
 
-                    if (serializationMethods == null)
-                        throw new Exception($"Returned null serializer for {fieldInfo.FieldType}");
+                var fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
+                if (fieldOffset > short.MaxValue)
+                    throw new Exception("Field offset way to big!");
 
-                    var fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
-                    if (fieldOffset > short.MaxValue)
-                        throw new Exception("Field offset way to big!");
+                var alternateNames = uSerializer.SerializationPolicy.GetAlternateNames(fieldInfo);
 
-                    var alternateNames = uSerializer.SerializationPolicy.GetAlternateNames(fieldInfo);
+                var fieldSerializationData = new FieldSerializationData(serializationMethods, (ushort) fieldOffset);
+                var metaData = new FieldMetaData(fieldInfo.Name, alternateNames, serializationMethods);
 
-                    var fieldSerializationData = new FieldSerializationData(serializationMethods, (ushort)fieldOffset);
-                    var metaData = new FieldMetaData(fieldInfo.Name, alternateNames, serializationMethods);
-
-                    fields[index] = (metaData, fieldSerializationData);
-                    index++;
-                }
-
-                if (index != fields.Length)
-                    Array.Resize(ref fields, index);
-
-                OrderFields(fields);
-
-                var splitMetas = new FieldMetaData[fields.Length];
-                var splitDatas = new FieldSerializationData[fields.Length];
-
-                for (var i = 0; i < fields.Length; i++)
-                {
-                    splitMetas[i] = fields[i].Item1;
-                    splitDatas[i] = fields[i].Item2;
-                }
-
-                return (splitMetas, splitDatas);
+                fields.Add((metaData, fieldSerializationData));
             }
-        }
+            
+            OrderFields(fields);
+            var fieldsCount = fields.Count;
 
+            var splitMetas = new FieldMetaData[fieldsCount];
+            var splitDatas = new FieldSerializationData[fieldsCount];
+
+            for (var i = 0; i < fieldsCount; i++)
+            {
+                splitMetas[i] = fields[i].Item1;
+                splitDatas[i] = fields[i].Item2;
+            }
+
+            return (splitMetas, splitDatas);
+        }
     }
 
     public readonly unsafe struct FieldsSerializer
@@ -186,7 +183,8 @@ namespace USerialization
         private readonly DataTypesDatabase _dataTypesDatabase;
         private readonly FieldMetaData[] _fieldsMetas;
 
-        public FieldsSerializer(FieldMetaData[] metas, FieldSerializationData[] fields, DataTypesDatabase dataTypesDatabase)
+        public FieldsSerializer(FieldMetaData[] metas, FieldSerializationData[] fields,
+            DataTypesDatabase dataTypesDatabase)
         {
             _fields = fields;
             _fieldsMetas = metas;
@@ -202,21 +200,21 @@ namespace USerialization
             var headerData = new byte[size];
 
             int position = 0;
-            headerData[position++] = (byte)fieldsLength;
+            headerData[position++] = (byte) fieldsLength;
 
             for (var index = 0; index < fieldsLength; index++)
             {
                 var fieldMeta = metas[index];
 
                 var hash = fieldMeta.FieldNameHash;
-                headerData[position++] = (byte)hash;
-                headerData[position++] = (byte)(hash >> 8);
-                headerData[position++] = (byte)(hash >> 16);
-                headerData[position++] = (byte)(hash >> 24);
+                headerData[position++] = (byte) hash;
+                headerData[position++] = (byte) (hash >> 8);
+                headerData[position++] = (byte) (hash >> 16);
+                headerData[position++] = (byte) (hash >> 24);
                 //var dataSerializer = fieldData.SerializationMethods;
                 var dataType = fieldMeta.DataType;
 
-                headerData[position++] = (byte)dataType;
+                headerData[position++] = (byte) dataType;
 
                 if (dataType == DataType.None)
                     throw new Exception("Data type is none!");
@@ -272,7 +270,6 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Read(byte* objectAddress, SerializerInput input)
         {
-
             var fieldCount = input.ReadByte();
             var size = fieldCount * 5;
 
@@ -312,7 +309,7 @@ namespace USerialization
                     var field = buffer[position++] | buffer[position++] << 8 | buffer[position++] << 16 |
                                 buffer[position++] << 24;
 
-                    var type = (DataType)buffer[position++];
+                    var type = (DataType) buffer[position++];
 
                     var deserialized = false;
 
@@ -327,7 +324,7 @@ namespace USerialization
 
                             if (type == meta.DataType)
                             {
-                                indexes[i] = (byte)searchIndex;
+                                indexes[i] = (byte) searchIndex;
                                 deserialized = true;
                             }
 
@@ -340,7 +337,7 @@ namespace USerialization
                     {
                         if (FieldSerializationData.GetAlternate(_fieldsMetas, type, field, out var alternateIndex))
                         {
-                            indexes[i] = (byte)alternateIndex;
+                            indexes[i] = (byte) alternateIndex;
                         }
                         else
                         {
@@ -353,7 +350,7 @@ namespace USerialization
                 {
                     var index = indexes[i];
 
-                    if ((byte)dataTypes[i] != 0)
+                    if ((byte) dataTypes[i] != 0)
                     {
                         _dataTypesDatabase.SkipData(dataTypes[i], input);
                         continue;
@@ -369,6 +366,4 @@ namespace USerialization
             }
         }
     }
-
-
 }
