@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Threading;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -9,7 +10,6 @@ namespace USerialization
     {
         public CircularReferenceException(string message) : base(message)
         {
-
         }
     }
 
@@ -38,7 +38,6 @@ namespace USerialization
 
             return true;
         }
-
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
@@ -89,10 +88,10 @@ namespace USerialization
                 return;
             }
 
-            if (_stack >= MaxStack)
-                throw new CircularReferenceException("Circular references are not supported!");
+            var value = Interlocked.Increment(ref _stack);
 
-            _stack++;
+            if (value >= MaxStack)
+                throw new CircularReferenceException("The system does not support circular references!");
 
             var track = output.BeginSizeTrack();
 
@@ -105,7 +104,7 @@ namespace USerialization
 
             output.WriteSizeTrack(track);
 
-            _stack--;
+            Interlocked.Decrement(ref _stack);
         }
 
         protected override void Read(void* fieldAddress, SerializerInput input)
