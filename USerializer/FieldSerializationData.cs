@@ -15,7 +15,10 @@ namespace USerialization
 
         public readonly int[] AlternateHashes;
 
-        public FieldMetaData(string fieldName, string[] alternateFieldNames, DataSerializer serializationMethods)
+        public readonly FieldInfo Field;
+
+        public FieldMetaData(string fieldName, string[] alternateFieldNames, FieldInfo info,
+            DataSerializer serializationMethods)
         {
             DataType = serializationMethods.GetDataType();
 
@@ -39,6 +42,8 @@ namespace USerialization
             {
                 AlternateHashes = null;
             }
+
+            Field = info;
         }
     }
 
@@ -69,7 +74,7 @@ namespace USerialization
             var fieldsLength = fields.Count;
             if (fieldsLength > 255)
                 throw new Exception();
-            
+
             //important
             fields.Sort((a, b) =>
             {
@@ -83,7 +88,9 @@ namespace USerialization
             for (var i = 0; i < fieldsLength - 1; i++)
             {
                 if (fields[i].Meta.FieldNameHash == fields[i + 1].Meta.FieldNameHash)
-                    throw new Exception("Field hash collision!");
+                {
+                    throw new Exception($"{fields[i].Meta.Field.DeclaringType} Field hash collision! {fields[i].Meta.Field} {fields[i + 1].Meta.Field}");
+                }
             }
         }
 
@@ -151,11 +158,11 @@ namespace USerialization
                 var alternateNames = uSerializer.SerializationPolicy.GetAlternateNames(fieldInfo);
 
                 var fieldSerializationData = new FieldSerializationData(serializationMethods, (ushort) fieldOffset);
-                var metaData = new FieldMetaData(fieldInfo.Name, alternateNames, serializationMethods);
+                var metaData = new FieldMetaData(fieldInfo.Name, alternateNames, fieldInfo, serializationMethods);
 
                 fields.Add((metaData, fieldSerializationData));
             }
-            
+
             OrderFields(fields);
             var fieldsCount = fields.Count;
 
