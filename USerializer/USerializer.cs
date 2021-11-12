@@ -89,7 +89,7 @@ namespace USerialization
             {
                 if (_methods.TryGetValue(type, out dataSerializer))
                 {
-                    if (initializeDataSerializer)
+                    if (initializeDataSerializer && dataSerializer != null)
                         dataSerializer.RootInitialize(this);
 
                     return dataSerializer != null;
@@ -212,7 +212,7 @@ namespace USerialization
             DataSerializer serializationMethods;
 
             var type = typeof(T);
-            
+
             if (result == null)
             {
                 if (TryGetDataSerializer(type, out serializationMethods) == false)
