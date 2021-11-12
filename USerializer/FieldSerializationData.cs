@@ -89,7 +89,8 @@ namespace USerialization
             {
                 if (fields[i].Meta.FieldNameHash == fields[i + 1].Meta.FieldNameHash)
                 {
-                    throw new Exception($"{fields[i].Meta.Field.DeclaringType} Field hash collision! {fields[i].Meta.Field} {fields[i + 1].Meta.Field}");
+                    throw new Exception(
+                        $"Field hash collision! {fields[i].Meta.Field.DeclaringType}-{fields[i].Meta.Field} and {fields[i + 1].Meta.Field.DeclaringType}- {fields[i + 1].Meta.Field}");
                 }
             }
         }
@@ -130,7 +131,7 @@ namespace USerialization
             var bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
             using var fieldsIterator = new TypeFieldsIterator(type, bindingFlags);
-            
+
             var fields = new List<(FieldMetaData, FieldSerializationData)>(32);
 
             while (fieldsIterator.MoveNext(out var fieldInfo))
