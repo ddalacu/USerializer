@@ -48,17 +48,22 @@ namespace USerialization
         }
 
         public bool AddArrayField<TElement>(int hash,
-            FieldArrayWriter<T, TElement>.GetLengthDelegate getLength, FieldArrayWriter<T, TElement>.GetElementDelegate getElement,
-            FieldArrayWriter<T, TElement>.SetLengthDelegate setLength, FieldArrayWriter<T, TElement>.SetElementDelegate setElement)
+            FieldArrayWriter<T, TElement>.GetLengthDelegate getLength,
+            FieldArrayWriter<T, TElement>.GetElementDelegate getElement,
+            FieldArrayWriter<T, TElement>.SetLengthDelegate setLength,
+            FieldArrayWriter<T, TElement>.SetElementDelegate setElement)
         {
             var memberType = typeof(TElement);
             if (_serializer.TryGetDataSerializer(memberType, out var elementSerializer, false) == false)
             {
-                _serializer.Logger.Error($"{typeof(T)} custom serializer, cannot get serialization methods for element of type {memberType}");
+                _serializer.Logger.Error(
+                    $"{typeof(T)} custom serializer, cannot get serialization methods for element of type {memberType}");
                 return false;
             }
 
-            var toAdd = new MemberSerializerStruct(hash, new FieldArrayWriter<T, TElement>(elementSerializer, getLength, setLength, getElement, setElement, _serializer));
+            var toAdd = new MemberSerializerStruct(hash,
+                new FieldArrayWriter<T, TElement>(elementSerializer, getLength, setLength, getElement, setElement,
+                    _serializer));
             Add(toAdd);
             return true;
         }
@@ -68,10 +73,10 @@ namespace USerialization
     {
         public ClassMemberAdder(USerializer serializer) : base(serializer)
         {
-
         }
 
-        public bool AddField<TMember>(int hash, SetPropertyDelegate<T, TMember> set, GetPropertyDelegate<T, TMember> get)
+        public bool AddField<TMember>(int hash, SetPropertyDelegate<T, TMember> set,
+            GetPropertyDelegate<T, TMember> get)
         {
             if (set == null)
                 throw new ArgumentNullException(nameof(set));
@@ -81,7 +86,8 @@ namespace USerialization
             var memberType = typeof(TMember);
             if (Serializer.TryGetDataSerializer(memberType, out var methods, false) == false)
             {
-                _serializer.Logger.Error($"{typeof(T)} custom serializer, cannot get serialization methods for field of type {memberType}");
+                _serializer.Logger.Error(
+                    $"{typeof(T)} custom serializer, cannot get serialization methods for field of type {memberType}");
                 return false;
             }
 
@@ -97,7 +103,8 @@ namespace USerialization
 
             if (Serializer.TryGetDataSerializer(memberType, out var methods, false) == false)
             {
-                _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {memberType}");
+                _serializer.Logger.Error(
+                    $"{type} custom serializer, cannot get serialization methods for field of type {memberType}");
                 return;
             }
 
@@ -109,8 +116,10 @@ namespace USerialization
                 return;
             }
 
-            var get = (GetPropertyDelegate<T, TMember>)Delegate.CreateDelegate(typeof(GetPropertyDelegate<T, TMember>), null, property.GetGetMethod());
-            var set = (SetPropertyDelegate<T, TMember>)Delegate.CreateDelegate(typeof(SetPropertyDelegate<T, TMember>), null, property.GetSetMethod());
+            var get = (GetPropertyDelegate<T, TMember>) Delegate.CreateDelegate(typeof(GetPropertyDelegate<T, TMember>),
+                null, property.GetGetMethod());
+            var set = (SetPropertyDelegate<T, TMember>) Delegate.CreateDelegate(typeof(SetPropertyDelegate<T, TMember>),
+                null, property.GetSetMethod());
 
             var toAdd = new MemberSerializerStruct(hash, new PropertyWriter<T, TMember>(methods, set, get));
 
@@ -134,7 +143,8 @@ namespace USerialization
 
             if (Serializer.TryGetDataSerializer(field.FieldType, out var methods, false) == false)
             {
-                _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
+                _serializer.Logger.Error(
+                    $"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
                 return false;
             }
 
@@ -152,17 +162,20 @@ namespace USerialization
 
             var formattedFieldName = $"<{propertyName}>k__BackingField";
 
-            var field = type.GetField(formattedFieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var field = type.GetField(formattedFieldName,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (field == null)
             {
-                _serializer.Logger.Error($"{type} custom serializer, cannot get backing field for property {propertyName}");
+                _serializer.Logger.Error(
+                    $"{type} custom serializer, cannot get backing field for property {propertyName}");
                 return false;
             }
 
             if (Serializer.TryGetDataSerializer(field.FieldType, out var methods, false) == false)
             {
-                _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
+                _serializer.Logger.Error(
+                    $"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
                 return false;
             }
 
@@ -176,11 +189,10 @@ namespace USerialization
     {
         public StructMemberAdder(USerializer serializer) : base(serializer)
         {
-
         }
 
         public bool AddField<TMember>(int hash, ByRefFieldWriter<T, TMember>.SetDelegate set,
-           ByRefFieldWriter<T, TMember>.GetDelegate get)
+            ByRefFieldWriter<T, TMember>.GetDelegate get)
         {
             if (set == null)
                 throw new ArgumentNullException(nameof(set));
@@ -190,7 +202,8 @@ namespace USerialization
             var memberType = typeof(TMember);
             if (Serializer.TryGetDataSerializer(memberType, out var methods, false) == false)
             {
-                _serializer.Logger.Error($"{typeof(T)} custom serializer, cannot get serialization methods for field of type {memberType}");
+                _serializer.Logger.Error(
+                    $"{typeof(T)} custom serializer, cannot get serialization methods for field of type {memberType}");
                 return false;
             }
 
@@ -216,7 +229,8 @@ namespace USerialization
 
             if (Serializer.TryGetDataSerializer(field.FieldType, out var methods, false) == false)
             {
-                _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
+                _serializer.Logger.Error(
+                    $"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
                 return false;
             }
 
@@ -234,17 +248,20 @@ namespace USerialization
 
             var formattedFieldName = $"<{propertyName}>k__BackingField";
 
-            var field = type.GetField(formattedFieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var field = type.GetField(formattedFieldName,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (field == null)
             {
-                _serializer.Logger.Error($"{type} custom serializer, cannot get backing field for property {propertyName}");
+                _serializer.Logger.Error(
+                    $"{type} custom serializer, cannot get backing field for property {propertyName}");
                 return false;
             }
 
             if (Serializer.TryGetDataSerializer(field.FieldType, out var methods, false) == false)
             {
-                _serializer.Logger.Error($"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
+                _serializer.Logger.Error(
+                    $"{type} custom serializer, cannot get serialization methods for field of type {field.FieldType}");
                 return false;
             }
 
@@ -280,18 +297,18 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
-            var address = (byte*)fieldAddress + _fieldOffset;
-            _dataSerializer.WriteMethod.Invoke(address, output);
+            var address = (byte*) fieldAddress + _fieldOffset;
+            _dataSerializer.Write(address, output, context);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
-            var address = (byte*)fieldAddress + _fieldOffset;
-            _dataSerializer.ReadMethod.Invoke(address, input);
+            var address = (byte*) fieldAddress + _fieldOffset;
+            _dataSerializer.Read(address, input, context);
         }
     }
 
@@ -324,27 +341,27 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
-            var obj = Unsafe.Read<object>(fieldAddress);//obj should not be null here
+            var obj = Unsafe.Read<object>(fieldAddress); //obj should not be null here
 
             var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
             fixed (byte* objectAddress = &pinnable.Pinnable)
             {
-                _dataSerializer.WriteMethod.Invoke(objectAddress + _fieldOffset, output);
+                _dataSerializer.Write(objectAddress + _fieldOffset, output, context);
             }
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
-            var obj = Unsafe.Read<object>(fieldAddress);//obj should not be null here
+            var obj = Unsafe.Read<object>(fieldAddress); //obj should not be null here
 
             var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
             fixed (byte* objectAddress = &pinnable.Pinnable)
             {
-                _dataSerializer.ReadMethod.Invoke(objectAddress + _fieldOffset, input);
+                _dataSerializer.Read(objectAddress + _fieldOffset, input, context);
             }
         }
     }
@@ -362,7 +379,8 @@ namespace USerialization
             _dataSerializer.RootInitialize(serializer);
         }
 
-        public PropertyWriter(DataSerializer dataSerializer, SetPropertyDelegate<T, TMember> set, GetPropertyDelegate<T, TMember> get)
+        public PropertyWriter(DataSerializer dataSerializer, SetPropertyDelegate<T, TMember> set,
+            GetPropertyDelegate<T, TMember> get)
         {
             _set = set;
             _get = get;
@@ -371,19 +389,19 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var value = _get(Unsafe.Read<T>(fieldAddress));
-            _dataSerializer.WriteMethod.Invoke(Unsafe.AsPointer(ref value), output);
+            _dataSerializer.Write(Unsafe.AsPointer(ref value), output, context);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
             TMember def = default;
             var ptr = Unsafe.AsPointer(ref def);
-            _dataSerializer.ReadMethod.Invoke(ptr, input);
+            _dataSerializer.Read(ptr, input, context);
             _set(Unsafe.Read<T>(fieldAddress), def);
         }
     }
@@ -393,6 +411,7 @@ namespace USerialization
         public delegate void SetDelegate(ref T obj, TMember value);
 
         public delegate TMember GetDelegate(ref T obj);
+
         private readonly SetDelegate _set;
         private readonly GetDelegate _get;
         private DataSerializer _dataSerializer;
@@ -412,22 +431,22 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
             var value = _get(ref instance);
-            _dataSerializer.WriteMethod.Invoke(Unsafe.AsPointer(ref value), output);
+            _dataSerializer.Write(Unsafe.AsPointer(ref value), output, context);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
 
             TMember def = default;
             var ptr = Unsafe.AsPointer(ref def);
-            _dataSerializer.ReadMethod.Invoke(ptr, input);
+            _dataSerializer.Read(ptr, input, context);
             _set(ref instance, def);
         }
     }
@@ -477,7 +496,7 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
 
@@ -492,14 +511,14 @@ namespace USerialization
             var sizeTracker = output.BeginSizeTrack();
             {
                 output.EnsureNext(6);
-                output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
+                output.WriteByteUnchecked((byte) _elementSerializer.GetDataType());
                 output.Write7BitEncodedIntUnchecked(count);
 
                 for (var index = 0; index < count; index++)
                 {
                     var element = _getElementDelegate(ref instance, index);
                     var itemAddress = Unsafe.AsPointer(ref element);
-                    _elementSerializer.WriteMethod.Invoke(itemAddress, output);
+                    _elementSerializer.Write(itemAddress, output, context);
                 }
             }
             output.WriteSizeTrack(sizeTracker);
@@ -507,13 +526,13 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
 
             if (input.BeginReadSize(out var end))
             {
-                var type = (DataType)input.ReadByte();
+                var type = (DataType) input.ReadByte();
 
                 var count = input.Read7BitEncodedInt();
 
@@ -525,7 +544,7 @@ namespace USerialization
                     {
                         TElement def = default;
                         var ptr = Unsafe.AsPointer(ref def);
-                        _elementSerializer.ReadMethod.Invoke(ptr, input);
+                        _elementSerializer.Read(ptr, input, context);
                         _setElementDelegate(ref instance, index, ref def);
                     }
                 }

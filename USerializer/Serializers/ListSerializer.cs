@@ -53,25 +53,17 @@ namespace USerialization
         public override DataType GetDataType() => _dataType;
 
         private DataType _elementDataType;
-        private InstanceWriteMethodPointer _elementWriter;
-        private InstanceReadMethodPointer _elementReader;
 
         protected override void Initialize(USerializer serializer)
         {
             _elementSerializer.RootInitialize(serializer);
 
             _elementDataType = _elementSerializer.GetDataType();
-
-            _elementWriter = _elementSerializer.WriteMethod;
-            _elementReader = _elementSerializer.ReadMethod;
-
+            
             if (_elementDataType == DataType.None)
             {
                 serializer.Logger.Error("Element data type is none, something went wrong!");
             }
-
-            //WriteMethod = _elementSerializer.WriteMethod;
-            //ReadMethod = _elementSerializer.ReadMethod;
         }
 
         public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer,
@@ -84,7 +76,7 @@ namespace USerialization
             _dataType = arrayDataType;
         }
 
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var list = Unsafe.Read<object>(fieldAddress);
 
@@ -109,10 +101,10 @@ namespace USerialization
                     fixed (byte* address = pinnable)
                     {
                         var tempAddress = address;
-                        var writer = _elementWriter;
+                        var serializer = _elementSerializer;
                         for (var index = 0; index < count; index++)
                         {
-                            writer.Invoke(tempAddress, output);
+                            serializer.Write(tempAddress, output, context);
                             tempAddress += _size;
                         }
                     }
@@ -127,7 +119,7 @@ namespace USerialization
             }
         }
 
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var list = ref Unsafe.AsRef<object>(fieldAddress);
 
@@ -179,10 +171,10 @@ namespace USerialization
                         fixed (byte* address = pinnable)
                         {
                             var tempAddress = address;
-                            var reader = _elementReader;
+                            var serializer = _elementSerializer;
                             for (var i = 0; i < count; i++)
                             {
-                                reader.Invoke(tempAddress, input);
+                                serializer.Read(tempAddress, input, context);
                                 tempAddress += _size;
                             }
                         }

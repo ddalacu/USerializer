@@ -36,21 +36,21 @@ namespace USerialization
         public abstract void CopyFromSurrogate(ref TSurrogate from, ref T to);
 
 
-        protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
             var to = default(TSurrogate);
             CopyToSurrogate(ref instance, ref to);
 
-            _dataSerializer.WriteMethod.Invoke(Unsafe.AsPointer(ref to), output);
+            _dataSerializer.Write(Unsafe.AsPointer(ref to), output, context);
         }
 
-        protected override unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
             var from = default(TSurrogate);
 
-            _dataSerializer.ReadMethod.Invoke(Unsafe.AsPointer(ref from), input);
+            _dataSerializer.Read(Unsafe.AsPointer(ref from), input, context);
             CopyFromSurrogate(ref from, ref instance);
         }
     }

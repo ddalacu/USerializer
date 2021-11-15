@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -26,15 +25,14 @@ namespace USerialization
         void Error(string error);
     }
 
-    public delegate IntPtr GetFunctionPointerDelegate(MethodInfo methodInfo);
-
-
     public class USerializer
     {
         private readonly ISerializationProvider[] _providers;
 
         private readonly TypeDictionary<DataSerializer> _methods =
             new TypeDictionary<DataSerializer>(512);
+
+        private readonly object _lock = new object();
 
         public ISerializationProvider[] Providers => _providers;
 
@@ -44,7 +42,6 @@ namespace USerialization
 
         public ILogger Logger { get; set; }
 
-        public GetFunctionPointerDelegate GetFunctionPointer { get; set; }
 
         public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers,
             DataTypesDatabase dataTypesDatabase, ILogger logger)
@@ -53,15 +50,7 @@ namespace USerialization
             _providers = providers;
             DataTypesDatabase = dataTypesDatabase;
             Logger = logger;
-            GetFunctionPointer = DefaultGetFunctionPointer;
         }
-
-        private static IntPtr DefaultGetFunctionPointer(MethodInfo methodinfo)
-        {
-            return methodinfo.MethodHandle.GetFunctionPointer();
-        }
-
-        private readonly object _lock = new object();
 
         public void Clear()
         {
@@ -158,7 +147,7 @@ namespace USerialization
             return TryGetDataSerializer(type, out _);
         }
 
-        public unsafe bool Serialize(SerializerOutput output, object o)
+        public unsafe bool Serialize(SerializerOutput output, object o, object context = null)
         {
             if (output == null)
                 throw new ArgumentNullException(nameof(output));
@@ -172,13 +161,13 @@ namespace USerialization
                     var pinnable = Unsafe.As<object, PinnableObject>(ref o);
                     fixed (byte* objectAddress = &pinnable.Pinnable)
                     {
-                        serializationMethods.WriteMethod.Invoke(objectAddress, output);
+                        serializationMethods.Write(objectAddress, output, context);
                     }
                 }
                 else
                 {
                     var fieldAddress = Unsafe.AsPointer(ref o);
-                    serializationMethods.WriteMethod.Invoke(fieldAddress, output);
+                    serializationMethods.Write(fieldAddress, output, context);
                 }
 
                 return true;
@@ -187,7 +176,7 @@ namespace USerialization
             return false;
         }
 
-        public unsafe bool Serialize<T>(SerializerOutput output, ref T value) where T : struct
+        public unsafe bool Serialize<T>(SerializerOutput output, ref T value, object context = null) where T : struct
         {
             if (output == null)
                 throw new ArgumentNullException(nameof(output));
@@ -197,14 +186,14 @@ namespace USerialization
             if (TryGetDataSerializer(type, out var serializationMethods))
             {
                 var fieldAddress = Unsafe.AsPointer(ref value);
-                serializationMethods.WriteMethod.Invoke(fieldAddress, output);
+                serializationMethods.Write(fieldAddress, output, context);
                 return true;
             }
 
             return true;
         }
 
-        public unsafe bool TryDeserialize<T>(SerializerInput input, ref T result)
+        public unsafe bool TryDeserialize<T>(SerializerInput input, ref T result, object context = null)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
@@ -232,11 +221,11 @@ namespace USerialization
                 }
             }
 
-            serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref result), input);
+            serializationMethods.Read(Unsafe.AsPointer(ref result), input, context);
             return true;
         }
 
-        public unsafe bool TryDeserialize<T>(SerializerInput input, Type type, ref T result)
+        public unsafe bool TryDeserialize<T>(SerializerInput input, Type type, ref T result, object context = null)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
@@ -247,7 +236,7 @@ namespace USerialization
             if (TryGetDataSerializer(type, out var serializationMethods) == false)
                 return false;
 
-            serializationMethods.ReadMethod.Invoke(Unsafe.AsPointer(ref result), input);
+            serializationMethods.Read(Unsafe.AsPointer(ref result), input, context);
             return true;
         }
 

@@ -7,7 +7,6 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public abstract class CustomStructSerializer<T> : CustomDataSerializer where T : struct
     {
-
         private MemberSerializer _memberSerializer;
 
         private DataType _dataType;
@@ -39,20 +38,20 @@ namespace USerialization
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
 
-        protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var track = output.BeginSizeTrack();
 
-            _memberSerializer.Write((byte*)fieldAddress, output);
+            _memberSerializer.Write((byte*) fieldAddress, output, context);
 
             output.WriteSizeTrack(track);
         }
 
-        protected override unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
         {
             if (input.BeginReadSize(out var end))
             {
-                _memberSerializer.Read((byte*)fieldAddress, input);
+                _memberSerializer.Read((byte*) fieldAddress, input, context);
 
                 input.EndObject(end);
             }

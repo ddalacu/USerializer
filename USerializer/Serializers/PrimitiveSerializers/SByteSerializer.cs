@@ -25,13 +25,13 @@ namespace USerialization
             return true;
         }
 
-        protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var value = *(byte*)(fieldAddress);
             output.WriteByte(value);
         }
 
-        protected override unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
         {
             var value = (byte*)(fieldAddress);
             *value = input.ReadByte();

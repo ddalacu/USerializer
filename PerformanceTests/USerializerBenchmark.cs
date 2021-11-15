@@ -9,7 +9,6 @@ namespace PerformanceTests
 {
     public class SerializeField : Attribute
     {
-
     }
 
     public class FormerlySerializedAsAttribute : Attribute
@@ -37,7 +36,7 @@ namespace PerformanceTests
             if (type.IsAbstract)
                 return false;
 
-            if (type.IsGenericTypeDefinition)// Type<>
+            if (type.IsGenericTypeDefinition) // Type<>
                 return false;
 
             if (type.IsValueType)
@@ -106,7 +105,9 @@ namespace PerformanceTests
 
         public string[] GetAlternateNames(FieldInfo fieldInfo)
         {
-            var formerly = (FormerlySerializedAsAttribute[])Attribute.GetCustomAttributes(fieldInfo, typeof(FormerlySerializedAsAttribute));
+            var formerly =
+                (FormerlySerializedAsAttribute[]) Attribute.GetCustomAttributes(fieldInfo,
+                    typeof(FormerlySerializedAsAttribute));
 
             var length = formerly.Length;
 
@@ -171,7 +172,7 @@ namespace PerformanceTests
         protected override void Serialize(T obj, Stream stream)
         {
             _output.SetStream(stream);
-            _serializer.Serialize(obj, _output);
+            _serializer.Serialize(obj, _output, null);
             _output.Flush();
         }
 
@@ -180,10 +181,9 @@ namespace PerformanceTests
         protected override T Deserialize(Stream stream)
         {
             _input.SetStream(stream);
-            var result = _serializer.Deserialize(_input);
+            var result = _serializer.Deserialize(_input, null);
             _input.FinishRead();
             return result;
         }
-
     }
 }

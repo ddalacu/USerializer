@@ -78,7 +78,7 @@ namespace USerialization
 
         private const int MaxStack = 32;
 
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var obj = Unsafe.Read<object>(fieldAddress);
 
@@ -99,7 +99,7 @@ namespace USerialization
 
             fixed (byte* objectAddress = &pinnable.Pinnable)
             {
-                _fieldsSerializer.Write(objectAddress, output);
+                _fieldsSerializer.Write(objectAddress, output, context);
             }
 
             output.WriteSizeTrack(track);
@@ -107,7 +107,7 @@ namespace USerialization
             Interlocked.Decrement(ref _stack);
         }
 
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
 
@@ -126,7 +126,7 @@ namespace USerialization
                 var pinnable = Unsafe.As<object, PinnableObject>(ref instance);
                 fixed (byte* objectAddress = &pinnable.Pinnable)
                 {
-                    _fieldsSerializer.Read(objectAddress, input);
+                    _fieldsSerializer.Read(objectAddress, input, context);
                 }
 
                 input.EndObject(end);

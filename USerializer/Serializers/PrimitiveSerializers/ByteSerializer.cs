@@ -30,13 +30,13 @@ namespace USerialization
             return true;
         }
 
-        protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var value = *(byte*) (fieldAddress);
             output.WriteByte(value);
         }
 
-        protected override unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
         {
             var value = (byte*) (fieldAddress);
             *value = input.ReadByte();
@@ -73,7 +73,7 @@ namespace USerialization
             return true;
         }
 
-        protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var array = Unsafe.Read<byte[]>(fieldAddress);
             if (array == null)
@@ -103,7 +103,7 @@ namespace USerialization
             }
         }
 
-        protected override unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var array = ref Unsafe.AsRef<byte[]>(fieldAddress);
 
@@ -164,7 +164,7 @@ namespace USerialization
             return true;
         }
 
-        protected override unsafe void Write(void* fieldAddress, SerializerOutput output)
+        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var list = Unsafe.Read<List<byte>>(fieldAddress);
             if (list == null)
@@ -194,7 +194,7 @@ namespace USerialization
             }
         }
 
-        protected override unsafe void Read(void* fieldAddress, SerializerInput input)
+        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var list = ref Unsafe.AsRef<List<byte>>(fieldAddress);
 

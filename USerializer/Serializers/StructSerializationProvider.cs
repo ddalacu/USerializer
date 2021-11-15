@@ -53,20 +53,20 @@ namespace USerialization
             _dataType = objectDataType;
         }
 
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var track = output.BeginSizeTrack();
 
-            _fieldsSerializer.Write((byte*)fieldAddress, output);
+            _fieldsSerializer.Write((byte*)fieldAddress, output, context);
 
             output.WriteSizeTrack(track);
         }
 
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
             if (input.BeginReadSize(out var end))
             {
-                _fieldsSerializer.Read((byte*)fieldAddress, input);
+                _fieldsSerializer.Read((byte*)fieldAddress, input, context);
                 input.EndObject(end);
             }
             else

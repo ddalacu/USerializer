@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using USerialization;
@@ -55,6 +57,40 @@ namespace USerializerTests
                 if (names.Remove(item.Name) == false)
                     Assert.Fail();
             }
+        }
+
+        [Serializable]
+        public class MyClass : ISerializationCallbacks
+        {
+            public bool Before = false;
+            public bool After = false;
+
+            public void OnBeforeSerialize(object context)
+            {
+                if (context == "OnBeforeSerialize")
+                    Before = true;
+            }
+
+            public void OnAfterSerialize(object context)
+            {
+                if (context == "OnAfterSerialize")
+                    After = true;
+            }
+        }
+
+        [Test]
+        public void TestContextBeingPassed()
+        {
+            var memStream = new MemoryStream();
+            var myClass = new MyClass();
+
+            BinaryUtility.Serialize(myClass, memStream, "OnBeforeSerialize");
+
+            memStream.Position = 0;
+            var deser = BinaryUtility.TryDeserialize(memStream, ref myClass, "OnAfterSerialize");
+            
+            Assert.IsTrue(myClass.Before);
+            Assert.IsTrue(myClass.After);
         }
     }
 }

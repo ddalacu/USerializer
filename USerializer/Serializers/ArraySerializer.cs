@@ -46,10 +46,6 @@ namespace USerialization
 
         private readonly DataSerializer _elementSerializer;
 
-        private InstanceWriteMethodPointer _elementWriter;
-
-        private InstanceReadMethodPointer _elementReader;
-
         private readonly int _size;
 
         private readonly DataType _dataType;
@@ -63,9 +59,6 @@ namespace USerialization
             _elementSerializer.RootInitialize(serializer);
 
             _elementDataType = _elementSerializer.GetDataType();
-
-            _elementWriter = _elementSerializer.WriteMethod;
-            _elementReader = _elementSerializer.ReadMethod;
 
             if (_elementDataType == DataType.None)
             {
@@ -81,7 +74,7 @@ namespace USerialization
             _dataType = arrayDataType;
         }
 
-        protected override void Write(void* fieldAddress, SerializerOutput output)
+        public override void Write(void* fieldAddress, SerializerOutput output, object context)
         {
             var array = Unsafe.Read<Array>(fieldAddress);
 
@@ -100,17 +93,17 @@ namespace USerialization
                 {
                     output.EnsureNext(6);
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte)_elementDataType);
+                    output.WriteByteUnchecked((byte) _elementDataType);
 
                     var pinnable = Unsafe.As<Array, byte[]>(ref array);
-                    var writer = _elementWriter;
+                    var serializer = _elementSerializer;
                     fixed (byte* address = pinnable)
                     {
                         var tempAddress = address;
 
                         for (var index = 0; index < count; index++)
                         {
-                            writer.Invoke(tempAddress, output);
+                            serializer.Write(tempAddress, output, context);
                             tempAddress += _size;
                         }
                     }
@@ -123,10 +116,9 @@ namespace USerialization
                 output.WriteIntUnchecked(1); //size tracker
                 output.WriteByteUnchecked(0);
             }
-
         }
 
-        protected override void Read(void* fieldAddress, SerializerInput input)
+        public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var array = ref Unsafe.AsRef<Array>(fieldAddress);
 
@@ -139,19 +131,19 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var type = (DataType)input.ReadByte();
+                    var type = (DataType) input.ReadByte();
 
                     if (type == _elementDataType)
                     {
                         var pinnable = Unsafe.As<Array, byte[]>(ref array);
-                        var reader = _elementReader;
+                        var serializer = _elementSerializer;
                         fixed (byte* address = pinnable)
                         {
                             var tempAddress = address;
 
                             for (var i = 0; i < count; i++)
                             {
-                                reader.Invoke(tempAddress, input);
+                                serializer.Read(tempAddress, input, context);
                                 tempAddress += _size;
                             }
                         }
@@ -166,5 +158,4 @@ namespace USerialization
             }
         }
     }
-
 }

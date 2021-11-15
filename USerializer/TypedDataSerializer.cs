@@ -6,50 +6,45 @@ namespace USerialization
     public readonly unsafe struct TypedDataSerializer<T>
     {
         //private readonly DataSerializer _methods;
-        private readonly InstanceWriteMethodPointer _write;
-        private readonly InstanceReadMethodPointer _read;
+        private readonly DataSerializer _dataSerializer;
 
 
-        public TypedDataSerializer(DataSerializer methods)
+        public TypedDataSerializer(DataSerializer dataSerializer)
         {
-            //_methods = methods;
-            _write = methods.WriteMethod;
-            if (_write.IsValid == false)
-                throw new Exception();
-            _read = methods.ReadMethod;
-            if (_read.IsValid == false)
-                throw new Exception();
+            _dataSerializer = dataSerializer;
+            if (_dataSerializer.Initialized == false)
+                throw new Exception($"{_dataSerializer} not initialized!");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Serialize(T item, SerializerOutput output)
+        public void Serialize(T item, SerializerOutput output, object context)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _write.Invoke(childAddress, output);
+            _dataSerializer.Write(childAddress, output, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Serialize(ref T item, SerializerOutput output)
+        public void Serialize(ref T item, SerializerOutput output, object context)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _write.Invoke(childAddress, output);
+            _dataSerializer.Write(childAddress, output, context);
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Deserialize(SerializerInput input)
+        public T Deserialize(SerializerInput input, object context)
         {
             T item = default;
             var childAddress = Unsafe.AsPointer(ref item);
-            _read.Invoke(childAddress, input);
+            _dataSerializer.Read(childAddress, input, context);
             return item;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Deserialize(ref T item, SerializerInput input)
+        public void Deserialize(ref T item, SerializerInput input, object context)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _read.Invoke(childAddress, input);
+            _dataSerializer.Read(childAddress, input, context);
         }
     }
 

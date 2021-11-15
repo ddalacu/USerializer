@@ -52,20 +52,15 @@ namespace USerialization
     {
         public readonly ushort Offset;
 
-        public readonly InstanceWriteMethodPointer Writer;
+        public readonly DataSerializer DataSerializer;
 
-        public readonly InstanceReadMethodPointer Reader;
-
-        public FieldSerializationData(DataSerializer serializationMethods, ushort offset)
+        public FieldSerializationData(DataSerializer dataSerializer, ushort offset)
         {
             Offset = offset;
-            Writer = serializationMethods.WriteMethod;
-            Reader = serializationMethods.ReadMethod;
+            DataSerializer = dataSerializer;
 
-            if (Writer.IsValid == false)
-                throw new Exception("Writer is invalid!");
-            if (Reader.IsValid == false)
-                throw new Exception("Reader is invalid!");
+            if (dataSerializer.Initialized == false)
+                throw new Exception($"{dataSerializer} not initialized!");
         }
 
 
@@ -146,12 +141,7 @@ namespace USerialization
 
                 if (serializationMethods == null)
                     throw new Exception($"Returned null serializer for {fieldInfo.FieldType}");
-
-                if (serializationMethods.WriteMethod.IsValid == false)
-                    throw new Exception($"{fieldInfo.FieldType} Writer is invalid!");
-                if (serializationMethods.ReadMethod.IsValid == false)
-                    throw new Exception($"{fieldInfo.FieldType} Reader is invalid!");
-
+                
                 var fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
                 if (fieldOffset > short.MaxValue)
                     throw new Exception("Field offset way to big!");
@@ -257,7 +247,7 @@ namespace USerialization
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(byte* objectAddress, SerializerOutput output)
+        public void Write(byte* objectAddress, SerializerOutput output, object context)
         {
             output.WriteBytes(_headerData, _headerData.Length);
 
@@ -269,14 +259,14 @@ namespace USerialization
                 var fieldData = typeDataFields[index];
                 //var dataSerializer = fieldData.SerializationMethods;
 
-                fieldData.Writer.Invoke(objectAddress + fieldData.Offset, output);
+                fieldData.DataSerializer.Write(objectAddress + fieldData.Offset, output, context);
             }
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Read(byte* objectAddress, SerializerInput input)
+        public void Read(byte* objectAddress, SerializerInput input, object context)
         {
             var fieldCount = input.ReadByte();
             var size = fieldCount * 5;
@@ -297,7 +287,7 @@ namespace USerialization
                     //var dataSerializer = fieldData.SerializationMethods;
                     //dataSerializer.Read(fieldDataOffset, input);
 
-                    fieldData.Reader.Invoke(fieldDataOffset, input);
+                    fieldData.DataSerializer.Read(fieldDataOffset, input, context);
                 }
             }
             else
@@ -369,7 +359,7 @@ namespace USerialization
                     //var dataSerializer = fieldData.SerializationMethods;
                     //dataSerializer.Read(fieldDataOffset, input);
 
-                    fieldData.Reader.Invoke(fieldDataOffset, input);
+                    fieldData.DataSerializer.Read(fieldDataOffset, input, context);
                 }
             }
         }
