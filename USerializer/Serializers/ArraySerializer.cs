@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -118,6 +119,7 @@ namespace USerialization
             }
         }
 
+
         public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
             ref var array = ref Unsafe.AsRef<Array>(fieldAddress);
@@ -127,7 +129,9 @@ namespace USerialization
                 var count = input.Read7BitEncodedInt();
 
                 if (array == null || array.Length != count)
-                    array = Array.CreateInstance(_elementType, count);
+                {
+                    array = ArrayHelpers.CreateArray(_elementType, count);
+                }
 
                 if (count > 0)
                 {

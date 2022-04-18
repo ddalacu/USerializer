@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 
 [assembly:
@@ -147,6 +148,23 @@ namespace USerialization
             {
                 Unsafe.InitBlock(addr + (start * elementSize), 0, (count * elementSize));
             }
+        }
+
+        private static int[] _dimension = new int[1];
+
+        public static Array CreateArray(Type type, int count) //in mono creating arrays allocates a temp dimension array, we try to avoid that
+        {
+            var dimension = Interlocked.Exchange(ref _dimension, null);
+
+            if (dimension != null)
+            {
+                dimension[0] = count;
+                var array = Array.CreateInstance(type, dimension);
+                _dimension = dimension; //restore ref
+                return array;
+            }
+
+            return Array.CreateInstance(type, count);
         }
     }
 }

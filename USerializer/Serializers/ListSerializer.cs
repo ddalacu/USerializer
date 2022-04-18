@@ -132,7 +132,7 @@ namespace USerialization
                 if (list == null)
                 {
                     list = FormatterServices.GetUninitializedObject(_fieldType);
-                    array = Array.CreateInstance(_elementType, count);
+                    array = ArrayHelpers.CreateArray(_elementType, count);
                     ListHelpers.SetArray(list, array, count);
                 }
                 else
@@ -142,7 +142,7 @@ namespace USerialization
 
                     if (len < count) //if we need more elements in the array then we allocate a array
                     {
-                        array = Array.CreateInstance(_elementType, count);
+                        array = ArrayHelpers.CreateArray(_elementType, count);
                         ListHelpers.SetArray(list, array, count);
                     }
                     else
