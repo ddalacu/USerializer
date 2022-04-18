@@ -46,7 +46,7 @@ jobs:
           destination-repository-name: 'USerializerUnity'
           user-email: ddalacu@yahoo.com
           target-branch: master
-          target-directory: 'Plugins'
+          target-directory: 'Runtime'
     - name: DeleteArtefact
       uses: geekyeggo/delete-artifact@v1
       with:
