@@ -63,6 +63,7 @@ namespace USerialization
             _availBytes = -1;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool BeginReadSize(out EndObject endObject)
         {
             var length = ReadInt();
@@ -82,6 +83,7 @@ namespace USerialization
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool BeginReadSize(out EndObject endObject, out int length)
         {
             length = ReadInt();
@@ -125,15 +127,6 @@ namespace USerialization
             _stream.Position = initialPosition;
             _position = -1;
             _availBytes = -1;
-
-            //var leftShifted = initialPosition - _buffer.Length / 2;
-            //if (leftShifted < 0)
-            //    leftShifted = 0;
-
-            //var delta = initialPosition - leftShifted;
-            //_stream.Position = leftShifted;
-            //_position = (int)delta;
-            //_availBytes = _stream.Read(_buffer, 0, _buffer.Length);
         }
 
 
@@ -289,6 +282,7 @@ namespace USerialization
             _position += toSkip;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<byte> GetNext(int count)
         {
             if (count < 0)
@@ -339,6 +333,7 @@ namespace USerialization
             return (ushort)(_buffer[_position++] | _buffer[_position++] << 8);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte[] ReadBytes(int count)
         {
             EnsureNext(count);
@@ -362,6 +357,7 @@ namespace USerialization
             return read;
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadBytes(byte[] read,int count)
         {
             EnsureNext(count);
