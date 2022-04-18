@@ -22,11 +22,7 @@ namespace USerialization
         public Stream Stream => _stream;
 
         private int _availBytes;
-
-        public byte[] Buffer => _buffer;
-
-        public int PositionInBuffer => _position;
-
+        
         public long StreamPosition
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -214,10 +210,33 @@ namespace USerialization
             int count = 0;
             int shift = 0;
             byte b;
+
+            var unusedBytes = _availBytes - _position;
+
+            if (unusedBytes >= 5)
+            {
+                do
+                {
+#if DEBUG
+                     if (shift == 5 * 7) // 5 bytes max
+                         throw new FormatException("WTF");
+#endif
+
+                    b = _buffer[_position++];
+
+                    count |= (b & 0x7F) << shift;
+                    shift += 7;
+                } while ((b & 0x80) != 0);
+
+                return count;
+            }
+
             do
             {
+#if DEBUG
                 if (shift == 5 * 7)  // 5 bytes max
                     throw new FormatException("WTF");
+#endif
 
                 EnsureNext(1);
                 b = _buffer[_position++];
@@ -268,6 +287,18 @@ namespace USerialization
 
             EnsureNext(toSkip);
             _position += toSkip;
+        }
+
+        public ReadOnlySpan<byte> GetNext(int count)
+        {
+            if (count < 0)
+                throw new Exception("Skip needs to be positive!");
+
+            EnsureNext(count);
+
+            var span = new ReadOnlySpan<byte>(_buffer, _position, count);
+            _position += count;
+            return span;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

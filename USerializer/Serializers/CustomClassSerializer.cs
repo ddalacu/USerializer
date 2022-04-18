@@ -9,7 +9,7 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public abstract class CustomClassSerializer<T> : CustomDataSerializer where T : class
     {
-        private Type _type;
+        private TypeInstantiator _instantiator;
 
         private MemberSerializer _memberSerializer;
 
@@ -19,7 +19,7 @@ namespace USerialization
 
         protected CustomClassSerializer()
         {
-            _type = typeof(T);//cache typeof to improve il2cpp perf
+            _instantiator = new TypeInstantiator(typeof(T));//cache typeof to improve il2cpp perf
         }
 
         public override bool TryInitialize(USerializer serializer)
@@ -69,7 +69,7 @@ namespace USerialization
             {
                 ref var objectInstance = ref Unsafe.AsRef<object>(fieldAddress);
                 if (objectInstance == null)
-                    objectInstance = Activator.CreateInstance(_type);
+                    objectInstance = _instantiator.CreateInstance();
 
                 _memberSerializer.Read((byte*)fieldAddress, input, context);
 

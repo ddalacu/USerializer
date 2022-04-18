@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Threading;
@@ -44,22 +45,20 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed unsafe class ClassDataSerializer : DataSerializer
     {
-        private readonly Type _type;
+        private TypeInstantiator _instantiator;
 
         private FieldsSerializer _fieldsSerializer;
-
-        private readonly bool _haveCtor;
-
+        
         private readonly DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
 
         protected override void Initialize(USerializer serializer)
         {
-            var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer);
+            var (metas, serializationDatas) = FieldSerializationData.GetFields(_instantiator.Type, serializer);
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
         }
-
+        
         public ClassDataSerializer(Type type, DataType objectDataType)
         {
             if (type == null)
@@ -68,9 +67,8 @@ namespace USerialization
             if (type.IsValueType)
                 throw new ArgumentException(nameof(type));
 
-            _type = type;
-            var constructor = _type.GetConstructor(Type.EmptyTypes);
-            _haveCtor = constructor != null;
+            _instantiator = new TypeInstantiator(type);
+            
             _dataType = objectDataType;
         }
 
@@ -115,12 +113,7 @@ namespace USerialization
             {
                 if (instance == null)
                 {
-                    if (_haveCtor)
-                    {
-                        instance = Activator.CreateInstance(_type);
-                    }
-                    else
-                        instance = FormatterServices.GetUninitializedObject(_type);
+                    instance = _instantiator.CreateInstance();
                 }
 
                 var pinnable = Unsafe.As<object, PinnableObject>(ref instance);

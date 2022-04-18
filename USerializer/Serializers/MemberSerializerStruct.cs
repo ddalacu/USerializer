@@ -86,30 +86,7 @@ namespace USerialization
 
             return headerData;
         }
-
-        private bool SameHeader(byte[] arr, int offset, int len)
-        {
-            if (len == _headerData.Length - 1)
-            {
-                fixed (byte* arrPtr = arr)
-                {
-                    fixed (byte* pinned = _headerData)
-                    {
-                        var arrayA = (pinned + 1);
-                        var arrayB = (arrPtr + offset);
-
-                        for (var i = 0; i < len; i++)
-                            if (arrayA[i] != arrayB[i])
-                                return false;
-
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
+        
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -136,16 +113,14 @@ namespace USerialization
             var fieldDatas = Members;
 
             var fieldCount = input.ReadByte();
-            var size = fieldCount * 5;
-
-            input.Skip(size);
-            //we just skipped the required data so we have it in the buffer
-            var buffer = input.Buffer;
-            var offset = input.PositionInBuffer - size;
-
-            if (SameHeader(buffer, offset, size))
+ 
+            var streamData = input.GetNext(fieldCount * 5);
+            
+            var localData = new ReadOnlySpan<byte>(_headerData, 1, _headerData.Length - 1);
+            
+            if (streamData.SequenceEqual(localData))
             {
-                for (int i = 0; i < fieldCount; i++)
+                for (var i = 0; i < fieldCount; i++)
                 {
                     var fieldData = fieldDatas[i];
                     fieldData.Serializer.Read(objectAddress, input, context);
@@ -153,7 +128,7 @@ namespace USerialization
             }
             else
             {
-                int position = offset;
+                int position = 0;
 
                 var indexes = stackalloc byte[fieldCount];
                 var dataTypes = stackalloc DataType[fieldCount];
@@ -163,9 +138,9 @@ namespace USerialization
                 int searchStart = 0;
                 for (var i = 0; i < fieldCount; i++)
                 {
-                    var field = buffer[position++] | buffer[position++] << 8 | buffer[position++] << 16 |
-                                buffer[position++] << 24;
-                    var type = (DataType) buffer[position++];
+                    var field = streamData[position++] | streamData[position++] << 8 | streamData[position++] << 16 |
+                                streamData[position++] << 24;
+                    var type = (DataType) streamData[position++];
 
                     var deserialized = false;
 
