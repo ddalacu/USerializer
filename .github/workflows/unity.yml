@@ -21,9 +21,9 @@ jobs:
     - name: Test
       run: dotnet test USerializer --verbosity normal
     - name: Publish
-      run: dotnet publish USerializer --configuration Release -o PublishDirectory
+      run: dotnet publish USerializer --configuration Release -o TempDirectory
     - name: Copy Data
-      run: cp -R USerializer PublishDirectory
+      run: cp -r USerializer/ PublishDirectory
     - uses: actions/upload-artifact@v2
       with:
         name: UserializerPublished
@@ -46,7 +46,7 @@ jobs:
           destination-repository-name: 'USerializerUnity'
           user-email: ddalacu@yahoo.com
           target-branch: master
-          target-directory: 'Runtime'
+          target-directory: 'Runtime/USerializer'
     - name: DeleteArtefact
       uses: geekyeggo/delete-artifact@v1
       with:
