@@ -29,10 +29,6 @@ namespace USerialization
         private int _position;
 
         public Stream Stream => _stream;
-
-        public byte[] Buffer => _buffer;
-
-        public long StreamPosition => _stream.Position + _position;
         
         public SerializerOutput(int capacity)
         {
