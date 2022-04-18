@@ -22,10 +22,8 @@ jobs:
       run: dotnet test USerializer --verbosity normal
     - name: Publish
       run: dotnet publish USerializer --configuration Release -o PublishDirectory
-    - name: DeleteDepsJson
-      run: rm PublishDirectory/USerializer.deps.json
-    - name: DeleteUnsafeDll
-      run: rm PublishDirectory/System.Runtime.CompilerServices.Unsafe.dll 
+    - name: Copy Data
+      run: cp -R USerializer PublishDirectory
     - uses: actions/upload-artifact@v2
       with:
         name: UserializerPublished
@@ -43,7 +41,7 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
       with:
-          source-directory: './USerializer'
+          source-directory: 'PublishDirectory'
           destination-github-username: 'ddalacu'
           destination-repository-name: 'USerializerUnity'
           user-email: ddalacu@yahoo.com
