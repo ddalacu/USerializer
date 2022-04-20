@@ -11,10 +11,10 @@ namespace USerializerTests
     public interface ISerializationCallbacks
     {
         void OnBeforeSerialize(object context);
-        
+
         void OnAfterSerialize(object context);
     }
-    
+
     public class CustomClassSerializationProvider : ISerializationProvider
     {
         public bool TryGet(USerializer serializer, Type type, out DataSerializer serializationMethods)
@@ -101,7 +101,7 @@ namespace USerializerTests
             var track = output.BeginSizeTrack();
 
             Unsafe.As<ISerializationCallbacks>(obj).OnBeforeSerialize(context);
-            
+
             var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
 
             fixed (byte* objectAddress = &pinnable.Pinnable)
@@ -195,11 +195,13 @@ namespace USerializerTests
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            var output = new SerializerOutput(bufferSize, stream);
-            var serialize = _uSerializer.Serialize(output, obj, context);
-            output.Flush();
+            if (_uSerializer.TryGetClassHelper(out var serializer, obj.GetType()) == false)
+                return false;
 
-            return serialize;
+            var output = new SerializerOutput(bufferSize, stream);
+            serializer.SerializeObject(obj, output, context);
+            output.Flush();
+            return true;
         }
 
         /// <summary>
@@ -212,36 +214,26 @@ namespace USerializerTests
         /// <param name="bufferSize"></param>
         /// <returns>false if type is not serializable</returns>
         public static bool TryDeserialize<T>(Stream stream, ref T result, object context = null,
-            int bufferSize = 4096 * 2)
+            int bufferSize = 4096 * 2) where T : class
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            var serializerInput = new SerializerInput(bufferSize, stream);
-            var tryDeserialize = _uSerializer.TryDeserialize(serializerInput, ref result, context);
-            serializerInput.FinishRead();
-            return tryDeserialize;
-        }
-
-        /// <summary>
-        /// Populates a object fields with data from the stream
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="stream"></param>
-        /// <param name="ob"></param>
-        /// <param name="context"></param>
-        /// <param name="bufferSize"></param>
-        /// <returns>false if type is not serializable</returns>
-        public static bool TryPopulateObject<T>(Stream stream, ref T ob, object context = null,
-            int bufferSize = 4096 * 2)
-        {
-            if (stream == null)
-                throw new ArgumentNullException(nameof(stream));
+            if (_uSerializer.TryGetClassHelper(out var serializer, typeof(T)) == false)
+                return false;
 
             var serializerInput = new SerializerInput(bufferSize, stream);
-            var tryPopulateObject = _uSerializer.TryDeserialize(serializerInput, ref ob, context);
+            if (result == null)
+            {
+                result = (T)serializer.DeserializeObject(serializerInput, context);
+            }
+            else
+            {
+                serializer.PopulateObject(result, serializerInput, context);
+            }
+
             serializerInput.FinishRead();
-            return tryPopulateObject;
+            return true;
         }
     }
 }

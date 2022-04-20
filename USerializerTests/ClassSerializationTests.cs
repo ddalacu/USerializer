@@ -167,6 +167,7 @@ namespace USerializerTests
             Assert.True(TestUtils.EqualArrays(initial, result));
         }
 
+
         [Test]
         public void SimpleClassListSerialization()
         {
@@ -478,6 +479,74 @@ namespace USerializerTests
             Assert.True(deserialized);
 
             Assert.True(a.Value == result.Value);
+        }
+
+
+        [Serializable]
+        public class Animal
+        {
+            public string Name;
+
+            public Animal()
+            {
+                Name = this.GetType().Name;
+            }
+        }
+
+        [Serializable]
+        public class BaseDog : Animal
+        {
+        }
+
+        [Serializable]
+        public class Pechinez : BaseDog
+        {
+        }
+
+        [Test]
+        public void SerializeDeserializeTypes()
+        {
+            if (BinaryUtility.USerializer.TryGetClassHelper(out var structSer, typeof(BaseDog)) == false)
+                throw new Exception("Cannot get data serialzier!");
+
+            var stream = new MemoryStream();
+            var output = new SerializerOutput(2048, stream);
+
+            var baseDog = new BaseDog();
+            var pechinez = new Pechinez();
+            var animal = new Animal();
+
+            structSer.SerializeObject(baseDog, output, null);
+            structSer.SerializeObject(baseDog, output, null);
+            structSer.SerializeObject(baseDog, output, null);
+            structSer.SerializeObject(new Pechinez(), output, null);
+            structSer.SerializeObject(new Pechinez(), output, null);
+
+            Assert.Throws<ArgumentException>(() => { structSer.SerializeObject(animal, output, null); });
+
+            output.Flush();
+            stream.Position = 0;
+
+            var input = new SerializerInput(2048, stream);
+            structSer.PopulateObject(baseDog, input, null);
+            structSer.PopulateObject(pechinez, input, null);
+            Assert.Throws<ArgumentException>(() => { structSer.PopulateObject(animal, input, null); });
+            input.FinishRead();
+            
+            {
+                stream.Position = 0;
+                input = new SerializerInput(2048, stream);
+                var instance = structSer.DeserializeObject(input, null);
+                Assert.True(instance is BaseDog);
+                input.FinishRead();
+            }
+
+            //var result = structSer.Deserialize<Animal>(input, null);
+
+            //Console.WriteLine(result.GetType());
+
+
+            // Assert.True(EqualityComparer<SimpleStruct>.Default.Equals(initial, result));
         }
     }
 }

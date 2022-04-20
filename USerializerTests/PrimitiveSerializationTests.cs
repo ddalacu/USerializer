@@ -47,7 +47,7 @@ namespace USerializerTests
         public void IntSerialization()
         {
             var input = BuildData<int>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(input == result);
         }
 
@@ -71,7 +71,7 @@ namespace USerializerTests
         public void UIntSerialization()
         {
             var input = BuildData<uint>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(input == result);
         }
 
@@ -94,7 +94,7 @@ namespace USerializerTests
         public void ShortSerialization()
         {
             var input = BuildData<short>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(input == result);
         }
 
@@ -118,7 +118,7 @@ namespace USerializerTests
         public void ByteSerialization()
         {
             var input = BuildData<byte>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(input == result);
         }
 
@@ -142,7 +142,7 @@ namespace USerializerTests
         public void UShortSerialization()
         {
             var input = BuildData<ushort>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(input == result);
         }
 
@@ -166,7 +166,7 @@ namespace USerializerTests
         public void LongSerialization()
         {
             var input = BuildData<long>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(input == result);
         }
 
@@ -190,7 +190,7 @@ namespace USerializerTests
         public void ULongSerialization()
         {
             var input = BuildData<ulong>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(input == result);
         }
 
@@ -214,7 +214,7 @@ namespace USerializerTests
         public void FloatSerialization()
         {
             var input = BuildData<float>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(Math.Abs(input - result) < 0.001f);
         }
 
@@ -239,7 +239,7 @@ namespace USerializerTests
         public void DoubleSerialization()
         {
             var input = BuildData<double>();
-            var result = TestUtils.SerializeDeserializeTest(input);
+            var result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.True(Math.Abs(input - result) < 0.0001f);
         }
 
@@ -262,7 +262,7 @@ namespace USerializerTests
         [Test]
         public void BoolSerialization()
         {
-            var result = TestUtils.SerializeDeserializeTest(true);
+            var result = TestUtils.SerializeDeserializeStructTest(true);
             Assert.True(result);
         }
 
@@ -286,7 +286,7 @@ namespace USerializerTests
         [Test]
         public void CharSerialization()
         {
-            var result = TestUtils.SerializeDeserializeTest('a');
+            var result = TestUtils.SerializeDeserializeStructTest('a');
             Assert.True('a' == result);
         }
 

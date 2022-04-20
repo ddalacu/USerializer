@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using NUnit.Framework;
 using USerialization;
 
@@ -41,10 +42,10 @@ namespace USerializerTests
         {
             adder.AddField(0, nameof(CustomStruct.Field));
 
-            adder.AddField(1, (ref CustomStruct obj, int val) => obj.Property = val, (ref CustomStruct obj) => obj.Property);
+            adder.AddField(1, (ref CustomStruct obj, int val) => obj.Property = val,
+                (ref CustomStruct obj) => obj.Property);
 
             adder.AddBackingField(2, nameof(CustomStruct.Property2));
-
         }
     }
 
@@ -59,7 +60,6 @@ namespace USerializerTests
             public string StringValue;
             public string[] Strings;
             public ToBeReferenced Reference;
-
 
 
             public bool Equals(SimpleStruct x, SimpleStruct y)
@@ -170,12 +170,50 @@ namespace USerializerTests
                 }
             };
 
-            var result = TestUtils.SerializeDeserializeTest(initial);
+            var result = TestUtils.SerializeDeserializeStructTest(initial);
 
             Assert.True(EqualityComparer<SimpleStruct>.Default.Equals(initial, result));
         }
 
+        [Test]
+        public void TestTypedSerialization()
+        {
+            var initial = new SimpleStruct()
+            {
+                IntValue = 123,
+                FloatValue = 11.1f,
+                BoolValue = true,
+                StringValue = "Wtfaaaaaaaaaaaaaaaaaa",
+                Strings = new string[]
+                {
+                    "one",
+                    "two",
+                    "three"
+                }
+            };
 
+            if (BinaryUtility.USerializer.TryGetValueHelper<SimpleStruct>(out var structSer) == false)
+                throw new Exception("Cannot get data serialzier!");
+            
+            var stream = new MemoryStream();
+
+            var output = new SerializerOutput(2048, stream);
+            
+            structSer.Serialize(ref initial, output, null);
+
+            output.Flush();
+            
+            stream.Position = 0;
+            
+            Assert.True(stream.Length > 0);
+
+            var input = new SerializerInput(2048, stream);
+            var result = structSer.Deserialize(input, null);
+            input.FinishRead();
+            
+            Assert.True(EqualityComparer<SimpleStruct>.Default.Equals(initial, result));
+        }
+        
         [Test]
         public void NestedStructSerialization()
         {
@@ -198,7 +236,7 @@ namespace USerializerTests
                     }
                 }
             };
-            var result = TestUtils.SerializeDeserializeTest(initial);
+            var result = TestUtils.SerializeDeserializeStructTest(initial);
 
             Assert.True(EqualityComparer<SimpleStruct>.Default.Equals(initial, result));
         }
@@ -290,10 +328,9 @@ namespace USerializerTests
                 Property = 112,
                 Property2 = 221
             };
-            var result = TestUtils.SerializeDeserializeTest(initial);
+            var result = TestUtils.SerializeDeserializeStructTest(initial);
 
             Assert.True(EqualityComparer<CustomStruct>.Default.Equals(initial, result));
         }
-
     }
 }
