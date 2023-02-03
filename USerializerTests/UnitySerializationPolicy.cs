@@ -43,11 +43,11 @@ namespace USerializerTests
 
             if (type.IsClass)
             {
-                if (type.GetCustomAttribute(_serializableAttributeType) != null)
+                if (Attribute.IsDefined(type, _serializableAttributeType))
                 {
                     if (type.IsGenericType)
                     {
-                        if (ShouldTryToSerialize(type) == false)
+                        if (ShouldTryToSerializeGeneric(type) == false)
                             return false;
                     }
 
@@ -58,14 +58,8 @@ namespace USerializerTests
             return false;
         }
 
-        private bool ShouldTryToSerialize(Type type)
+        private bool ShouldTryToSerializeGeneric(Type type)
         {
-            foreach (var genericArgument in type.GetGenericArguments())
-            {
-                if (ShouldSerialize(genericArgument) == false)
-                    return false;
-            }
-
             var genericTypeDefinition = type.GetGenericTypeDefinition();
 
             if (genericTypeDefinition == typeof(Dictionary<,>))

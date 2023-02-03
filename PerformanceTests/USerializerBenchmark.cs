@@ -44,7 +44,7 @@ namespace PerformanceTests
 
             if (type.IsClass)
             {
-                if (type.GetCustomAttribute(_serializableAttributeType) != null)
+                if (Attribute.IsDefined(type, _serializableAttributeType))
                 {
                     if (type.IsGenericType)
                     {
