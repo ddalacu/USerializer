@@ -28,7 +28,7 @@ Limitations and downsides:<br/>
 - Properties won't serialize auttomaticaly (add custom serializers and serialize properties too,for examples on how to do this check ExampleClassSerializer inside tests project)
 - If a object is referenced multiple times then the object would be serialized each time, so after deserialization you would get multiple objects
 
-This project is best used in cases where no code generation is allowed and you don't want to run any AOT generation, i use this as a dirrect replacement for unity's JsonUtillity
+This project is best used in cases where no code generation is allowed and you don't want to run any AOT generation, i use this as a direct replacement for unity's JsonUtillity
 
 ![Performance image](../gh-pages/output.png)
 
