@@ -1,5 +1,6 @@
 ﻿namespace USerialization
 {
+    
     /// <summary>
     /// Wrote on the stream after the field hash and before the value check <see cref="ClassSerializationProvider"/> <see cref="StructSerializationProvider"/>
     /// </summary>
