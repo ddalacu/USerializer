@@ -5,7 +5,6 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
