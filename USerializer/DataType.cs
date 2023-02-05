@@ -24,7 +24,7 @@
 
         public void Skip(SerializerInput input)
         {
-            var toSkip = input.ReadInt();
+            var toSkip = input.Read<int>();
             if (toSkip == -1)//null
                 return;
 
@@ -38,7 +38,7 @@
 
         public void Skip(SerializerInput input)
         {
-            var toSkip = input.ReadInt();
+            var toSkip = input.Read<int>();
             if (toSkip == -1)//null
                 return;
 

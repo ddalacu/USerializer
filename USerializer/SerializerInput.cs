@@ -1,28 +1,30 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
-
 
 namespace USerialization
 {
     public enum EndObject : long
     {
-
     }
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class SerializerInput
+    public sealed unsafe class SerializerInput : IDisposable
     {
         private Stream _stream;
-        private byte[] _buffer;
+
+        private byte* _buffer;
+
+        private int _bufferSize;
+
         private int _position;
-
         public Stream Stream => _stream;
-
-        private int _availBytes;
         
+        private int _availBytes;
+
         public long StreamPosition
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -36,7 +38,9 @@ namespace USerialization
 
         public SerializerInput(int capacity)
         {
-            _buffer = new byte[capacity];
+            _buffer = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
+            _bufferSize = capacity;
+
             _position = -1;
             _availBytes = -1;
         }
@@ -66,7 +70,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool BeginReadSize(out EndObject endObject)
         {
-            var length = ReadInt();
+            var length = Read<int>();
 
 #if DEBUG
             if (length < -1)
@@ -79,14 +83,14 @@ namespace USerialization
                 return false;
             }
 
-            endObject = (EndObject)(StreamPosition + length);
+            endObject = (EndObject) (StreamPosition + length);
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool BeginReadSize(out EndObject endObject, out int length)
         {
-            length = ReadInt();
+            length = Read<int>();
 
 #if DEBUG
             if (length < -1)
@@ -99,7 +103,7 @@ namespace USerialization
                 return false;
             }
 
-            endObject = (EndObject)(StreamPosition + length);
+            endObject = (EndObject) (StreamPosition + length);
             return true;
         }
 
@@ -107,19 +111,19 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
-            SetPosition((long)endObject);
+            SetPosition((long) endObject);
         }
 
         public void SetPosition(long initialPosition)
         {
-            if (_availBytes >= _position)//if these are equal then we might have no valid data
+            if (_availBytes >= _position) //if these are equal then we might have no valid data
             {
                 var positionInBuffer = initialPosition - (_stream.Position - _availBytes);
 
                 if (positionInBuffer >= 0 &&
                     positionInBuffer <= _availBytes)
                 {
-                    _position = (int)positionInBuffer;
+                    _position = (int) positionInBuffer;
                     return;
                 }
             }
@@ -129,7 +133,6 @@ namespace USerialization
             _availBytes = -1;
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ReadByte()
         {
@@ -137,64 +140,12 @@ namespace USerialization
             return _buffer[_position++];
         }
 
-        public byte ReadByteUnchecked()
-        {
-            return _buffer[_position++];
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint ReadUInt()
+        public T Read<T>() where T : unmanaged
         {
-            EnsureNext(4);
-            uint value = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
-            return value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe float ReadFloat()
-        {
-            EnsureNext(4);
-            uint tmpBuffer = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
-            //_position += 4;
-            return *((float*)&tmpBuffer);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe double ReadDouble()
-        {
-            EnsureNext(8);
-
-            uint lo = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
-                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
-            uint hi = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
-                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
-
-            ulong tmpBuffer = ((ulong)hi) << 32 | lo;
-            return *((double*)&tmpBuffer);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe float ReadFloatUnchecked()
-        {
-            uint tmpBuffer = (uint)(_buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24);
-            //_position += 4;
-            return *((float*)&tmpBuffer);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ReadInt()
-        {
-            EnsureNext(4);
-            var value = _buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24;
-            //_position += 4;
-            return value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ReadIntUnchecked()
-        {
-            var value = _buffer[_position++] | _buffer[_position++] << 8 | _buffer[_position++] << 16 | _buffer[_position++] << 24;
-            //_position += 4;
+            EnsureNext(sizeof(T));
+            var value = Unsafe.ReadUnaligned<T>(_buffer + _position);
+            _position += sizeof(T);
             return value;
         }
 
@@ -240,39 +191,7 @@ namespace USerialization
 
             return count;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe string ReadString()
-        {
-            var length = Read7BitEncodedInt();
-
-            length -= 1;
-
-            if (length == -1)
-                return null;
-
-            if (length == 0)
-                return string.Empty;
-
-            var byteLength = length * sizeof(char);
-
-#if DEBUG
-            if (byteLength < 0)
-                throw new Exception("byteLength is negative!");
-#endif
-
-            EnsureNext(byteLength);
-
-            fixed (byte* bufferPtr = _buffer)
-            {
-                var str = new string((char*)(bufferPtr + _position), 0, length);
-
-                _position += byteLength;
-
-                return str;
-            }
-        }
-
+        
         public void Skip(int toSkip)
         {
             if (toSkip < 0)
@@ -283,151 +202,40 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ReadOnlySpan<byte> GetNext(int count)
+        public ReadOnlySpan<T> GetNext<T>(int count) where T : unmanaged
         {
             if (count < 0)
                 throw new Exception("Skip needs to be positive!");
 
-            EnsureNext(count);
-
-            var span = new ReadOnlySpan<byte>(_buffer, _position, count);
-            _position += count;
+            var byteCount = count * sizeof(T);
+            EnsureNext(byteCount);
+            var span = new ReadOnlySpan<T>(_buffer + _position, count);
+            _position += byteCount;
             return span;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ulong ReadUInt64()
-        {
-            EnsureNext(8);
-
-            uint lo = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
-                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
-            uint hi = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
-                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
-            return ((ulong)hi) << 32 | lo;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public long ReadInt64()
-        {
-            EnsureNext(8);
-
-            uint lo = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
-                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
-            uint hi = (uint)(_buffer[_position++] | _buffer[_position++] << 8 |
-                             _buffer[_position++] << 16 | _buffer[_position++] << 24);
-            return (long)(((ulong)hi) << 32 | lo);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public short ReadInt16()
-        {
-            EnsureNext(2);
-            return (short)(_buffer[_position++] | _buffer[_position++] << 8);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ushort ReadUInt16()
-        {
-            EnsureNext(2);
-            return (ushort)(_buffer[_position++] | _buffer[_position++] << 8);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe byte[] ReadBytes(int count)
+        public void ReadBytes(void* readPtr, int count)
         {
             EnsureNext(count);
-
-            var read = new byte[count];
-
-            fixed (byte* readPtr = read)
-            {
-                fixed (byte* bufferPtr = _buffer)
-                {
 #if DEBUG
-                    if (count < 0)
-                        throw new Exception("Count is negative!");
+                if (count < 0)
+                    throw new Exception("Count is negative!");
 #endif
 
-                    Unsafe.CopyBlock(readPtr, bufferPtr + _position, (uint)count);
-                }
-            }
+            Unsafe.CopyBlockUnaligned(readPtr, _buffer + _position, (uint) count);
 
-            _position += (int)count;
-            return read;
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadBytes(byte[] read,int count)
-        {
-            EnsureNext(count);
-
-            fixed (byte* readPtr = read)
-            {
-                fixed (byte* bufferPtr = _buffer)
-                {
-#if DEBUG
-                    if (count < 0)
-                        throw new Exception("Count is negative!");
-#endif
-
-                    Unsafe.CopyBlock(readPtr, bufferPtr + _position, (uint)count);
-                }
-            }
-
-            _position += (int)count;
-        }
-        
-        public unsafe bool[] ReadBools(int count)
-        {
-            EnsureNext(count);
-
-            var read = new bool[count];
-
-            fixed (bool* readPtr = read)
-            {
-                fixed (byte* bufferPtr = _buffer)
-                {
-#if DEBUG
-                    if (count < 0)
-                        throw new Exception("Count is negative!");
-#endif
-
-                    Unsafe.CopyBlock(readPtr, bufferPtr + _position, (uint)count);
-                }
-            }
-
-            _position += (int)count;
-            return read;
+            _position += count;
         }
 
-        public unsafe void ReadBools(bool[] read,int count)
-        {
-            EnsureNext(count);
-            
-            fixed (bool* readPtr = read)
-            {
-                fixed (byte* bufferPtr = _buffer)
-                {
-#if DEBUG
-                    if (count < 0)
-                        throw new Exception("Count is negative!");
-#endif
 
-                    Unsafe.CopyBlock(readPtr, bufferPtr + _position, (uint)count);
-                }
-            }
-
-            _position += (int)count;
-        }
-        
-        public unsafe void EnsureNext(int count)
+        public void EnsureNext(int count)
         {
             var end = _position + count;
 
             if (end > _availBytes)
             {
-                var bufferSize = _buffer.Length;
+                var bufferSize = _bufferSize;
 
                 if (_availBytes != -1)
                 {
@@ -446,36 +254,56 @@ namespace USerialization
 
                     if (count > bufferSize)
                     {
-                        var newBuffer = new byte[count * 2];
+                        var expanded = count * 2;
 
-                        fixed (byte* bufferPtr = _buffer)
-                        fixed (byte* newBufferPtr = newBuffer)
-                        {
-                            Unsafe.CopyBlock(newBufferPtr, bufferPtr + _position, (uint)unusedBytes);
-                        }
+                        var newBuffer = (byte*) Marshal.AllocHGlobal(expanded).ToPointer();
+
+                        Unsafe.CopyBlockUnaligned(newBuffer, _buffer + _position, (uint) unusedBytes);
+
+                        Marshal.FreeHGlobal(new IntPtr(_buffer));
 
                         _buffer = newBuffer;
-                        bufferSize = _buffer.Length;
+                        bufferSize = expanded;
                     }
                     else
                     {
-                        fixed (byte* bufferPtr = _buffer)
-                        {
-                            Unsafe.CopyBlock(bufferPtr, bufferPtr + _position, (uint)unusedBytes);
-                        }
+                        Unsafe.CopyBlockUnaligned(_buffer, _buffer + _position, (uint) unusedBytes);
                     }
 
                     _position = 0;
-                    _availBytes = unusedBytes + _stream.Read(_buffer, unusedBytes, bufferSize - unusedBytes);
+
+                    var toRead = new Span<byte>(_buffer + unusedBytes, bufferSize - unusedBytes);
+
+                    _availBytes = unusedBytes + _stream.Read(toRead);
                 }
                 else
                 {
                     _position = 0;
-                    _availBytes = _stream.Read(_buffer, 0, bufferSize);
+
+                    var toRead = new Span<byte>(_buffer, bufferSize);
+                    _availBytes = _stream.Read(toRead);
                 }
             }
         }
 
+        private void InternalDispose()
+        {
+            if (_buffer == null)
+                return;
 
+            Marshal.FreeHGlobal(new IntPtr(_buffer));
+            _buffer = null;
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+            InternalDispose();
+        }
+
+        ~SerializerInput()
+        {
+            InternalDispose();
+        }
     }
 }
