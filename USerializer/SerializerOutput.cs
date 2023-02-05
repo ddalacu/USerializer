@@ -30,7 +30,7 @@ namespace USerialization
         private int _position;
 
         public Stream Stream => _stream;
-        
+
         public SerializerOutput(int capacity)
         {
             _buffer = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
@@ -87,8 +87,6 @@ namespace USerialization
         }
 
 
-        private readonly byte[] _trackBytes = new byte[4];
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSizeTrack(SizeTracker tracker)
         {
@@ -97,16 +95,15 @@ namespace USerialization
 
             if ((int) tracker <= streamPos)
             {
-                Unsafe.WriteUnaligned(ref _trackBytes[0], length);
-
+                var stackSpan = stackalloc byte[4];
+                Unsafe.WriteUnaligned(stackSpan, length);
                 _stream.Position = (long) tracker - 4;
-                _stream.Write(_trackBytes, 0, 4);
+                _stream.Write(new ReadOnlySpan<byte>(stackSpan, 4));
                 _stream.Position = streamPos;
             }
             else
             {
                 var offset = (int) (tracker - streamPos);
-
                 Unsafe.WriteUnaligned(ref _buffer[offset - 4], length);
             }
         }
@@ -127,10 +124,11 @@ namespace USerialization
 
             if ((int) lateWrite <= streamPos)
             {
-                Unsafe.WriteUnaligned(ref _trackBytes[0], value);
+                var stackSpan = stackalloc byte[4];
+                Unsafe.WriteUnaligned(stackSpan, value);
 
                 _stream.Position = (long) lateWrite - 4;
-                _stream.Write(_trackBytes, 0, 4);
+                _stream.Write(new ReadOnlySpan<byte>(stackSpan, 4));
                 _stream.Position = streamPos;
             }
             else
@@ -139,7 +137,7 @@ namespace USerialization
                 Unsafe.WriteUnaligned(ref _buffer[offset - 4], value);
             }
         }
-        
+
         public void Write7BitEncodedInt(int value)
         {
             // Write out an int 7 bits at a time.  The high bit of the byte,
@@ -152,7 +150,7 @@ namespace USerialization
                 _buffer[_position++] = (byte) (v | 0x80);
                 v >>= 7;
             }
-            
+
             EnsureNext(1);
 
             _buffer[_position++] = (byte) v;
