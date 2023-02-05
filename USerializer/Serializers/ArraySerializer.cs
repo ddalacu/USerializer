@@ -114,7 +114,7 @@ namespace USerialization
             else
             {
                 output.EnsureNext(5);
-                output.WriteIntUnchecked(1); //size tracker
+                output.WriteUnchecked<int>(1); //size tracker
                 output.WriteByteUnchecked(0);
             }
         }

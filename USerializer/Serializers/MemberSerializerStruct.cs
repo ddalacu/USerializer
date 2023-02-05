@@ -13,12 +13,12 @@ namespace USerialization
         {
             Hash = serializerStruct.Hash;
             var dataSerializer = serializerStruct.DataSerializer;
-            
+
             if (dataSerializer.Initialized == false)
                 throw new Exception($"{dataSerializer} not initialized!");
 
             Serializer = dataSerializer;
-            
+
             var data = dataSerializer.GetDataType();
             if (data == DataType.None)
                 throw new Exception();
@@ -86,7 +86,7 @@ namespace USerialization
 
             return headerData;
         }
-        
+
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -96,7 +96,8 @@ namespace USerialization
 
             var fieldsLength = typeDataFields.Length;
 
-            output.WriteBytes(_headerData, _headerData.Length);
+            fixed (void* ptr = _headerData)
+                output.WriteBytes(ptr, _headerData.Length);
 
             for (var index = 0; index < fieldsLength; index++)
             {
@@ -113,11 +114,11 @@ namespace USerialization
             var fieldDatas = Members;
 
             var fieldCount = input.ReadByte();
- 
-            var streamData = input.GetNext(fieldCount * 5);
-            
+
+            var streamData = input.GetNext<byte>(fieldCount * 5);
+
             var localData = new ReadOnlySpan<byte>(_headerData, 1, _headerData.Length - 1);
-            
+
             if (streamData.SequenceEqual(localData))
             {
                 for (var i = 0; i < fieldCount; i++)

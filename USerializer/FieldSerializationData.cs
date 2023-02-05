@@ -226,7 +226,8 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(byte* objectAddress, SerializerOutput output, object context)
         {
-            output.WriteBytes(_headerData, _headerData.Length);
+            fixed (void* ptr = _headerData)
+                output.WriteBytes(ptr, _headerData.Length);
 
             var typeDataFields = _fields;
             var fieldsLength = typeDataFields.Length;
@@ -249,9 +250,9 @@ namespace USerialization
             //we just skipped the required data so we have it in the buffer
             var fieldDatas = _fields;
 
-            var streamData = input.GetNext(fieldCount * 5);
+            var streamData = input.GetNext<byte>(fieldCount * 5);
             var localData = new ReadOnlySpan<byte>(_headerData, 1, _headerData.Length - 1);
-            
+
             if (streamData.SequenceEqual(localData))
             {
                 for (var i = 0; i < fieldCount; i++)
@@ -269,13 +270,14 @@ namespace USerialization
                 var fieldsLength = fieldDatas.Length;
 
                 var position = 0;
-                
+
                 int searchStart = 0;
                 for (var i = 0; i < fieldCount; i++)
                 {
                     dataTypes[i] = 0;
 
-                    var field = streamData[position++] | streamData[position++] << 8 | streamData[position++] << 16 | streamData[position++] << 24;
+                    var field = streamData[position++] | streamData[position++] << 8 | streamData[position++] << 16 |
+                                streamData[position++] << 24;
 
                     var type = (DataType) streamData[position++];
 

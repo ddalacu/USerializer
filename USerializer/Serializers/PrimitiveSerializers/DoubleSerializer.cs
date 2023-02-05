@@ -1,40 +1,23 @@
-﻿using Unity.IL2CPP.CompilerServices;
+﻿using System.Collections.Generic;
+using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(double), typeof(DoubleSerializer))]
+[assembly: CustomSerializer(typeof(double[]), typeof(DoubleArraySerializer))]
+[assembly: CustomSerializer(typeof(List<double>), typeof(DoubleListSerializer))]
 
 namespace USerialization
 {
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed class DoubleSerializer : CustomDataSerializer
+    public sealed class DoubleSerializer : GenericUnmanagedSerializer<double, DoubleDataTypeLogic>
     {
-        private DataType _dataType;
+    }
 
-        public override DataType GetDataType() => _dataType;
+    public sealed class DoubleArraySerializer : GenericUnmanagedArraySerializer<double, DoubleDataTypeLogic>
+    {
+    }
 
-        public override bool TryInitialize(USerializer serializer)
-        {
-            var typeLogic = serializer.DataTypesDatabase;
-
-            if (typeLogic.TryGet(out DoubleDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
-
-            _dataType = arrayDataTypeLogic.Value;
-            return true;
-        }
-
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
-        {
-            var value = *(double*)(fieldAddress);
-            output.WriteDouble(value);
-        }
-
-        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
-        {
-            var value = (double*)(fieldAddress);
-            *value = input.ReadDouble();
-        }
+    public sealed class DoubleListSerializer : GenericUnmanagedListSerializer<double, DoubleDataTypeLogic>
+    {
     }
 
     public sealed class DoubleDataTypeLogic : UnmanagedDataTypeLogic<double>
