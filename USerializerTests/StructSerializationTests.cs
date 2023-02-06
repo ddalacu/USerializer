@@ -197,11 +197,11 @@ namespace USerializerTests
             
             var stream = new MemoryStream();
 
-            var output = new SerializerOutput(2048, stream);
+            var output = new SerializerOutput(2048);
             
             structSer.Serialize(ref initial, output, null);
 
-            output.Flush();
+            output.Flush(stream);
             
             stream.Position = 0;
             

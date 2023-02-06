@@ -93,9 +93,9 @@ namespace USerializerTests
                 return;
             }
 
-            var value = Interlocked.Increment(ref _stack);
+            _stack++;
 
-            if (value >= MaxStack)
+            if (_stack >= MaxStack)
                 throw new CircularReferenceException("The system does not support circular references!");
 
             var track = output.BeginSizeTrack();
@@ -111,7 +111,7 @@ namespace USerializerTests
 
             output.WriteSizeTrack(track);
 
-            Interlocked.Decrement(ref _stack);
+            _stack--;
         }
 
         public override void Read(void* fieldAddress, SerializerInput input, object context)
@@ -198,9 +198,9 @@ namespace USerializerTests
             if (_uSerializer.TryGetClassHelper(out var serializer, obj.GetType()) == false)
                 return false;
 
-            var output = new SerializerOutput(bufferSize, stream);
+            var output = new SerializerOutput(bufferSize);
             serializer.SerializeObject(obj, output, context);
-            output.Flush();
+            output.Flush(stream);
             return true;
         }
 

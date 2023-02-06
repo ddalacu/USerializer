@@ -510,7 +510,7 @@ namespace USerializerTests
                 throw new Exception("Cannot get data serialzier!");
 
             var stream = new MemoryStream();
-            var output = new SerializerOutput(2048, stream);
+            var output = new SerializerOutput(2048);
 
             var baseDog = new BaseDog();
             var pechinez = new Pechinez();
@@ -524,7 +524,7 @@ namespace USerializerTests
 
             Assert.Throws<ArgumentException>(() => { structSer.SerializeObject(animal, output, null); });
 
-            output.Flush();
+            output.Flush(stream);
             stream.Position = 0;
 
             var input = new SerializerInput(2048, stream);

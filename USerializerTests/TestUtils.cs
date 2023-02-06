@@ -85,9 +85,9 @@ namespace USerializerTests
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
 
-            var output = new SerializerOutput(2048, initialSerialize);
+            var output = new SerializerOutput(2048);
             valueSerializer.Serialize(ref value, output, null);
-            output.Flush();
+            output.Flush(initialSerialize);
 
             var initial = initialSerialize.Position;
 
@@ -103,9 +103,9 @@ namespace USerializerTests
 
             var secondSerialize = new MemoryStream();
 
-            var output2 = new SerializerOutput(2048, secondSerialize);
+            var output2 = new SerializerOutput(2048);
             valueSerializer.Serialize(ref deserialize, output2, null);
-            output2.Flush();
+            output2.Flush(secondSerialize);
 
             var ob = default(T);
             secondSerialize.Position = 0;
@@ -116,9 +116,9 @@ namespace USerializerTests
 
             var reserialize = new MemoryStream();
 
-            var output3 = new SerializerOutput(2048, reserialize);
+            var output3 = new SerializerOutput(2048);
             valueSerializer.Serialize(ref ob, output3, null);
-            output3.Flush();
+            output3.Flush(reserialize);
 
             Assert.True(EqualArrays(reserialize.ToArray(), reserialize.ToArray()));
 

@@ -163,9 +163,8 @@ namespace PerformanceTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         protected override void Serialize(T obj, Stream stream)
         {
-            _output.SetStream(stream);
             _serializer.SerializeObject(obj, _output, null);
-            _output.Flush();
+            _output.Flush(stream);
         }
 
 

@@ -21,31 +21,17 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed unsafe class SerializerOutput : IDisposable
     {
-        private Stream _stream;
-
         private byte* _buffer;
 
         private int _bufferSize;
 
         private int _position;
 
-        public Stream Stream => _stream;
-
         public SerializerOutput(int capacity)
         {
             _buffer = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
             _bufferSize = capacity;
             _position = 0;
-        }
-
-        public SerializerOutput(int capacity, Stream stream) : this(capacity)
-        {
-            _stream = stream;
-        }
-
-        public void SetStream(Stream stream)
-        {
-            _stream = stream;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -55,26 +41,24 @@ namespace USerialization
 
             if (size <= _bufferSize)
                 return;
+            
+            var capacity = _bufferSize * 2;
+            var expanded = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
 
-            Flush();
-
-            if (count <= _bufferSize)
-                return;
-
+            Unsafe.CopyBlock(expanded, _buffer, (uint) _position);
             Marshal.FreeHGlobal(new IntPtr(_buffer));
 
-            var capacity = count * 2;
-            _buffer = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
+            _buffer = expanded;
             _bufferSize = capacity;
         }
 
         /// <summary>
         /// Makes sure all date in buffer is written to the stream
         /// </summary>
-        public void Flush()
+        public void Flush(Stream stream)
         {
             var span = new ReadOnlySpan<byte>(_buffer, _position);
-            _stream.Write(span);
+            stream.Write(span);
             _position = 0;
         }
 
@@ -83,79 +67,25 @@ namespace USerialization
         {
             EnsureNext(4);
             _position += 4;
-            return (SizeTracker) (_stream.Position + _position);
+            return (SizeTracker) (_position);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public SizeTracker BeginSizeTrackUnchecked()
+        {
+            _position += 4;
+            return (SizeTracker) (_position);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSizeTrack(SizeTracker tracker)
         {
-            var streamPos = _stream.Position;
-            int length = (int) ((streamPos + _position) - tracker);
+            int length = (int) ((_position) - tracker);
 
-            if ((int) tracker <= streamPos)
-            {
-                var stackSpan = stackalloc byte[4];
-                Unsafe.WriteUnaligned(stackSpan, length);
-                _stream.Position = (long) tracker - 4;
-                _stream.Write(new ReadOnlySpan<byte>(stackSpan, 4));
-                _stream.Position = streamPos;
-            }
-            else
-            {
-                var offset = (int) (tracker - streamPos);
-                Unsafe.WriteUnaligned(ref _buffer[offset - 4], length);
-            }
+            var point = (int) (tracker - 4);
+            Unsafe.WriteUnaligned(ref _buffer[point], length);
         }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public LateWrite BeginLateWriteInt()
-        {
-            EnsureNext(4);
-            _position += 4;
-            return (LateWrite) (_stream.Position + _position);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void EndLateWriteInt(LateWrite lateWrite, int value)
-        {
-            var streamPos = _stream.Position;
-
-            if ((int) lateWrite <= streamPos)
-            {
-                var stackSpan = stackalloc byte[4];
-                Unsafe.WriteUnaligned(stackSpan, value);
-
-                _stream.Position = (long) lateWrite - 4;
-                _stream.Write(new ReadOnlySpan<byte>(stackSpan, 4));
-                _stream.Position = streamPos;
-            }
-            else
-            {
-                var offset = (int) (lateWrite - streamPos);
-                Unsafe.WriteUnaligned(ref _buffer[offset - 4], value);
-            }
-        }
-
-        public void Write7BitEncodedInt(int value)
-        {
-            // Write out an int 7 bits at a time.  The high bit of the byte,
-            // when on, tells reader to continue reading more bytes.
-            uint v = (uint) value; // support negative numbers
-            while (v >= 0x80)
-            {
-                EnsureNext(1);
-
-                _buffer[_position++] = (byte) (v | 0x80);
-                v >>= 7;
-            }
-
-            EnsureNext(1);
-
-            _buffer[_position++] = (byte) v;
-        }
-
+        
         public void Write7BitEncodedIntUnchecked(int value)
         {
             uint v = (uint) value;

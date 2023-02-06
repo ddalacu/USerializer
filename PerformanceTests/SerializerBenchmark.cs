@@ -6,7 +6,7 @@ namespace PerformanceTests
     {
         private MemoryStream _memoryStream;
 
-        private const int Iterations = 10;
+        private const int Iterations = 100;
 
         private MemoryStream _deserializeStream;
 

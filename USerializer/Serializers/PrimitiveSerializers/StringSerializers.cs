@@ -40,7 +40,7 @@ namespace USerialization
             var byteLength = valueLength * sizeof(char);
 
             output.EnsureNext(byteLength + 5); //5 if from the max size of Write7BitEncodedIntUnchecked
-            output.Write7BitEncodedInt(valueLength + 1);
+            output.Write7BitEncodedIntUnchecked(valueLength + 1);
 
             fixed (void* textPtr = value)
             {

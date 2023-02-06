@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using CommandLine;
+using MemoryPack;
 using Microcharts;
 using SkiaSharp;
 
@@ -39,9 +41,13 @@ namespace PerformanceTests
 
         private static void Execute(Options options)
         {
-            //var serializer = new USerializer(new UnitySerializationPolicy(), ProvidersUtils.GetDefaultProviders(),
-            //    new DataTypesDatabase());
-            //serializer.PreCacheType(typeof(BookShelf));
+            // var shelf = SerializationBenchmarks.Data(10000);
+            //
+            // var serializer = new USerializerBenchmark<BookShelf>();
+            //
+            // serializer.TestSerialize(shelf);
+            //
+            // return;
 
             var summary = BenchmarkRunner.Run<SerializationBenchmarks>();
 

@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Ceras;
-using MessagePack;
+using MemoryPack;
 
 namespace PerformanceTests
 {
-
     [ShortRunJob]
     public class SerializationBenchmarks
     {
         private USerializerBenchmark<BookShelf> _uSerializer;
 
-        private MessagePackBenchmark<BookShelf> _messagePackBenchmark;
+        private MemoryPackBenchmark<BookShelf> _memoryPackBenchmark;
 
         private CerasBenchmark<BookShelf> _cerasBenchmark;
 
@@ -23,39 +22,39 @@ namespace PerformanceTests
         public void Setup()
         {
             _uSerializer = new USerializerBenchmark<BookShelf>();
-            _messagePackBenchmark = new MessagePackBenchmark<BookShelf>();
+            _memoryPackBenchmark = new MemoryPackBenchmark<BookShelf>();
             _cerasBenchmark = new CerasBenchmark<BookShelf>();
             _toSerialize = Data(10000);
 
             _uSerializer.Init(_toSerialize);
-            _messagePackBenchmark.Init(_toSerialize);
+            _memoryPackBenchmark.Init(_toSerialize);
             _cerasBenchmark.Init(_toSerialize);
         }
 
-        public int BookDataSize = 64;
+        public const int BookDataSize = 64;
 
-        private byte[] CreateAndFillByteBuffer()
+        public static byte[] CreateAndFillByteBuffer()
         {
             byte[] optionalPayload = new byte[BookDataSize];
 
             for (int j = 0; j < optionalPayload.Length; j++)
             {
-                optionalPayload[j] = (byte)(j % 26 + 'a');
+                optionalPayload[j] = (byte) (j % 26 + 'a');
             }
 
             return optionalPayload;
         }
 
-        private BookShelf Data(int nToCreate)
+        public static BookShelf Data(int nToCreate)
         {
             var lret = new BookShelf("private member value")
             {
                 Books = Enumerable.Range(1, nToCreate).Select(i => new Book
-                {
-                    Id = i,
-                    Title = $"Book {i}",
-                    BookData = CreateAndFillByteBuffer(),
-                }
+                    {
+                        Id = i,
+                        // Title = $"Book {i}",
+                        // BookData = CreateAndFillByteBuffer(),
+                    }
                 ).ToList()
             };
             return lret;
@@ -74,15 +73,15 @@ namespace PerformanceTests
         }
 
         [Benchmark()]
-        public void MessagePackSerialize()
+        public void MemoryPackSerialize()
         {
-            _messagePackBenchmark.TestSerialize(_toSerialize);
+            _memoryPackBenchmark.TestSerialize(_toSerialize);
         }
 
         [Benchmark()]
-        public void MessagePackDeserialize()
+        public void MemoryPackDeserialize()
         {
-            _messagePackBenchmark.TestDeserialize(_toSerialize);
+            _memoryPackBenchmark.TestDeserialize(_toSerialize);
         }
 
         [Benchmark()]
@@ -99,47 +98,40 @@ namespace PerformanceTests
     }
 
     [Serializable]
-    [MessagePackObject]
+    [MemoryPackable(GenerateType.VersionTolerant)]
     [MemberConfig(TargetMember.All)]
-    public class BookShelf
+    public partial class BookShelf
     {
-        [Key(0)]
         [field: SerializeField]
-        public List<Book> Books
-        {
-            get;
-            set;
-        }
+        [MemoryPackOrder(1)]
+        public List<Book> Books { get; set; }
 
-        [Key(1)]
-        [SerializeField]
-        private string Secret;
+        // [SerializeField]
+        // public string Secret;
 
         //[IgnoreMember]
         //public string GetSecret => Secret;
 
         public BookShelf(string secret)
         {
-            Secret = secret;
+            //Secret = secret;
         }
 
+        [MemoryPackConstructor()]
         public BookShelf()
         {
         }
     }
 
     [Serializable]
-    [MessagePackObject]
     [MemberConfig(TargetMember.All)]
-    public class Book
+    [MemoryPackable(GenerateType.VersionTolerant)]
+    public partial class Book
     {
-        [Key(0)]
-        public string Title;
-
-        [Key(1)]
+        //public string Title;
+        [MemoryPackOrder(1)]
         public int Id;
-
-        [Key(2)]
-        public byte[] BookData;
+        //
+        // public byte[] BookData;
     }
 }
