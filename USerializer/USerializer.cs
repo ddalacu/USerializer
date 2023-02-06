@@ -52,6 +52,8 @@ namespace USerialization
 
             var unlock = false;
 
+            //todo remove multiple threads support
+            
             if (Monitor.IsEntered(_lock) == false) //allow only one thread at a time to get data serializer
             {
                 Monitor.Enter(_lock);

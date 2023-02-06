@@ -86,9 +86,9 @@ namespace USerialization
                 return;
             }
 
-            var value = Interlocked.Increment(ref _stack);
+            _stack++;
 
-            if (value >= MaxStack)
+            if (_stack >= MaxStack)
                 throw new CircularReferenceException("The system does not support circular references!");
 
             var track = output.BeginSizeTrack();
@@ -102,7 +102,7 @@ namespace USerialization
 
             output.WriteSizeTrack(track);
 
-            Interlocked.Decrement(ref _stack);
+            _stack--;
         }
 
         public override void Read(void* fieldAddress, SerializerInput input, object context)
