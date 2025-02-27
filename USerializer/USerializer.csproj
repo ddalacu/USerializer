@@ -15,15 +15,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fody" Version="6.5.1">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="ModuleInit.Fody" Version="2.1.1">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
-	<WeaverFiles Include="$(SolutionDir)USerializer.Fody\bin\$(Configuration)\netstandard2.0\USerializer.Fody.dll" WeaverClassNames="ModuleWeaver" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="..\USerializer.Fody\bin\Debug\netstandard2.0\">
+      <Link>netstandard2.0</Link>
+    </Folder>
   </ItemGroup>
 
 </Project>

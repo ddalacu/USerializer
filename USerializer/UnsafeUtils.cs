@@ -3,10 +3,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
-[assembly: USerialization.LocalModuleInitialize(typeof(USerialization.UnsafeUtils),
-    nameof(USerialization.UnsafeUtils.LocalInitialize), 999)]
-
-
 namespace USerialization
 {
     public class PinnableObject
@@ -16,11 +12,11 @@ namespace USerialization
 
     public static unsafe class UnsafeUtils
     {
-        private static bool _isMono;
+        private static readonly bool _isMono;
 
         public static bool IsMono => _isMono;
 
-        internal static void LocalInitialize()
+        static UnsafeUtils()
         {
             _isMono = Type.GetType("Mono.Runtime") != null;
         }

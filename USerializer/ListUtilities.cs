@@ -5,18 +5,14 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 
 
-[assembly:
-    USerialization.LocalModuleInitialize(typeof(USerialization.ListHelpers),
-        nameof(USerialization.ListHelpers.LocalInitialize))]
-
 namespace USerialization
 {
     public static class ListHelpers
     {
-        private static int _itemsFieldOffset;
-        private static int _sizeFieldOffset;
+        private static readonly int _itemsFieldOffset;
+        private static readonly int _sizeFieldOffset;
 
-        internal static void LocalInitialize()
+        static ListHelpers()
         {
             var listType = typeof(List<object>);
             var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
