@@ -41,13 +41,13 @@ namespace PerformanceTests
 
         private static void Execute(Options options)
         {
-             var shelf = SerializationBenchmarks.Data(10000);
+            // var shelf = SerializationBenchmarks.Data(10000);
             //
-             var serializer = new USerializerBenchmark<BookShelf>();
-            
-             serializer.TestSerialize(shelf);
-            
-             return;
+            // var serializer = new USerializerBenchmark<BookShelf>();
+            //
+            // serializer.TestSerialize(shelf);
+            //
+            // return;
 
             var summary = BenchmarkRunner.Run<SerializationBenchmarks>();
 
