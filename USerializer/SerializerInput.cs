@@ -130,8 +130,10 @@ namespace USerialization
             }
 
             _streamPosition = initialPosition;
-            _bufferPosition = -1;
-            _bufferCount = -1;
+            _bufferPosition = 0;
+            _bufferCount = 0;
+
+            _stream.Position = _streamPosition;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
