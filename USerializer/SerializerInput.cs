@@ -112,7 +112,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
-            //SetPosition((long)endObject);
+            SetPosition((long)endObject);
         }
 
         public void SetPosition(long initialPosition)
