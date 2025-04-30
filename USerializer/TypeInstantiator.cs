@@ -36,7 +36,7 @@ public unsafe struct TypeInstantiator
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public object CreateInstance()
     {
-        var inst = FormatterServices.GetUninitializedObject(Type);
+        var inst = RuntimeHelpers.GetUninitializedObject(Type);
         if (_ctor != null)
         {
             ((delegate*<object, void>) _ctor)(inst);

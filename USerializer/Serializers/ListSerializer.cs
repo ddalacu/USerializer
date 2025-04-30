@@ -131,7 +131,7 @@ namespace USerialization
 
                 if (list == null)
                 {
-                    list = FormatterServices.GetUninitializedObject(_fieldType);
+                    list = RuntimeHelpers.GetUninitializedObject(_fieldType);
                     array = ArrayHelpers.CreateArray(_elementType, count);
                     ListHelpers.SetArray(list, array, count);
                 }
