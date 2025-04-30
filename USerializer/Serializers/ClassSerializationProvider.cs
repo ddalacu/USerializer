@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Threading;
@@ -45,20 +46,18 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed unsafe class ClassDataSerializer : DataSerializer
     {
-        private TypeInstantiator _instantiator;
-
         private FieldsSerializer _fieldsSerializer;
-        
+
         private readonly DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
 
         protected override void Initialize(USerializer serializer)
         {
-            var (metas, serializationDatas) = FieldSerializationData.GetFields(_instantiator.Type, serializer);
+            var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer);
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
         }
-        
+
         public ClassDataSerializer(Type type, DataType objectDataType)
         {
             if (type == null)
@@ -67,12 +66,13 @@ namespace USerialization
             if (type.IsValueType)
                 throw new ArgumentException(nameof(type));
 
-            _instantiator = new TypeInstantiator(type);
-            
+            _type = type;
             _dataType = objectDataType;
         }
 
         private int _stack;
+        
+        private readonly Type _type;
 
         private const int MaxStack = 32;
 
@@ -113,7 +113,7 @@ namespace USerialization
             {
                 if (instance == null)
                 {
-                    instance = _instantiator.CreateInstance();
+                    instance = Activator.CreateInstance(_type);
                 }
 
                 var pinnable = Unsafe.As<object, PinnableObject>(ref instance);
