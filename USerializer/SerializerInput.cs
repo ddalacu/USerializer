@@ -24,14 +24,16 @@ namespace USerialization
 
         private int _bufferCount;
         public Stream Stream => _stream;
-        
+
+        private long _streamPosition;
+
         public long StreamPosition
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 var unusedBytes = _bufferCount - _bufferPosition;
-                var streamPos = _stream.Position - unusedBytes;
+                var streamPos = _streamPosition - unusedBytes;
                 return streamPos;
             }
         }
@@ -48,14 +50,15 @@ namespace USerialization
         public SerializerInput(int capacity, Stream stream) : this(capacity)
         {
             _stream = stream;
+            _streamPosition = stream.Position;
         }
 
         public void SetStream(Stream stream)
         {
             _stream = stream;
-            
             _bufferPosition = 0;
             _bufferCount = 0;
+            _streamPosition = _stream.Position;
         }
 
         public void FinishRead()
@@ -116,7 +119,7 @@ namespace USerialization
         {
             if (_bufferCount >= _bufferPosition) //if these are equal then we might have no valid data
             {
-                var positionInBuffer = initialPosition - (_stream.Position - _bufferCount);
+                var positionInBuffer = initialPosition - (_streamPosition - _bufferCount);
 
                 if (positionInBuffer >= 0 &&
                     positionInBuffer <= _bufferCount)
@@ -126,9 +129,9 @@ namespace USerialization
                 }
             }
 
-            _stream.Position = initialPosition;
-            _bufferPosition = 0;
-            _bufferCount = 0;
+            _streamPosition = initialPosition;
+            _bufferPosition = -1;
+            _bufferCount = -1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -284,7 +287,7 @@ namespace USerialization
             var toRead = new Span<byte>(_buffer + unusedBytes, _bufferCapacity - unusedBytes);
 
             var read = ReadInSpan(toRead);
-            
+            _streamPosition += read;
             _bufferCount = unusedBytes + read;
 
             if (_bufferCount < count)
