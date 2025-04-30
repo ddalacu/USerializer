@@ -16,7 +16,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.x.x
+        dotnet-version: 9.x.x
     - name: Restore dependencies
       run: dotnet restore USerializer
     - name: Build
@@ -31,7 +31,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.x.x
+        dotnet-version: 9.x.x
     - name: DotnetPublish
       run: dotnet publish PerformanceTests --configuration Release -o Release
     - name: RunPerformanceTests
