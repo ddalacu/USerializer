@@ -228,61 +228,63 @@ namespace USerialization
             _position += count;
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EnsureNext(int count)
         {
             var end = _position + count;
-
             if (end > _availBytes)
+                ReadMore(count);
+        }
+
+        private void ReadMore(int count)
+        {
+            var bufferSize = _bufferSize;
+
+            if (_availBytes != -1)
             {
-                var bufferSize = _bufferSize;
-
-                if (_availBytes != -1)
+                if (_availBytes < bufferSize)
                 {
-                    if (_availBytes < bufferSize)
-                    {
-                        //Debug.Assert(Stream.Position == Stream.Length);
-                        throw new Exception("Trying to read pass the stream!"); //read out of stream
-                    }
+                    //Debug.Assert(Stream.Position == Stream.Length);
+                    throw new Exception("Trying to read pass the stream!"); //read out of stream
+                }
 
-                    var unusedBytes = _availBytes - _position;
+                var unusedBytes = _availBytes - _position;
 
 #if DEBUG
-                    if (unusedBytes < 0)
-                        throw new Exception("Unused bytes is negative!");
+                if (unusedBytes < 0)
+                    throw new Exception("Unused bytes is negative!");
 #endif
 
-                    if (count > bufferSize)
-                    {
-                        var expanded = count * 2;
+                if (count > bufferSize)
+                {
+                    var expanded = count * 2;
 
-                        var newBuffer = (byte*) Marshal.AllocHGlobal(expanded).ToPointer();
+                    var newBuffer = (byte*) Marshal.AllocHGlobal(expanded).ToPointer();
 
-                        Unsafe.CopyBlockUnaligned(newBuffer, _buffer + _position, (uint) unusedBytes);
+                    Unsafe.CopyBlockUnaligned(newBuffer, _buffer + _position, (uint) unusedBytes);
 
-                        Marshal.FreeHGlobal(new IntPtr(_buffer));
+                    Marshal.FreeHGlobal(new IntPtr(_buffer));
 
-                        _buffer = newBuffer;
-                        bufferSize = expanded;
-                    }
-                    else
-                    {
-                        Unsafe.CopyBlockUnaligned(_buffer, _buffer + _position, (uint) unusedBytes);
-                    }
-
-                    _position = 0;
-
-                    var toRead = new Span<byte>(_buffer + unusedBytes, bufferSize - unusedBytes);
-
-                    _availBytes = unusedBytes + _stream.Read(toRead);
+                    _buffer = newBuffer;
+                    bufferSize = expanded;
                 }
                 else
                 {
-                    _position = 0;
-
-                    var toRead = new Span<byte>(_buffer, bufferSize);
-                    _availBytes = _stream.Read(toRead);
+                    Unsafe.CopyBlockUnaligned(_buffer, _buffer + _position, (uint) unusedBytes);
                 }
+
+                _position = 0;
+
+                var toRead = new Span<byte>(_buffer + unusedBytes, bufferSize - unusedBytes);
+
+                _availBytes = unusedBytes + _stream.Read(toRead);
+            }
+            else
+            {
+                _position = 0;
+
+                var toRead = new Span<byte>(_buffer, bufferSize);
+                _availBytes = _stream.Read(toRead);
             }
         }
 

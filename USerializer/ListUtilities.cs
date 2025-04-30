@@ -36,7 +36,7 @@ namespace USerialization
             var pinnable = Unsafe.As<List<T>, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*) (listAddress + _sizeFieldOffset);
+                count = Unsafe.Read<int>(listAddress + _sizeFieldOffset);
                 return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
             }
         }
@@ -76,8 +76,8 @@ namespace USerialization
             var pinnable = Unsafe.As<object, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                Unsafe.Write(listAddress + _itemsFieldOffset, array);
-                Unsafe.Write(listAddress + _sizeFieldOffset, array.Length);
+                Unsafe.WriteUnaligned(listAddress + _itemsFieldOffset, array);
+                Unsafe.WriteUnaligned(listAddress + _sizeFieldOffset, array.Length);
             }
         }
 
@@ -88,8 +88,8 @@ namespace USerialization
 
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                Unsafe.Write(listAddress + _itemsFieldOffset, array);
-                Unsafe.Write(listAddress + _sizeFieldOffset, count);
+                Unsafe.WriteUnaligned(listAddress + _itemsFieldOffset, array);
+                Unsafe.WriteUnaligned(listAddress + _sizeFieldOffset, count);
             }
         }
 
@@ -99,7 +99,7 @@ namespace USerialization
             var pinnable = Unsafe.As<object, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                Unsafe.Write(listAddress + _sizeFieldOffset, count);
+                Unsafe.WriteUnaligned(listAddress + _sizeFieldOffset, count);
             }
         }
 
@@ -109,7 +109,7 @@ namespace USerialization
             var pinnable = Unsafe.As<object, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*) (listAddress + _sizeFieldOffset);
+                count = Unsafe.Read<int>(listAddress + _sizeFieldOffset);
                 return Unsafe.Read<Array>(listAddress + _itemsFieldOffset);
             }
         }
@@ -120,7 +120,7 @@ namespace USerialization
             var pinnable = Unsafe.As<object, PinnableObject>(ref list);
             fixed (byte* listAddress = &pinnable.Pinnable)
             {
-                count = *(int*) (listAddress + _sizeFieldOffset);
+                count = Unsafe.Read<int>(listAddress + _sizeFieldOffset);
                 return Unsafe.Read<T[]>(listAddress + _itemsFieldOffset);
             }
         }
@@ -132,7 +132,7 @@ namespace USerialization
         {
             fixed (void* addr = array)
             {
-                Unsafe.InitBlock(((byte*) addr) + (start * sizeof(T)), 0, (uint) (count * sizeof(T)));
+                Unsafe.InitBlock(((byte*)addr) + (start * sizeof(T)), 0, (uint)(count * sizeof(T)));
             }
         }
 
@@ -148,7 +148,9 @@ namespace USerialization
 
         private static int[] _dimension = new int[1];
 
-        public static Array CreateArray(Type type, int count) //in mono creating arrays allocates a temp dimension array, we try to avoid that
+        public static Array
+            CreateArray(Type type,
+                int count) //in mono creating arrays allocates a temp dimension array, we try to avoid that
         {
             var dimension = Interlocked.Exchange(ref _dimension, null);
 
