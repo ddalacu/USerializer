@@ -109,7 +109,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteBytes(void* ptr, int length) //not so safe :|
+        public void WriteBytes(void* ptr, int length)
         {
             EnsureNext(length);
 
@@ -124,7 +124,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteBytesUnchecked(void* ptr, int length) //not so safe :|
+        public void WriteBytesUnchecked(void* ptr, int length)
         {
 #if DEBUG
             if (length < 0)

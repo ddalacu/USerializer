@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
@@ -28,14 +27,12 @@ namespace USerialization
 
         public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
         {
-            var value = *(T*) (fieldAddress);
-            output.Write(value);
+            output.Write(Unsafe.Read<T>(fieldAddress));
         }
 
         public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
         {
-            var value = (T*) (fieldAddress);
-            *value = input.Read<T>();
+            Unsafe.Write(fieldAddress, input.Read<T>());
         }
     }
 
@@ -83,10 +80,10 @@ namespace USerialization
                 var sizeTracker = output.BeginSizeTrack();
                 {
                     var byteLength = count * sizeof(T);
-                    
+
                     output.EnsureNext(6 + byteLength);
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte) _elementDataType);
+                    output.WriteByteUnchecked((byte)_elementDataType);
 
                     fixed (void* buf = array)
                         output.WriteBytesUnchecked(buf, byteLength);
@@ -112,7 +109,7 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var type = (DataType) input.ReadByte();
+                    var type = (DataType)input.ReadByte();
                     if (type == _elementDataType)
                     {
                         fixed (void* buf = array)
@@ -174,10 +171,10 @@ namespace USerialization
                 var sizeTracker = output.BeginSizeTrack();
                 {
                     var byteLength = count * sizeof(T);
-                    
+
                     output.EnsureNext(6 + byteLength);
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte) _elementDataType);
+                    output.WriteByteUnchecked((byte)_elementDataType);
 
                     var array = ListHelpers.GetArray(list, out _);
 
@@ -207,7 +204,7 @@ namespace USerialization
                 {
                     var array = ListHelpers.PrepareArray(ref list, count);
 
-                    var type = (DataType) input.ReadByte();
+                    var type = (DataType)input.ReadByte();
 
                     if (type == _elementDataType)
                     {
@@ -216,7 +213,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.CleanArray(array, 0, (uint) count);
+                        ArrayHelpers.CleanArray(array, 0, (uint)count);
                     }
                 }
                 else

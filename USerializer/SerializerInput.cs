@@ -18,53 +18,54 @@ namespace USerialization
 
         private byte* _buffer;
 
-        private int _bufferSize;
+        private int _bufferCapacity;
 
-        private int _position;
+        private int _bufferPosition;
+
+        private int _bufferCount;
         public Stream Stream => _stream;
-        
-        private int _availBytes;
+
+        private long _streamPosition;
 
         public long StreamPosition
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                var unusedBytes = _availBytes - _position;
-                var streamPos = _stream.Position - unusedBytes;
+                var unusedBytes = _bufferCount - _bufferPosition;
+                var streamPos = _streamPosition - unusedBytes;
                 return streamPos;
             }
         }
 
         public SerializerInput(int capacity)
         {
-            _buffer = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
-            _bufferSize = capacity;
+            _buffer = (byte*)Marshal.AllocHGlobal(capacity).ToPointer();
+            _bufferCapacity = capacity;
 
-            _position = -1;
-            _availBytes = -1;
+            _bufferPosition = -1;
+            _bufferCount = -1;
         }
 
         public SerializerInput(int capacity, Stream stream) : this(capacity)
         {
             _stream = stream;
+            _streamPosition = stream.Position;
         }
 
         public void SetStream(Stream stream)
         {
             _stream = stream;
-            _position = -1;
-            _availBytes = -1;
+            _bufferPosition = 0;
+            _bufferCount = 0;
+            _streamPosition = _stream.Position;
         }
 
         public void FinishRead()
         {
-            var unusedBytes = _availBytes - _position;
-
-            _stream.Position = _stream.Position - unusedBytes;
-
-            _position = -1;
-            _availBytes = -1;
+            _stream.Position = StreamPosition;
+            _bufferPosition = -1;
+            _bufferCount = -1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -83,7 +84,7 @@ namespace USerialization
                 return false;
             }
 
-            endObject = (EndObject) (StreamPosition + length);
+            endObject = (EndObject)(StreamPosition + length);
             return true;
         }
 
@@ -103,7 +104,7 @@ namespace USerialization
                 return false;
             }
 
-            endObject = (EndObject) (StreamPosition + length);
+            endObject = (EndObject)(StreamPosition + length);
             return true;
         }
 
@@ -111,41 +112,41 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
-            SetPosition((long) endObject);
+            //SetPosition((long)endObject);
         }
 
         public void SetPosition(long initialPosition)
         {
-            if (_availBytes >= _position) //if these are equal then we might have no valid data
+            if (_bufferCount >= _bufferPosition) //if these are equal then we might have no valid data
             {
-                var positionInBuffer = initialPosition - (_stream.Position - _availBytes);
+                var positionInBuffer = initialPosition - (_streamPosition - _bufferCount);
 
                 if (positionInBuffer >= 0 &&
-                    positionInBuffer <= _availBytes)
+                    positionInBuffer <= _bufferCount)
                 {
-                    _position = (int) positionInBuffer;
+                    _bufferPosition = (int)positionInBuffer;
                     return;
                 }
             }
 
-            _stream.Position = initialPosition;
-            _position = -1;
-            _availBytes = -1;
+            _streamPosition = initialPosition;
+            _bufferPosition = -1;
+            _bufferCount = -1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ReadByte()
         {
             EnsureNext(1);
-            return _buffer[_position++];
+            return _buffer[_bufferPosition++];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Read<T>() where T : unmanaged
         {
             EnsureNext(sizeof(T));
-            var value = Unsafe.ReadUnaligned<T>(_buffer + _position);
-            _position += sizeof(T);
+            var value = Unsafe.ReadUnaligned<T>(_buffer + _bufferPosition);
+            _bufferPosition += sizeof(T);
             return value;
         }
 
@@ -155,18 +156,18 @@ namespace USerialization
             int shift = 0;
             byte b;
 
-            var unusedBytes = _availBytes - _position;
+            var unusedBytes = _bufferCount - _bufferPosition;
 
             if (unusedBytes >= 5)
             {
                 do
                 {
 #if DEBUG
-                     if (shift == 5 * 7) // 5 bytes max
-                         throw new FormatException("WTF");
+                    if (shift == 5 * 7) // 5 bytes max
+                        throw new FormatException("WTF");
 #endif
 
-                    b = _buffer[_position++];
+                    b = _buffer[_bufferPosition++];
 
                     count |= (b & 0x7F) << shift;
                     shift += 7;
@@ -178,12 +179,12 @@ namespace USerialization
             do
             {
 #if DEBUG
-                if (shift == 5 * 7)  // 5 bytes max
+                if (shift == 5 * 7) // 5 bytes max
                     throw new FormatException("WTF");
 #endif
 
                 EnsureNext(1);
-                b = _buffer[_position++];
+                b = _buffer[_bufferPosition++];
 
                 count |= (b & 0x7F) << shift;
                 shift += 7;
@@ -191,14 +192,14 @@ namespace USerialization
 
             return count;
         }
-        
+
         public void Skip(int toSkip)
         {
             if (toSkip < 0)
                 throw new Exception("Skip needs to be positive!");
 
             EnsureNext(toSkip);
-            _position += toSkip;
+            _bufferPosition += toSkip;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -209,8 +210,8 @@ namespace USerialization
 
             var byteCount = count * sizeof(T);
             EnsureNext(byteCount);
-            var span = new ReadOnlySpan<T>(_buffer + _position, count);
-            _position += byteCount;
+            var span = new ReadOnlySpan<T>(_buffer + _bufferPosition, count);
+            _bufferPosition += byteCount;
             return span;
         }
 
@@ -219,73 +220,78 @@ namespace USerialization
         {
             EnsureNext(count);
 #if DEBUG
-                if (count < 0)
-                    throw new Exception("Count is negative!");
+            if (count < 0)
+                throw new Exception("Count is negative!");
 #endif
 
-            Unsafe.CopyBlockUnaligned(readPtr, _buffer + _position, (uint) count);
+            Unsafe.CopyBlockUnaligned(readPtr, _buffer + _bufferPosition, (uint)count);
 
-            _position += count;
+            _bufferPosition += count;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EnsureNext(int count)
         {
-            var end = _position + count;
-            if (end > _availBytes)
+            var end = _bufferPosition + count;
+            if (end > _bufferCount)
                 ReadMore(count);
+        }
+
+        private int ReadInSpan(Span<byte> span)
+        {
+            var cRead = 0;
+
+            while (cRead < span.Length)
+            {
+                var read = _stream.Read(span.Slice(cRead));
+                if (read == 0)
+                    break;
+
+                cRead += read;
+            }
+
+            return cRead;
         }
 
         private void ReadMore(int count)
         {
-            var bufferSize = _bufferSize;
-
-            if (_availBytes != -1)
-            {
-                if (_availBytes < bufferSize)
-                {
-                    //Debug.Assert(Stream.Position == Stream.Length);
-                    throw new Exception("Trying to read pass the stream!"); //read out of stream
-                }
-
-                var unusedBytes = _availBytes - _position;
+            var unusedBytes = _bufferCount - _bufferPosition;
 
 #if DEBUG
-                if (unusedBytes < 0)
-                    throw new Exception("Unused bytes is negative!");
+            if (unusedBytes < 0)
+                throw new Exception("Unused bytes is negative!");
 #endif
 
-                if (count > bufferSize)
-                {
-                    var expanded = count * 2;
+            if (count > _bufferCapacity)
+            {
+                var expanded = count * 2;
 
-                    var newBuffer = (byte*) Marshal.AllocHGlobal(expanded).ToPointer();
+                var newBuffer = (byte*)Marshal.AllocHGlobal(expanded).ToPointer();
 
-                    Unsafe.CopyBlockUnaligned(newBuffer, _buffer + _position, (uint) unusedBytes);
+                if (unusedBytes > 0)
+                    Unsafe.CopyBlockUnaligned(newBuffer, _buffer + _bufferPosition, (uint)unusedBytes);
 
-                    Marshal.FreeHGlobal(new IntPtr(_buffer));
+                Marshal.FreeHGlobal(new IntPtr(_buffer));
 
-                    _buffer = newBuffer;
-                    bufferSize = expanded;
-                }
-                else
-                {
-                    Unsafe.CopyBlockUnaligned(_buffer, _buffer + _position, (uint) unusedBytes);
-                }
-
-                _position = 0;
-
-                var toRead = new Span<byte>(_buffer + unusedBytes, bufferSize - unusedBytes);
-
-                _availBytes = unusedBytes + _stream.Read(toRead);
+                _buffer = newBuffer;
+                _bufferCapacity = expanded;
             }
             else
             {
-                _position = 0;
-
-                var toRead = new Span<byte>(_buffer, bufferSize);
-                _availBytes = _stream.Read(toRead);
+                if (unusedBytes > 0)
+                    Unsafe.CopyBlockUnaligned(_buffer, _buffer + _bufferPosition, (uint)unusedBytes);
             }
+
+            _bufferPosition = 0;
+
+            var toRead = new Span<byte>(_buffer + unusedBytes, _bufferCapacity - unusedBytes);
+
+            var read = ReadInSpan(toRead);
+            _streamPosition += read;
+            _bufferCount = unusedBytes + read;
+
+            if (_bufferCount < count)
+                throw new Exception("Trying to read pass the stream!"); //read out of stream
         }
 
         private void InternalDispose()
