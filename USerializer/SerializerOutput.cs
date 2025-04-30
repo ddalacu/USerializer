@@ -38,10 +38,12 @@ namespace USerialization
         public void EnsureNext(int count)
         {
             var size = _position + count;
+            if (size > _bufferSize)
+                Expand();
+        }
 
-            if (size <= _bufferSize)
-                return;
-            
+        private void Expand()
+        {
             var capacity = _bufferSize * 2;
             var expanded = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
 
