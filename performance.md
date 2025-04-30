@@ -10,11 +10,11 @@ Job=ShortRun  IterationCount=3  LaunchCount=1
 WarmupCount=3  
 
 ```
-|                 Method |      Mean |     Error |   StdDev |
-|----------------------- |----------:|----------:|---------:|
-|   USerializerSerialize |  23.31 ms |  7.890 ms | 0.432 ms |
-| USerializerDeserialize | 122.80 ms | 50.956 ms | 2.793 ms |
-|    MemoryPackSerialize |  15.91 ms |  0.925 ms | 0.051 ms |
-|  MemoryPackDeserialize |  20.38 ms |  3.105 ms | 0.170 ms |
-|         CerasSerialize |  51.26 ms |  1.974 ms | 0.108 ms |
-|       CerasDeserialize |  55.78 ms |  4.091 ms | 0.224 ms |
+|                 Method |     Mean |     Error |   StdDev |
+|----------------------- |---------:|----------:|---------:|
+|   USerializerSerialize | 22.59 ms |  0.826 ms | 0.045 ms |
+| USerializerDeserialize | 88.60 ms | 19.368 ms | 1.062 ms |
+|    MemoryPackSerialize | 16.26 ms |  7.270 ms | 0.399 ms |
+|  MemoryPackDeserialize | 21.38 ms |  3.845 ms | 0.211 ms |
+|         CerasSerialize | 50.19 ms |  3.080 ms | 0.169 ms |
+|       CerasDeserialize | 55.82 ms |  6.400 ms | 0.351 ms |
