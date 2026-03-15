@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using Unity.IL2CPP.CompilerServices;
 
@@ -59,7 +60,7 @@ namespace USerialization
             _elementSerializer.RootInitialize(serializer);
 
             _elementDataType = _elementSerializer.GetDataType();
-            
+
             if (_elementDataType == DataType.None)
             {
                 serializer.Logger.Error("Element data type is none, something went wrong!");
@@ -72,13 +73,13 @@ namespace USerialization
             _fieldType = fieldType;
             _elementType = elementType;
             _elementSerializer = elementSerializer;
-            _size = UnsafeUtils.GetArrayElementSize(elementType);
+            _size = UnsafeUtils.GetStackSize(elementType);
             _dataType = arrayDataType;
         }
 
-        public override void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            var list = Unsafe.Read<object>(fieldAddress);
+            var list = Unsafe.As<byte, object>(ref MemoryMarshal.GetReference(fieldAddress));
 
             if (list == null)
             {
@@ -94,7 +95,7 @@ namespace USerialization
                 {
                     output.EnsureNext(6);
                     output.Write7BitEncodedIntUnchecked(count);
-                    output.WriteByteUnchecked((byte) _elementDataType);
+                    output.WriteByteUnchecked((byte)_elementDataType);
 
                     var pinnable = Unsafe.As<Array, byte[]>(ref array);
 
@@ -104,7 +105,7 @@ namespace USerialization
                         var serializer = _elementSerializer;
                         for (var index = 0; index < count; index++)
                         {
-                            serializer.Write(tempAddress, output, context);
+                            serializer.Write(new ReadOnlySpan<byte>(tempAddress, _size), output, context);
                             tempAddress += _size;
                         }
                     }
@@ -154,8 +155,8 @@ namespace USerialization
                             //Array.Clear(array, count, remaining);
 
                             if (remaining > 0)
-                                ArrayHelpers.CleanArray(array, (uint) count, (uint) remaining, (uint) _size);
-                            
+                                ArrayHelpers.CleanArray(array, (uint)count, (uint)remaining, (uint)_size);
+
                             ListHelpers.SetCount(list, count);
                         }
                     }
@@ -163,7 +164,7 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var type = (DataType) input.ReadByte();
+                    var type = (DataType)input.ReadByte();
                     if (type == _elementDataType)
                     {
                         var pinnable = Unsafe.As<Array, byte[]>(ref array);
@@ -181,7 +182,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.CleanArray(array, 0, (uint) count, (uint) _size);
+                        ArrayHelpers.CleanArray(array, 0, (uint)count, (uint)_size);
                     }
                 }
 

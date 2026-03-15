@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Threading;
 using Unity.IL2CPP.CompilerServices;
@@ -57,6 +58,8 @@ namespace USerializerTests
 
         private readonly DataType _dataType;
 
+        private readonly int _dataSize;
+
         public override DataType GetDataType() => _dataType;
 
         protected override void Initialize(USerializer serializer)
@@ -74,6 +77,8 @@ namespace USerializerTests
                 throw new ArgumentException(nameof(type));
 
             _type = type;
+            _dataSize = UnsafeUtils.GetClassHeapSize(type);
+
             var constructor = _type.GetConstructor(Type.EmptyTypes);
             _haveCtor = constructor != null;
             _dataType = objectDataType;
@@ -83,9 +88,9 @@ namespace USerializerTests
 
         private const int MaxStack = 32;
 
-        public override void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            var obj = Unsafe.Read<object>(fieldAddress);
+            ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
 
             if (obj == null)
             {
@@ -102,11 +107,9 @@ namespace USerializerTests
 
             Unsafe.As<ISerializationCallbacks>(obj).OnBeforeSerialize(context);
 
-            var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
-
-            fixed (byte* objectAddress = &pinnable.Pinnable)
+            fixed (byte* objectAddress = &obj.Pinnable)
             {
-                _fieldsSerializer.Write(objectAddress, output, context);
+                _fieldsSerializer.Write(new Span<byte>(objectAddress, _dataSize), output, context);
             }
 
             output.WriteSizeTrack(track);

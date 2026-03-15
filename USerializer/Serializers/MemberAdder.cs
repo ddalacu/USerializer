@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -116,9 +117,9 @@ namespace USerialization
                 return;
             }
 
-            var get = (GetPropertyDelegate<T, TMember>) Delegate.CreateDelegate(typeof(GetPropertyDelegate<T, TMember>),
+            var get = (GetPropertyDelegate<T, TMember>)Delegate.CreateDelegate(typeof(GetPropertyDelegate<T, TMember>),
                 null, property.GetGetMethod());
-            var set = (SetPropertyDelegate<T, TMember>) Delegate.CreateDelegate(typeof(SetPropertyDelegate<T, TMember>),
+            var set = (SetPropertyDelegate<T, TMember>)Delegate.CreateDelegate(typeof(SetPropertyDelegate<T, TMember>),
                 null, property.GetSetMethod());
 
             var toAdd = new MemberSerializerStruct(hash, new PropertyWriter<T, TMember>(methods, set, get));
@@ -271,7 +272,6 @@ namespace USerialization
         }
     }
 
-
     public delegate void SetPropertyDelegate<in T, in TMember>(T obj, TMember value);
 
     public delegate TMember GetPropertyDelegate<in T, out TMember>(T obj);
@@ -281,6 +281,8 @@ namespace USerialization
         private DataSerializer _dataSerializer;
 
         private int _fieldOffset;
+
+        private int _stackSize;
 
         public override DataType GetDataType() => _dataSerializer.GetDataType();
 
@@ -292,22 +294,22 @@ namespace USerialization
         public StructFieldWriter(DataSerializer dataSerializer, FieldInfo fieldInfo)
         {
             _fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
+            _stackSize = UnsafeUtils.GetStackSize(fieldInfo.FieldType);
             _dataSerializer = dataSerializer;
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            var address = (byte*) fieldAddress + _fieldOffset;
-            _dataSerializer.Write(address, output, context);
+            _dataSerializer.Write(fieldAddress.Slice(_fieldOffset, _stackSize), output, context);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public override void Read(void* fieldAddress, SerializerInput input, object context)
         {
-            var address = (byte*) fieldAddress + _fieldOffset;
+            var address = (byte*)fieldAddress + _fieldOffset;
             _dataSerializer.Read(address, input, context);
         }
     }
@@ -317,6 +319,9 @@ namespace USerialization
         private DataSerializer _dataSerializer;
 
         private int _fieldOffset;
+
+        private int _stackSize;
+
         public override DataType GetDataType() => _dataSerializer.GetDataType();
 
         protected override void Initialize(USerializer serializer)
@@ -336,19 +341,19 @@ namespace USerialization
                 throw new ArgumentException(nameof(fieldInfo));
 
             _fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
+            _stackSize = UnsafeUtils.GetStackSize(fieldInfo.FieldType);
             _dataSerializer = dataSerializer;
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            var obj = Unsafe.Read<object>(fieldAddress); //obj should not be null here
+            ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
 
-            var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
-            fixed (byte* objectAddress = &pinnable.Pinnable)
+            fixed (byte* objectAddress = &obj.Pinnable)
             {
-                _dataSerializer.Write(objectAddress + _fieldOffset, output, context);
+                _dataSerializer.Write(new Span<byte>(objectAddress + _fieldOffset, _stackSize), output, context);
             }
         }
 
@@ -389,10 +394,12 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> a, SerializerOutput output, object context)
         {
-            var value = _get(Unsafe.Read<T>(fieldAddress));
-            _dataSerializer.Write(Unsafe.AsPointer(ref value), output, context);
+            ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(a));
+            var value = _get(instance);
+            var ptr = Unsafe.AsPointer(ref value);
+            _dataSerializer.Write(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), output, context);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
@@ -431,11 +438,13 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> a, SerializerOutput output, object context)
         {
-            ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
+            ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(a));
+
             var value = _get(ref instance);
-            _dataSerializer.Write(Unsafe.AsPointer(ref value), output, context);
+            var ptr = Unsafe.AsPointer(ref value);
+            _dataSerializer.Write(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), output, context);
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
@@ -496,9 +505,9 @@ namespace USerialization
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-        public override void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
+            ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(fieldAddress));
 
             var count = _getLengthDelegate(ref instance);
 
@@ -511,14 +520,14 @@ namespace USerialization
             var sizeTracker = output.BeginSizeTrack();
             {
                 output.EnsureNext(6);
-                output.WriteByteUnchecked((byte) _elementSerializer.GetDataType());
+                output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
                 output.Write7BitEncodedIntUnchecked(count);
 
                 for (var index = 0; index < count; index++)
                 {
                     var element = _getElementDelegate(ref instance, index);
                     var itemAddress = Unsafe.AsPointer(ref element);
-                    _elementSerializer.Write(itemAddress, output, context);
+                    _elementSerializer.Write(new Span<byte>(itemAddress, Unsafe.SizeOf<TElement>()), output, context);
                 }
             }
             output.WriteSizeTrack(sizeTracker);
@@ -532,7 +541,7 @@ namespace USerialization
 
             if (input.BeginReadSize(out var end))
             {
-                var type = (DataType) input.ReadByte();
+                var type = (DataType)input.ReadByte();
 
                 var count = input.Read7BitEncodedInt();
 

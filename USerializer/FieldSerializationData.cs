@@ -52,12 +52,15 @@ namespace USerialization
     {
         public readonly ushort Offset;
 
+        public readonly ushort Size;
+
         public readonly DataSerializer DataSerializer;
 
-        public FieldSerializationData(DataSerializer dataSerializer, ushort offset)
+        public FieldSerializationData(DataSerializer dataSerializer, ushort offset, ushort size)
         {
             Offset = offset;
             DataSerializer = dataSerializer;
+            Size = size;
 
             if (dataSerializer.Initialized == false)
                 throw new Exception($"{dataSerializer} not initialized!");
@@ -148,7 +151,10 @@ namespace USerialization
 
                 var alternateNames = uSerializer.SerializationPolicy.GetAlternateNames(fieldInfo);
 
-                var fieldSerializationData = new FieldSerializationData(serializationMethods, (ushort) fieldOffset);
+                var stackSize = UnsafeUtils.GetStackSize(fieldInfo.FieldType);
+
+                var fieldSerializationData =
+                    new FieldSerializationData(serializationMethods, (ushort)fieldOffset, (ushort)stackSize);
                 var metaData = new FieldMetaData(fieldInfo.Name, alternateNames, fieldInfo, serializationMethods);
 
                 fields.Add((metaData, fieldSerializationData));
@@ -198,21 +204,21 @@ namespace USerialization
             var headerData = new byte[size];
 
             int position = 0;
-            headerData[position++] = (byte) fieldsLength;
+            headerData[position++] = (byte)fieldsLength;
 
             for (var index = 0; index < fieldsLength; index++)
             {
                 var fieldMeta = metas[index];
 
                 var hash = fieldMeta.FieldNameHash;
-                headerData[position++] = (byte) hash;
-                headerData[position++] = (byte) (hash >> 8);
-                headerData[position++] = (byte) (hash >> 16);
-                headerData[position++] = (byte) (hash >> 24);
+                headerData[position++] = (byte)hash;
+                headerData[position++] = (byte)(hash >> 8);
+                headerData[position++] = (byte)(hash >> 16);
+                headerData[position++] = (byte)(hash >> 24);
                 //var dataSerializer = fieldData.SerializationMethods;
                 var dataType = fieldMeta.DataType;
 
-                headerData[position++] = (byte) dataType;
+                headerData[position++] = (byte)dataType;
 
                 if (dataType == DataType.None)
                     throw new Exception("Data type is none!");
@@ -224,10 +230,9 @@ namespace USerialization
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(byte* objectAddress, SerializerOutput output, object context)
+        public void Write(ReadOnlySpan<byte> objectAddress, SerializerOutput output, object context)
         {
-            fixed (void* ptr = _headerData)
-                output.WriteBytes(ptr, _headerData.Length);
+            output.WriteSpan<byte>(_headerData.AsSpan());
 
             var typeDataFields = _fields;
             var fieldsLength = typeDataFields.Length;
@@ -236,8 +241,8 @@ namespace USerialization
             {
                 var fieldData = typeDataFields[index];
                 //var dataSerializer = fieldData.SerializationMethods;
-
-                fieldData.DataSerializer.Write(objectAddress + fieldData.Offset, output, context);
+                var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
+                fieldData.DataSerializer.Write(tempSpan, output, context);
             }
         }
 
@@ -279,7 +284,7 @@ namespace USerialization
                     var field = streamData[position++] | streamData[position++] << 8 | streamData[position++] << 16 |
                                 streamData[position++] << 24;
 
-                    var type = (DataType) streamData[position++];
+                    var type = (DataType)streamData[position++];
 
                     var deserialized = false;
 
@@ -294,7 +299,7 @@ namespace USerialization
 
                             if (type == meta.DataType)
                             {
-                                indexes[i] = (byte) searchIndex;
+                                indexes[i] = (byte)searchIndex;
                                 deserialized = true;
                             }
 
@@ -307,7 +312,7 @@ namespace USerialization
                     {
                         if (FieldSerializationData.GetAlternate(_fieldsMetas, type, field, out var alternateIndex))
                         {
-                            indexes[i] = (byte) alternateIndex;
+                            indexes[i] = (byte)alternateIndex;
                         }
                         else
                         {
@@ -320,7 +325,7 @@ namespace USerialization
                 {
                     var index = indexes[i];
 
-                    if ((byte) dataTypes[i] != 0)
+                    if ((byte)dataTypes[i] != 0)
                     {
                         _dataTypesDatabase.SkipData(dataTypes[i], input);
                         continue;

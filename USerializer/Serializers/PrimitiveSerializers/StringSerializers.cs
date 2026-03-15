@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
@@ -26,9 +27,9 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            var value = Unsafe.Read<string>(fieldAddress);
+            ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(fieldAddress));
 
             if (value == null)
             {
@@ -42,11 +43,7 @@ namespace USerialization
 
             output.EnsureNext(byteLength + 5); //5 if from the max size of Write7BitEncodedIntUnchecked
             output.Write7BitEncodedIntUnchecked(valueLength + 1);
-
-            fixed (void* textPtr = value)
-            {
-                output.WriteBytesUnchecked(textPtr, byteLength);
-            }
+            output.WriteSpan(value.AsSpan());
         }
 
         public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)

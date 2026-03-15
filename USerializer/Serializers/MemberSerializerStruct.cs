@@ -65,20 +65,20 @@ namespace USerialization
             var headerData = new byte[size];
 
             int position = 0;
-            headerData[position++] = (byte) fieldsLength;
+            headerData[position++] = (byte)fieldsLength;
 
             for (var index = 0; index < fieldsLength; index++)
             {
                 var fieldData = datas[index];
                 var hash = fieldData.Hash;
-                headerData[position++] = (byte) hash;
-                headerData[position++] = (byte) (hash >> 8);
-                headerData[position++] = (byte) (hash >> 16);
-                headerData[position++] = (byte) (hash >> 24);
+                headerData[position++] = (byte)hash;
+                headerData[position++] = (byte)(hash >> 8);
+                headerData[position++] = (byte)(hash >> 16);
+                headerData[position++] = (byte)(hash >> 24);
 
                 var dataType = fieldData.Serializer.GetDataType();
 
-                headerData[position++] = (byte) dataType;
+                headerData[position++] = (byte)dataType;
 
                 if (dataType == DataType.None)
                     throw new Exception("Data type is none!");
@@ -90,14 +90,13 @@ namespace USerialization
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(byte* objectAddress, SerializerOutput output, object context)
+        public void Write(ReadOnlySpan<byte> objectAddress, SerializerOutput output, object context)
         {
             var typeDataFields = Members;
 
             var fieldsLength = typeDataFields.Length;
 
-            fixed (void* ptr = _headerData)
-                output.WriteBytes(ptr, _headerData.Length);
+            output.WriteSpan<byte>(_headerData.AsSpan());
 
             for (var index = 0; index < fieldsLength; index++)
             {
@@ -141,7 +140,7 @@ namespace USerialization
                 {
                     var field = streamData[position++] | streamData[position++] << 8 | streamData[position++] << 16 |
                                 streamData[position++] << 24;
-                    var type = (DataType) streamData[position++];
+                    var type = (DataType)streamData[position++];
 
                     var deserialized = false;
 
@@ -153,7 +152,7 @@ namespace USerialization
                         {
                             if (type == fieldData.Serializer.GetDataType())
                             {
-                                indexes[i] = (byte) searchIndex;
+                                indexes[i] = (byte)searchIndex;
                                 deserialized = true;
                             }
 

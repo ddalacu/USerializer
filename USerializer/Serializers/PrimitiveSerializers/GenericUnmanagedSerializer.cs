@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -25,9 +27,14 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            output.Write(Unsafe.Read<T>(fieldAddress));
+            output.WriteSpan<byte>(fieldAddress);
+            
+            // ref var reference = ref MemoryMarshal.GetReference(fieldAddress);
+            // T value= Unsafe.As<byte, T>(ref Unsafe.AsRef( reference));
+            // Console.WriteLine(fieldAddress.Length==Unsafe.SizeOf<T>());
+            // output.Write(value);
         }
 
         public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
@@ -64,9 +71,10 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            var array = Unsafe.Read<T[]>(fieldAddress);
+            
+            var array = Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(fieldAddress));
             if (array == null)
             {
                 output.WriteNull();
@@ -84,9 +92,7 @@ namespace USerialization
                     output.EnsureNext(6 + byteLength);
                     output.Write7BitEncodedIntUnchecked(count);
                     output.WriteByteUnchecked((byte)_elementDataType);
-
-                    fixed (void* buf = array)
-                        output.WriteBytesUnchecked(buf, byteLength);
+                    output.WriteSpan<T>(array.AsSpan());
                 }
                 output.WriteSizeTrack(sizeTracker);
             }
@@ -155,9 +161,10 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            var list = Unsafe.Read<List<T>>(fieldAddress);
+            var list = Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(fieldAddress));
+
             if (list == null)
             {
                 output.WriteNull();
@@ -177,9 +184,8 @@ namespace USerialization
                     output.WriteByteUnchecked((byte)_elementDataType);
 
                     var array = ListHelpers.GetArray(list, out _);
-
-                    fixed (void* buf = array)
-                        output.WriteBytesUnchecked(buf, byteLength);
+                    var span = array.AsSpan().Slice(0, count);
+                    output.WriteSpan<T>(span);
                 }
 
                 output.WriteSizeTrack(sizeTracker);

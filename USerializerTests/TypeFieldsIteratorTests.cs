@@ -64,6 +64,7 @@ namespace USerializerTests
         {
             public bool Before = false;
             public bool After = false;
+            public long A, B, C, D, E;
 
             public void OnBeforeSerialize(object context)
             {

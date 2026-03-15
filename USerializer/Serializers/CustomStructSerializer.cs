@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -38,11 +39,11 @@ namespace USerialization
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
 
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
             var track = output.BeginSizeTrack();
 
-            _memberSerializer.Write((byte*) fieldAddress, output, context);
+            _memberSerializer.Write(fieldAddress, output, context);
 
             output.WriteSizeTrack(track);
         }

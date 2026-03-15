@@ -22,7 +22,7 @@ namespace USerialization
                 throw new NullReferenceException(nameof(output));
 
             var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Write(childAddress, output, context);
+            _dataSerializer.Write(new Span<byte>(childAddress, Unsafe.SizeOf<T>()), output, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -48,7 +48,7 @@ namespace USerialization
             out ValueSerializationHelper<T> dataSerializer, bool initializeDataSerializer = true) where T : struct
         {
             var type = typeof(T);
-            
+
             if (serializer.TryGetDataSerializer(type, out var data, initializeDataSerializer) == false)
             {
                 dataSerializer = default;

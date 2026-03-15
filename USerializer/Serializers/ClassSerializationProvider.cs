@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Threading;
 using Unity.IL2CPP.CompilerServices;
@@ -50,6 +51,8 @@ namespace USerialization
 
         private readonly DataType _dataType;
 
+        private readonly int _heapSize;
+
         public override DataType GetDataType() => _dataType;
 
         protected override void Initialize(USerializer serializer)
@@ -68,17 +71,18 @@ namespace USerialization
 
             _type = type;
             _dataType = objectDataType;
+            _heapSize = UnsafeUtils.GetClassHeapSize(type);
         }
 
         private int _stack;
-        
+
         private readonly Type _type;
 
         private const int MaxStack = 32;
 
-        public override void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            var obj = Unsafe.Read<object>(fieldAddress);
+            ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
 
             if (obj == null)
             {
@@ -93,11 +97,9 @@ namespace USerialization
 
             var track = output.BeginSizeTrack();
 
-            var pinnable = Unsafe.As<object, PinnableObject>(ref obj);
-
-            fixed (byte* objectAddress = &pinnable.Pinnable)
+            fixed (byte* objectAddress = &obj.Pinnable)
             {
-                _fieldsSerializer.Write(objectAddress, output, context);
+                _fieldsSerializer.Write(new Span<byte>(objectAddress, _heapSize), output, context);
             }
 
             output.WriteSizeTrack(track);

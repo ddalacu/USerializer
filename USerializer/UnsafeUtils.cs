@@ -10,6 +10,9 @@ namespace USerialization
         public byte Pinnable;
     }
 
+    /// <summary>
+    /// this class is VERY hacky/unsafe but its ok
+    /// </summary>
     public static unsafe class UnsafeUtils
     {
         private static readonly bool _isMono;
@@ -19,6 +22,18 @@ namespace USerialization
         static UnsafeUtils()
         {
             _isMono = Type.GetType("Mono.Runtime") != null;
+
+            if (_isMono == false)
+            {
+                var sizeOfTest = GetClassHeapSize(typeof(PinnableObject));
+
+                if (sizeOfTest != sizeof(void*))
+                    throw new InvalidOperationException();
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
         }
 
         public static int GetFieldOffset(FieldInfo fi)
@@ -42,7 +57,7 @@ namespace USerialization
             }
         }
 
-        public static int GetArrayElementSize(Type type)
+        public static int GetStackSize(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
@@ -84,5 +99,36 @@ namespace USerialization
             public int Offset => (int)(m_dword2 & 0x7FFFFFF);
         }
 
+        public static int HeaderSize()
+        {
+            switch (sizeof(void*))
+            {
+                case 8:
+                    return 16;
+                case 4:
+                    return 8;
+                default:
+                    throw new NotSupportedException("Unsupported pointer size");
+            }
+        }
+
+        public static unsafe int GetClassHeapSize(Type type)
+        {
+            if (type.IsClass == false)
+                throw new InvalidOperationException();
+            if (type.IsInterface)
+                throw new InvalidOperationException();
+            if (type.IsAbstract)
+                throw new InvalidOperationException();
+
+            // Get the Method Table pointer (the "handle")
+            IntPtr handle = type.TypeHandle.Value;
+
+            // The BaseSize is stored at an offset within the Method Table.
+            // On modern 64-bit .NET (Core/5+), this is typically at offset 4.
+            // It represents the total size of the object on the heap in bytes.
+            var baseSize = Unsafe.Read<int>((void*)(handle + 4));
+            return baseSize - HeaderSize();
+        }
     }
 }

@@ -342,6 +342,40 @@ namespace USerializerTests
             public A Ref;
             public int Value = 0;
         }
+        
+        [Serializable]
+        public class Referencing
+        {
+            public Other A;
+            public Other B;
+            public Other C;
+
+            public override string ToString()
+            {
+                return "Hello World";
+            }
+        }
+        
+        [Serializable]
+        public class Other
+        {
+            
+        }
+        
+        [Test]
+        public void TestReferences()
+        {
+            var instance = new Referencing()
+            {
+                A = new Other(),
+                //B = new Other(),
+                //C = new Other(),
+            };
+            
+            var stream = new MemoryStream();
+            BinaryUtility.Serialize(instance, stream);
+            stream.Position = 0;
+        }
 
         [Test]
         public void CyclicTypeDependency()

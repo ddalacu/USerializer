@@ -1,4 +1,6 @@
-﻿namespace USerialization
+﻿using System;
+
+namespace USerialization
 {
     public abstract unsafe class DataSerializer
     {
@@ -6,7 +8,7 @@
 
         public abstract DataType GetDataType();
 
-        public abstract void Write(void* fieldAddress, SerializerOutput output, object context);
+        public abstract void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context);
 
         public abstract void Read(void* fieldAddress, SerializerInput input, object context);
         

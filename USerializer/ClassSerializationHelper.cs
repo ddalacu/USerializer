@@ -16,7 +16,7 @@ namespace USerialization
 
             if (serializedType.IsValueType)
                 throw new ArgumentException("Should not be value type!");
-            
+
             if (_dataSerializer.Initialized == false)
                 throw new Exception($"{_dataSerializer} not initialized!");
         }
@@ -36,7 +36,7 @@ namespace USerialization
                     throw new ArgumentException($"{itemType} cannot be casted to {_serializedType}");
 
                 var childAddress = Unsafe.AsPointer(ref item);
-                _dataSerializer.Write(childAddress, output, context);
+                _dataSerializer.Write(new Span<byte>(childAddress, IntPtr.Size), output, context);
                 return;
             }
 
@@ -44,11 +44,12 @@ namespace USerialization
                 throw new ArgumentException(
                     $"Type of the object {itemType} is not the same as the serializer type {_serializedType}");
 
-            var pinnable = Unsafe.As<object, PinnableObject>(ref item);
-            fixed (byte* objectAddress = &pinnable.Pinnable)
-            {
-                _dataSerializer.Write(objectAddress, output, context);
-            }
+            throw new NotImplementedException();
+            // var pinnable = Unsafe.As<object, PinnableObject>(ref item);
+            // fixed (byte* objectAddress = &pinnable.Pinnable)
+            // {
+            //     _dataSerializer.Write(objectAddress, output, context);
+            // }
         }
 
         public object DeserializeObject(SerializerInput input, object context)

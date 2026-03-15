@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -48,9 +49,11 @@ namespace USerialization
             _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
         }
 
-        public override unsafe void Write(void* fieldAddress, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
         {
-            if (Unsafe.Read<object>(fieldAddress) == null)
+            ref var obj =ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
+            
+            if (obj == null)
             {
                 output.WriteNull();
                 return;
@@ -58,7 +61,7 @@ namespace USerialization
 
             var track = output.BeginSizeTrack();
 
-            _memberSerializer.Write((byte*)fieldAddress, output, context);
+            _memberSerializer.Write(fieldAddress, output, context);
 
             output.WriteSizeTrack(track);
         }

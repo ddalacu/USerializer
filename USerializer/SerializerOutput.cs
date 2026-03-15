@@ -29,7 +29,7 @@ namespace USerialization
 
         public SerializerOutput(int capacity)
         {
-            _buffer = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
+            _buffer = (byte*)Marshal.AllocHGlobal(capacity).ToPointer();
             _bufferSize = capacity;
             _position = 0;
         }
@@ -45,9 +45,9 @@ namespace USerialization
         private void Expand()
         {
             var capacity = _bufferSize * 2;
-            var expanded = (byte*) Marshal.AllocHGlobal(capacity).ToPointer();
+            var expanded = (byte*)Marshal.AllocHGlobal(capacity).ToPointer();
 
-            Unsafe.CopyBlock(expanded, _buffer, (uint) _position);
+            Unsafe.CopyBlock(expanded, _buffer, (uint)_position);
             Marshal.FreeHGlobal(new IntPtr(_buffer));
 
             _buffer = expanded;
@@ -69,70 +69,52 @@ namespace USerialization
         {
             EnsureNext(4);
             _position += 4;
-            return (SizeTracker) (_position);
+            return (SizeTracker)(_position);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SizeTracker BeginSizeTrackUnchecked()
         {
             _position += 4;
-            return (SizeTracker) (_position);
+            return (SizeTracker)(_position);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSizeTrack(SizeTracker tracker)
         {
-            int length = (int) ((_position) - tracker);
+            int length = (int)((_position) - tracker);
 
-            var point = (int) (tracker - 4);
+            var point = (int)(tracker - 4);
             Unsafe.WriteUnaligned(ref _buffer[point], length);
         }
-        
+
         public void Write7BitEncodedIntUnchecked(int value)
         {
-            uint v = (uint) value;
+            uint v = (uint)value;
             while (v >= 0x80)
             {
-                _buffer[_position++] = (byte) (v | 0x80);
+                _buffer[_position++] = (byte)(v | 0x80);
                 v >>= 7;
             }
 
-            _buffer[_position++] = (byte) v;
+            _buffer[_position++] = (byte)v;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteNull()
         {
             EnsureNext(4);
-            Unsafe.WriteUnaligned(_buffer + _position, (int) -1);
+            Unsafe.WriteUnaligned(_buffer + _position, (int)-1);
             _position += 4;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteBytes(void* ptr, int length)
+        public void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
-            EnsureNext(length);
-
-#if DEBUG
-            if (length < 0)
-                throw new Exception("byteLength is negative!");
-#endif
-
-            Unsafe.CopyBlockUnaligned(_buffer + _position, ptr, (uint) length);
-
-            _position += length;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteBytesUnchecked(void* ptr, int length)
-        {
-#if DEBUG
-            if (length < 0)
-                throw new Exception("byteLength is negative!");
-#endif
-
-            Unsafe.CopyBlockUnaligned(_buffer + _position, ptr, (uint) length);
-            _position += length;
+            var byteSpan = MemoryMarshal.AsBytes(span);
+            fixed (byte* ptr = &byteSpan.GetPinnableReference())
+                Unsafe.CopyBlockUnaligned(_buffer + _position, ptr, (uint)byteSpan.Length);
+            _position += byteSpan.Length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
