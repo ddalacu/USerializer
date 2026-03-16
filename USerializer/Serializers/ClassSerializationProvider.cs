@@ -30,14 +30,11 @@ namespace USerialization
 
             if (type.IsPrimitive)
                 return false;
-
-            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic) == false)
-                return false;
-
+            
             if (serializer.SerializationPolicy.ShouldSerialize(type) == false)
                 return false;
 
-            serializationMethods = new ClassDataSerializer(type, objectDataTypeLogic.Value);
+            serializationMethods = new ClassDataSerializer(type);
 
             return true;
         }
@@ -49,11 +46,9 @@ namespace USerialization
     {
         private FieldsSerializer _fieldsSerializer;
 
-        private readonly DataType _dataType;
-
         private readonly int _heapSize;
 
-        public override DataType GetDataType() => _dataType;
+        public override DataType GetDataType() => DataType.Object;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -61,7 +56,7 @@ namespace USerialization
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
         }
 
-        public ClassDataSerializer(Type type, DataType objectDataType)
+        public ClassDataSerializer(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
@@ -70,7 +65,6 @@ namespace USerialization
                 throw new ArgumentException(nameof(type));
 
             _type = type;
-            _dataType = objectDataType;
             _heapSize = UnsafeUtils.GetClassHeapSize(type);
         }
 
@@ -117,7 +111,7 @@ namespace USerialization
                 {
                     instance = Activator.CreateInstance(_type);
                 }
-                
+
                 ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
                 fixed (byte* objectAddress = &pinnable.Pinnable)
                 {

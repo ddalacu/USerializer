@@ -4,28 +4,13 @@ using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
-[assembly: CustomSerializer(typeof(string), typeof(StringSerializer))]
-
 namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class StringSerializer : CustomDataSerializer
     {
-        private DataType _dataType;
-
-        public override DataType GetDataType() => _dataType;
-
-        public override bool TryInitialize(USerializer serializer)
-        {
-            var typeLogic = serializer.DataTypesDatabase;
-
-            if (typeLogic.TryGet(out StringDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
-
-            _dataType = arrayDataTypeLogic.Value;
-            return true;
-        }
+        public override DataType GetDataType() => DataType.String;
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
@@ -76,10 +61,8 @@ namespace USerialization
         }
     }
 
-    public sealed class StringDataTypeLogic : IDataTypeLogic
+    public sealed class StringDataSkipper : IDataSkipper
     {
-        public DataType Value { get; set; }
-
         public void Skip(SerializerInput input)
         {
             var chars = input.Read7BitEncodedInt();

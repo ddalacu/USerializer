@@ -6,7 +6,8 @@
         {
             ISerializationProvider[] providers =
             {
-                new CustomSerializerProvider(logger),
+                new PrimitivesSerializerProvider(),
+               // new CustomSerializerProvider(logger),
                 new EnumSerializer(),
                 new ArraySerializer(),
                 new ListSerializer(),

@@ -23,10 +23,7 @@ namespace USerialization
                 serializationMethods = default;
                 return false;
             }
-
-            if (serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
-
+            
             var elementType = type.GetElementType();
 
             if (serializer.TryGetDataSerializer(elementType, out var elementSerializer, false) == false)
@@ -35,7 +32,7 @@ namespace USerialization
                 return false;
             }
 
-            serializationMethods = new ArrayDataSerializer(elementType, elementSerializer, arrayDataTypeLogic.Value);
+            serializationMethods = new ArrayDataSerializer(elementType, elementSerializer);
             return true;
         }
     }
@@ -49,10 +46,8 @@ namespace USerialization
         private readonly DataSerializer _elementSerializer;
 
         private readonly int _size;
-
-        private readonly DataType _dataType;
-
-        public override DataType GetDataType() => _dataType;
+        
+        public override DataType GetDataType() => DataType.Array;
 
         private DataType _elementDataType;
 
@@ -68,12 +63,11 @@ namespace USerialization
             }
         }
 
-        public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer, DataType arrayDataType)
+        public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer)
         {
             _size = UnsafeUtils.GetStackSize(elementType);
             _elementType = elementType;
             _elementSerializer = elementSerializer;
-            _dataType = arrayDataType;
         }
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)

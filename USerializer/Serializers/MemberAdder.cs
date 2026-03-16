@@ -63,8 +63,7 @@ namespace USerialization
             }
 
             var toAdd = new MemberSerializerStruct(hash,
-                new FieldArrayWriter<T, TElement>(elementSerializer, getLength, setLength, getElement, setElement,
-                    _serializer));
+                new FieldArrayWriter<T, TElement>(elementSerializer, getLength, setLength, getElement, setElement));
             Add(toAdd);
             return true;
         }
@@ -475,9 +474,7 @@ namespace USerialization
 
         public delegate void SetLengthDelegate(ref T obj, int length);
 
-        private DataType _dataType;
-
-        public override DataType GetDataType() => _dataType;
+        public override DataType GetDataType() => DataType.Array;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -488,18 +485,13 @@ namespace USerialization
             GetLengthDelegate getLengthDelegate,
             SetLengthDelegate setLengthDelegate,
             GetElementDelegate getElementDelegate,
-            SetElementDelegate setElementDelegate, USerializer uSerializer)
+            SetElementDelegate setElementDelegate)
         {
             _elementSerializer = elementSerializer;
             _getLengthDelegate = getLengthDelegate;
             _setLengthDelegate = setLengthDelegate;
             _getElementDelegate = getElementDelegate;
             _setElementDelegate = setElementDelegate;
-
-            var typeLogic = uSerializer.DataTypesDatabase;
-
-            if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic))
-                _dataType = arrayDataTypeLogic.Value;
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]

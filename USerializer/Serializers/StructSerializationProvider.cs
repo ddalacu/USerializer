@@ -8,10 +8,7 @@ namespace USerialization
         public bool TryGet(USerializer serializer, Type type, out DataSerializer serializationMethods)
         {
             serializationMethods = default;
-
-            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic dataTypeLogic) == false)
-                return false;
-
+            
             if (type.IsArray)
                 return false;
 
@@ -24,7 +21,7 @@ namespace USerialization
             if (serializer.SerializationPolicy.ShouldSerialize(type) == false)
                 return false;
 
-            serializationMethods = new StructDataSerializer(type, dataTypeLogic.Value);
+            serializationMethods = new StructDataSerializer(type);
             return true;
         }
     }
@@ -34,12 +31,10 @@ namespace USerialization
     public sealed unsafe class StructDataSerializer : DataSerializer
     {
         private readonly Type _type;
-
-        private readonly DataType _dataType;
-
+        
         private FieldsSerializer _fieldsSerializer;
 
-        public override DataType GetDataType() => _dataType;
+        public override DataType GetDataType() => DataType.Object;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -47,10 +42,9 @@ namespace USerialization
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
         }
 
-        public StructDataSerializer(Type type, DataType objectDataType)
+        public StructDataSerializer(Type type)
         {
             _type = type;
-            _dataType = objectDataType;
         }
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)

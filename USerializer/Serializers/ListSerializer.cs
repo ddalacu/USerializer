@@ -18,10 +18,7 @@ namespace USerialization
 
             if (type.GetGenericTypeDefinition() != typeof(List<>))
                 return false;
-
-            if (serializer.DataTypesDatabase.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
-
+            
             var elementType = type.GetGenericArguments()[0];
 
             if (serializer.TryGetDataSerializer(elementType, out var elementDataSerializer, false) == false)
@@ -31,7 +28,7 @@ namespace USerialization
             }
 
             serializationMethods =
-                new ListDataSerializer(type, elementType, elementDataSerializer, arrayDataTypeLogic.Value);
+                new ListDataSerializer(type, elementType, elementDataSerializer);
             return true;
         }
     }
@@ -48,10 +45,8 @@ namespace USerialization
         private readonly int _size;
 
         private readonly Type _fieldType;
-
-        private readonly DataType _dataType;
-
-        public override DataType GetDataType() => _dataType;
+        
+        public override DataType GetDataType() => DataType.Array;
 
         private DataType _elementDataType;
 
@@ -67,14 +62,12 @@ namespace USerialization
             }
         }
 
-        public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer,
-            DataType arrayDataType)
+        public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer)
         {
             _fieldType = fieldType;
             _elementType = elementType;
             _elementSerializer = elementSerializer;
             _size = UnsafeUtils.GetStackSize(elementType);
-            _dataType = arrayDataType;
         }
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)

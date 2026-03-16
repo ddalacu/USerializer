@@ -11,20 +11,7 @@ namespace USerialization
     {
         private MemberSerializer _memberSerializer;
 
-        private DataType _dataType;
-
-        public override DataType GetDataType() => _dataType;
-
-        public override bool TryInitialize(USerializer serializer)
-        {
-            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic))
-            {
-                _dataType = objectDataTypeLogic.Value;
-                return true;
-            }
-
-            return false;
-        }
+        public override DataType GetDataType() => DataType.Object;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -40,7 +27,7 @@ namespace USerialization
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
 
-        public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             var track = output.BeginSizeTrack();
 
@@ -49,7 +36,7 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             if (input.BeginReadSize(out var end))
             {

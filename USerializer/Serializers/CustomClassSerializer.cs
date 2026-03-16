@@ -15,25 +15,13 @@ namespace USerialization
 
         private DataType _dataType;
 
-        public override DataType GetDataType() => _dataType;
+        public override DataType GetDataType() => DataType.Object;
 
         protected CustomClassSerializer()
         {
             _type = typeof(T);
         }
-
-        public override bool TryInitialize(USerializer serializer)
-        {
-            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic))
-            {
-                _dataType = objectDataTypeLogic.Value;
-                return true;
-            }
-
-            return false;
-        }
-
-
+        
         public abstract void LocalInit(ClassMemberAdder<T> adder);
 
         protected override void Initialize(USerializer serializer)

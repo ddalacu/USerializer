@@ -10,23 +10,17 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class GenericUnmanagedSerializer<T, TLogic> : CustomDataSerializer
         where T : unmanaged
-        where TLogic : IDataTypeLogic, new()
+        where TLogic : IDataSkipper, new()
     {
         private DataType _dataType;
 
         public override DataType GetDataType() => _dataType;
 
-        public override bool TryInitialize(USerializer serializer)
+        public GenericUnmanagedSerializer(DataType dataType)
         {
-            var typeLogic = serializer.DataTypesDatabase;
-
-            if (typeLogic.TryGet(out TLogic arrayDataTypeLogic) == false)
-                return false;
-
-            _dataType = arrayDataTypeLogic.Value;
-            return true;
+            _dataType = dataType;
         }
-
+        
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
@@ -49,30 +43,12 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class GenericUnmanagedArraySerializer<T, TLogic> : CustomDataSerializer
         where T : unmanaged
-        where TLogic : IDataTypeLogic, new()
+        where TLogic : IDataSkipper, new()
     {
         private DataType _elementDataType;
-        private DataType _dataType;
 
-        public override DataType GetDataType() => _dataType;
-
-        public override bool TryInitialize(USerializer serializer)
-        {
-            var typeLogic = serializer.DataTypesDatabase;
-
-            if (typeLogic.TryGet(out TLogic result) == false)
-                return false;
-
-            _elementDataType = result.Value;
-
-            if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
-
-            _dataType = arrayDataTypeLogic.Value;
-
-            return true;
-        }
-
+        public override DataType GetDataType() => DataType.Array;
+        
         public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             var array = Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(span));
@@ -137,30 +113,11 @@ namespace USerialization
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class GenericUnmanagedListSerializer<T, TLogic> : CustomDataSerializer
         where T : unmanaged
-        where TLogic : IDataTypeLogic, new()
+        where TLogic : IDataSkipper, new()
     {
         private DataType _elementDataType;
-
-        private DataType _dataType;
-
-        public override DataType GetDataType() => _dataType;
-
-        public override bool TryInitialize(USerializer serializer)
-        {
-            var typeLogic = serializer.DataTypesDatabase;
-
-            if (typeLogic.TryGet(out TLogic result) == false)
-                return false;
-
-            _elementDataType = result.Value;
-
-            if (typeLogic.TryGet(out ArrayDataTypeLogic arrayDataTypeLogic) == false)
-                return false;
-
-            _dataType = arrayDataTypeLogic.Value;
-
-            return true;
-        }
+        
+        public override DataType GetDataType() => DataType.Array;
 
         public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {

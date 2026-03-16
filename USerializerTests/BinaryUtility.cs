@@ -31,7 +31,7 @@ namespace USerializerTests
             if (type.IsPrimitive)
                 return false;
 
-            if (serializer.DataTypesDatabase.TryGet(out ObjectDataTypeLogic objectDataTypeLogic) == false)
+            if (serializer.DataTypesDatabase.TryGet(out ObjectDataSkipper objectDataTypeLogic) == false)
                 return false;
 
             if (serializer.SerializationPolicy.ShouldSerialize(type) == false)
@@ -40,7 +40,7 @@ namespace USerializerTests
             if (typeof(ISerializationCallbacks).IsAssignableFrom(type) == false)
                 return false;
 
-            serializationMethods = new CustomClassDataSerializer(type, objectDataTypeLogic.Value);
+            serializationMethods = new CustomClassDataSerializer(type);
 
             return true;
         }
@@ -55,12 +55,10 @@ namespace USerializerTests
         private FieldsSerializer _fieldsSerializer;
 
         private readonly bool _haveCtor;
-
-        private readonly DataType _dataType;
-
+        
         private readonly int _dataSize;
 
-        public override DataType GetDataType() => _dataType;
+        public override DataType GetDataType() => DataType.Object;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -68,7 +66,7 @@ namespace USerializerTests
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
         }
 
-        public CustomClassDataSerializer(Type type, DataType objectDataType)
+        public CustomClassDataSerializer(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
@@ -81,7 +79,6 @@ namespace USerializerTests
 
             var constructor = _type.GetConstructor(Type.EmptyTypes);
             _haveCtor = constructor != null;
-            _dataType = objectDataType;
         }
 
         private int _stack;
@@ -170,6 +167,7 @@ namespace USerializerTests
 
             ISerializationProvider[] providers =
             {
+                new PrimitivesSerializerProvider(),
                 new CustomSerializerProvider(consoleLogger),
                 new EnumSerializer(),
                 new ArraySerializer(),
