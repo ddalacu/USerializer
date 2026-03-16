@@ -117,9 +117,9 @@ namespace USerializerTests
             _stack--;
         }
 
-        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
             {
@@ -133,7 +133,7 @@ namespace USerializerTests
                         instance = FormatterServices.GetUninitializedObject(_type);
                 }
 
-                ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
+                ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
                 fixed (byte* objectAddress = &pinnable.Pinnable)
                 {
                     _fieldsSerializer.Read(new Span<byte>(objectAddress, _dataSize), input, context);

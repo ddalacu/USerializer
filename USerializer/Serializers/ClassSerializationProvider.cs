@@ -107,9 +107,9 @@ namespace USerialization
             _stack--;
         }
 
-        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
             {
@@ -118,7 +118,7 @@ namespace USerialization
                     instance = Activator.CreateInstance(_type);
                 }
                 
-                ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
+                ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
                 fixed (byte* objectAddress = &pinnable.Pinnable)
                 {
                     _fieldsSerializer.Read(new Span<byte>(objectAddress, _heapSize), input, context);

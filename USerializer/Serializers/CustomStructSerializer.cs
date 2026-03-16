@@ -49,17 +49,17 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
         {
             if (input.BeginReadSize(out var end))
             {
-                _memberSerializer.Read(fieldAddress, input, context);
+                _memberSerializer.Read(span, input, context);
 
                 input.EndObject(end);
             }
             else
             {
-                ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(fieldAddress));
+                ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
                 instance = default;
             }
         }

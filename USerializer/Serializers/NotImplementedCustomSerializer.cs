@@ -15,7 +15,7 @@ namespace USerialization
             throw new NotImplementedException();
         }
 
-        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             throw new NotImplementedException();
         }

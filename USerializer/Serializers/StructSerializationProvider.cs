@@ -60,11 +60,11 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             if (input.BeginReadSize(out var end))
             {
-                _fieldsSerializer.Read(fieldAddress, input, context);
+                _fieldsSerializer.Read(span, input, context);
                 input.EndObject(end);
             }
             else

@@ -120,9 +120,9 @@ namespace USerialization
         }
 
 
-        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var array = ref Unsafe.As<byte, Array>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var array = ref Unsafe.As<byte, Array>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
             {

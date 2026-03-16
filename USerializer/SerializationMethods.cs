@@ -10,7 +10,7 @@ namespace USerialization
 
         public abstract void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context);
 
-        public abstract void Read(Span<byte> fieldAddress, SerializerInput input, object context);
+        public abstract void Read(Span<byte> span, SerializerInput input, object context);
         
         public void RootInitialize(USerializer serializer)
         {

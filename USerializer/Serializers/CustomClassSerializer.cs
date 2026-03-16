@@ -65,16 +65,16 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var objectInstance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var objectInstance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
             {
                 if (objectInstance == null)
                     objectInstance = Activator.CreateInstance(_type);
 
-                _memberSerializer.Read(fieldAddress, input, context);
+                _memberSerializer.Read(span, input, context);
 
                 input.EndObject(end);
             }

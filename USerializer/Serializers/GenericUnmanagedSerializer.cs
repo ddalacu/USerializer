@@ -29,7 +29,8 @@ namespace USerialization
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            output.WriteSpan<byte>(span);
+            ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
+            output.Write(item);
 
             // ref var reference = ref MemoryMarshal.GetReference(fieldAddress);
             // T value= Unsafe.As<byte, T>(ref Unsafe.AsRef( reference));
@@ -37,9 +38,9 @@ namespace USerialization
             // output.Write(value);
         }
 
-        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
             item = input.Read<T>();
         }
     }
@@ -104,9 +105,9 @@ namespace USerialization
             }
         }
 
-        public override unsafe void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var array = ref Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var array = ref Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
             {
@@ -198,9 +199,9 @@ namespace USerialization
             }
         }
 
-        public override unsafe void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var list = ref Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var list = ref Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
             {

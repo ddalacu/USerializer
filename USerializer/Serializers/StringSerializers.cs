@@ -46,9 +46,9 @@ namespace USerialization
             output.WriteSpan(value.AsSpan());
         }
 
-        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(span));
 
             var length = input.Read7BitEncodedInt();
 
