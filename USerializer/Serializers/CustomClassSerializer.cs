@@ -5,7 +5,6 @@ using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
-
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public abstract class CustomClassSerializer<T> : CustomDataSerializer where T : class
@@ -49,10 +48,10 @@ namespace USerialization
             _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
         }
 
-        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            ref var obj =ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
-            
+            ref var obj = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
+
             if (obj == null)
             {
                 output.WriteNull();
@@ -61,30 +60,28 @@ namespace USerialization
 
             var track = output.BeginSizeTrack();
 
-            _memberSerializer.Write(fieldAddress, output, context);
+            _memberSerializer.Write(span, output, context);
 
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
+        public override unsafe void Read(Span<byte> fieldAddress, SerializerInput input, object context)
         {
+            ref var objectInstance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(fieldAddress));
+
             if (input.BeginReadSize(out var end))
             {
-                ref var objectInstance = ref Unsafe.AsRef<object>(fieldAddress);
                 if (objectInstance == null)
                     objectInstance = Activator.CreateInstance(_type);
 
-                _memberSerializer.Read((byte*)fieldAddress, input, context);
+                _memberSerializer.Read(fieldAddress, input, context);
 
                 input.EndObject(end);
             }
             else
             {
-                ref var objectInstance = ref Unsafe.AsRef<object>(fieldAddress);
                 objectInstance = null;
             }
-
         }
     }
 }
-

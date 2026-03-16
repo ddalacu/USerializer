@@ -318,6 +318,20 @@ namespace USerializerTests
             Assert.True(result.Time == initial.Time);
         }
 
+        // [Test]
+        // public void BoxedStructSerialization()
+        // {
+        //     var initial = new CustomStruct()
+        //     {
+        //         Field = 123,
+        //         Property = 112,
+        //         Property2 = 221
+        //     };
+        //     object boxed = initial;
+        //     var initialSerialize = new MemoryStream();
+        //     var serialized = BinaryUtility.Serialize(boxed, initialSerialize);
+        //     Assert.True(serialized);
+        // }
 
         [Test]
         public void CustomStructSerialization()

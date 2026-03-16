@@ -249,7 +249,7 @@ namespace USerialization
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Read(byte* objectAddress, SerializerInput input, object context)
+        public void Read(Span<byte> objectAddress, SerializerInput input, object context)
         {
             var fieldCount = input.ReadByte();
             //we just skipped the required data so we have it in the buffer
@@ -263,8 +263,8 @@ namespace USerialization
                 for (var i = 0; i < fieldCount; i++)
                 {
                     var fieldData = fieldDatas[i];
-                    var fieldDataOffset = objectAddress + fieldData.Offset;
-                    fieldData.DataSerializer.Read(fieldDataOffset, input, context);
+                    var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
+                    fieldData.DataSerializer.Read(tempSpan, input, context);
                 }
             }
             else
@@ -332,11 +332,11 @@ namespace USerialization
                     }
 
                     var fieldData = fieldDatas[index];
-                    var fieldDataOffset = objectAddress + fieldData.Offset;
+                    var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
                     //var dataSerializer = fieldData.SerializationMethods;
                     //dataSerializer.Read(fieldDataOffset, input);
 
-                    fieldData.DataSerializer.Read(fieldDataOffset, input, context);
+                    fieldData.DataSerializer.Read(tempSpan, input, context);
                 }
             }
         }

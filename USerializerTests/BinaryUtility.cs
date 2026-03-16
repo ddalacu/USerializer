@@ -88,9 +88,9 @@ namespace USerializerTests
 
         private const int MaxStack = 32;
 
-        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
 
             if (obj == null)
             {
@@ -117,9 +117,9 @@ namespace USerializerTests
             _stack--;
         }
 
-        public override void Read(void* fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
         {
-            ref var instance = ref Unsafe.AsRef<object>(fieldAddress);
+            ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(fieldAddress));
 
             if (input.BeginReadSize(out var end))
             {
@@ -133,10 +133,10 @@ namespace USerializerTests
                         instance = FormatterServices.GetUninitializedObject(_type);
                 }
 
-                var pinnable = Unsafe.As<object, PinnableObject>(ref instance);
+                ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(fieldAddress));
                 fixed (byte* objectAddress = &pinnable.Pinnable)
                 {
-                    _fieldsSerializer.Read(objectAddress, input, context);
+                    _fieldsSerializer.Read(new Span<byte>(objectAddress, _dataSize), input, context);
                 }
 
                 input.EndObject(end);

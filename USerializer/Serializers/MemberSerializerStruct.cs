@@ -108,7 +108,7 @@ namespace USerialization
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Read(byte* objectAddress, SerializerInput input, object context)
+        public void Read(Span<byte> objectAddress, SerializerInput input, object context)
         {
             var fieldDatas = Members;
 

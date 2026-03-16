@@ -29,7 +29,7 @@ namespace USerialization
         public void Populate(ref T item, SerializerInput input, object context)
         {
             var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Read(childAddress, input, context);
+            _dataSerializer.Read(new Span<byte>(childAddress, Unsafe.SizeOf<T>()), input, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -37,7 +37,7 @@ namespace USerialization
         {
             T item = default;
             var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Read(childAddress, input, context);
+            _dataSerializer.Read(new Span<byte>(childAddress, Unsafe.SizeOf<T>()), input, context);
             return item;
         }
     }

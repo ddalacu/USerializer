@@ -37,9 +37,9 @@ namespace USerialization
         public abstract void CopyFromSurrogate(ref TSurrogate from, ref T to);
     
     
-        public override unsafe void Write(ReadOnlySpan<byte> a, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            fixed (void* fieldAddress = a)
+            fixed (void* fieldAddress = span)
             {
                 ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
                 var to = default(TSurrogate);
@@ -50,13 +50,18 @@ namespace USerialization
             }
         }
     
-        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
+        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
         {
-            ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
-            var from = default(TSurrogate);
-    
-            _dataSerializer.Read(Unsafe.AsPointer(ref from), input, context);
-            CopyFromSurrogate(ref from, ref instance);
+            fixed (void* fieldAddress = span)
+            {
+                ref var instance = ref Unsafe.AsRef<T>(fieldAddress);
+                var from = default(TSurrogate);
+
+                var pointer = Unsafe.AsPointer(ref from);
+                
+                _dataSerializer.Read(new Span<byte>(pointer,Unsafe.SizeOf<TSurrogate>()), input, context);
+                CopyFromSurrogate(ref from, ref instance);
+            }
         }
     }
 }

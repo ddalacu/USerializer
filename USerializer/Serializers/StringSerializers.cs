@@ -27,9 +27,9 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(span));
 
             if (value == null)
             {
@@ -46,9 +46,9 @@ namespace USerialization
             output.WriteSpan(value.AsSpan());
         }
 
-        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
         {
-            ref var value = ref Unsafe.AsRef<string>(fieldAddress);
+            ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(fieldAddress));
 
             var length = input.Read7BitEncodedInt();
 

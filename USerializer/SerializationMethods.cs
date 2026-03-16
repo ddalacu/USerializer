@@ -8,9 +8,9 @@ namespace USerialization
 
         public abstract DataType GetDataType();
 
-        public abstract void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context);
+        public abstract void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context);
 
-        public abstract void Read(void* fieldAddress, SerializerInput input, object context);
+        public abstract void Read(Span<byte> fieldAddress, SerializerInput input, object context);
         
         public void RootInitialize(USerializer serializer)
         {

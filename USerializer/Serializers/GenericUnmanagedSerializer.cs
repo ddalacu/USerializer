@@ -27,19 +27,20 @@ namespace USerialization
             return true;
         }
 
-        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            output.WriteSpan<byte>(fieldAddress);
-            
+            output.WriteSpan<byte>(span);
+
             // ref var reference = ref MemoryMarshal.GetReference(fieldAddress);
             // T value= Unsafe.As<byte, T>(ref Unsafe.AsRef( reference));
             // Console.WriteLine(fieldAddress.Length==Unsafe.SizeOf<T>());
             // output.Write(value);
         }
 
-        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
         {
-            Unsafe.Write(fieldAddress, input.Read<T>());
+            ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(fieldAddress));
+            item = input.Read<T>();
         }
     }
 
@@ -71,10 +72,9 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            
-            var array = Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(fieldAddress));
+            var array = Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(span));
             if (array == null)
             {
                 output.WriteNull();
@@ -104,9 +104,9 @@ namespace USerialization
             }
         }
 
-        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
+        public override unsafe void Read(Span<byte> fieldAddress, SerializerInput input, object context)
         {
-            ref var array = ref Unsafe.AsRef<T[]>(fieldAddress);
+            ref var array = ref Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(fieldAddress));
 
             if (input.BeginReadSize(out var end))
             {
@@ -161,9 +161,9 @@ namespace USerialization
             return true;
         }
 
-        public override unsafe void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            var list = Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var list = ref Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(span));
 
             if (list == null)
             {
@@ -184,8 +184,8 @@ namespace USerialization
                     output.WriteByteUnchecked((byte)_elementDataType);
 
                     var array = ListHelpers.GetArray(list, out _);
-                    var span = array.AsSpan().Slice(0, count);
-                    output.WriteSpan<T>(span);
+                    var slice = array.AsSpan().Slice(0, count);
+                    output.WriteSpan<T>(slice);
                 }
 
                 output.WriteSizeTrack(sizeTracker);
@@ -198,9 +198,9 @@ namespace USerialization
             }
         }
 
-        public override unsafe void Read(void* fieldAddress, SerializerInput input, object context)
+        public override unsafe void Read(Span<byte> fieldAddress, SerializerInput input, object context)
         {
-            ref var list = ref Unsafe.AsRef<List<T>>(fieldAddress);
+            ref var list = ref Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(fieldAddress));
 
             if (input.BeginReadSize(out var end))
             {

@@ -56,7 +56,7 @@ namespace USerialization
         {
             object item = default;
             var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Read(childAddress, input, context);
+            _dataSerializer.Read(new Span<byte>(childAddress, IntPtr.Size), input, context);
             return item;
         }
 
@@ -70,7 +70,7 @@ namespace USerialization
                 throw new ArgumentException($"{itemType} cannot be casted to {_serializedType}");
 
             var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Read(childAddress, input, context);
+            _dataSerializer.Read(new Span<byte>(childAddress, IntPtr.Size), input, context);
         }
     }
 

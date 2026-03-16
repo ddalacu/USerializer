@@ -76,9 +76,9 @@ namespace USerialization
             _dataType = arrayDataType;
         }
 
-        public override void Write(ReadOnlySpan<byte> fieldAddress, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
-            ref var array = ref Unsafe.As<byte, Array>(ref MemoryMarshal.GetReference(fieldAddress));
+            ref var array = ref Unsafe.As<byte, Array>(ref MemoryMarshal.GetReference(span));
 
             if (array == null)
             {
@@ -120,9 +120,9 @@ namespace USerialization
         }
 
 
-        public override void Read(void* fieldAddress, SerializerInput input, object context)
+        public override void Read(Span<byte> fieldAddress, SerializerInput input, object context)
         {
-            ref var array = ref Unsafe.AsRef<Array>(fieldAddress);
+            ref var array = ref Unsafe.As<byte, Array>(ref MemoryMarshal.GetReference(fieldAddress));
 
             if (input.BeginReadSize(out var end))
             {
@@ -147,7 +147,7 @@ namespace USerialization
 
                             for (var i = 0; i < count; i++)
                             {
-                                serializer.Read(tempAddress, input, context);
+                                serializer.Read(new Span<byte>(tempAddress, _size), input, context);
                                 tempAddress += _size;
                             }
                         }
