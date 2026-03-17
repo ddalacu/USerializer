@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace USerialization
 {
-    public readonly unsafe struct ValueSerializationHelper<T> where T : struct
+    public readonly struct ValueSerializationHelper<T> where T : struct
     {
         private readonly DataSerializer _dataSerializer;
 
@@ -20,24 +20,21 @@ namespace USerialization
         {
             if (output == null)
                 throw new NullReferenceException(nameof(output));
-
-            var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Write(new Span<byte>(childAddress, Unsafe.SizeOf<T>()), output, context);
+            
+            _dataSerializer.Write(SpanUtils.GetByteSpan(ref item), output, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Populate(ref T item, SerializerInput input, object context)
         {
-            var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Read(new Span<byte>(childAddress, Unsafe.SizeOf<T>()), input, context);
+            _dataSerializer.Read(SpanUtils.GetByteSpan(ref item), input, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Deserialize(SerializerInput input, object context)
         {
             T item = default;
-            var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Read(new Span<byte>(childAddress, Unsafe.SizeOf<T>()), input, context);
+            _dataSerializer.Read(SpanUtils.GetByteSpan(ref item), input, context);
             return item;
         }
     }

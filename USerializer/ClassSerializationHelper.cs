@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace USerialization
 {
-    public readonly unsafe struct ClassSerializationHelper
+    public readonly struct ClassSerializationHelper
     {
         private readonly DataSerializer _dataSerializer;
 
@@ -34,9 +33,8 @@ namespace USerialization
             {
                 if (_serializedType.IsAssignableFrom(itemType) == false)
                     throw new ArgumentException($"{itemType} cannot be casted to {_serializedType}");
-
-                var childAddress = Unsafe.AsPointer(ref item);
-                _dataSerializer.Write(new Span<byte>(childAddress, IntPtr.Size), output, context);
+                
+                _dataSerializer.Write(SpanUtils.GetByteSpan(ref item), output, context);
                 return;
             }
 
@@ -55,8 +53,7 @@ namespace USerialization
         public object DeserializeObject(SerializerInput input, object context)
         {
             object item = default;
-            var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Read(new Span<byte>(childAddress, IntPtr.Size), input, context);
+            _dataSerializer.Read(SpanUtils.GetByteSpan(ref item), input, context);
             return item;
         }
 
@@ -68,9 +65,8 @@ namespace USerialization
             var itemType = item.GetType();
             if (_serializedType.IsAssignableFrom(itemType) == false)
                 throw new ArgumentException($"{itemType} cannot be casted to {_serializedType}");
-
-            var childAddress = Unsafe.AsPointer(ref item);
-            _dataSerializer.Read(new Span<byte>(childAddress, IntPtr.Size), input, context);
+            
+            _dataSerializer.Read(SpanUtils.GetByteSpan(ref item), input, context);
         }
     }
 
