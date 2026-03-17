@@ -6,7 +6,7 @@ namespace USerialization
     /// Simply throws a exception when trying to write or read
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public unsafe class NotImplementedCustomSerializer<T> : CustomDataSerializer
+    public class NotImplementedCustomSerializer<T> : CustomDataSerializer
     {
         public override DataType GetDataType() => DataType.None;
 

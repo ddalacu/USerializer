@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
@@ -22,22 +23,23 @@ namespace USerialization
             foreach (var member in members)
                 member.DataSerializer.RootInitialize(serializer);
 
-            _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
+            _memberSerializer = new MemberSerializer(Unsafe.SizeOf<T>(), members, serializer.DataTypesDatabase);
         }
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == Unsafe.SizeOf<T>());
             var track = output.BeginSizeTrack();
-
             _memberSerializer.Write(span, output, context);
-
             output.WriteSizeTrack(track);
         }
 
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == Unsafe.SizeOf<T>());
+
             if (input.BeginReadSize(out var end))
             {
                 _memberSerializer.Read(span, input, context);

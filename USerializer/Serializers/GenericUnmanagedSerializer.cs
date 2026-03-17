@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
@@ -8,9 +9,8 @@ namespace USerialization
 {
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public class GenericUnmanagedSerializer<T, TLogic> : CustomDataSerializer
+    public class GenericUnmanagedSerializer<T> : CustomDataSerializer
         where T : unmanaged
-        where TLogic : IDataSkipper, new()
     {
         private DataType _dataType;
 
@@ -23,9 +23,10 @@ namespace USerialization
         
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == Unsafe.SizeOf<T>());
+            
             ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
             output.Write(item);
-
             // ref var reference = ref MemoryMarshal.GetReference(fieldAddress);
             // T value= Unsafe.As<byte, T>(ref Unsafe.AsRef( reference));
             // Console.WriteLine(fieldAddress.Length==Unsafe.SizeOf<T>());
@@ -34,6 +35,8 @@ namespace USerialization
 
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == Unsafe.SizeOf<T>());
+            
             ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
             item = input.Read<T>();
         }
@@ -41,9 +44,8 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public class GenericUnmanagedArraySerializer<T, TLogic> : CustomDataSerializer
+    public class GenericUnmanagedArraySerializer<T> : CustomDataSerializer
         where T : unmanaged
-        where TLogic : IDataSkipper, new()
     {
         private DataType _elementDataType;
 
@@ -51,6 +53,8 @@ namespace USerialization
         
         public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
+            
             var array = Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(span));
             if (array == null)
             {
@@ -83,6 +87,8 @@ namespace USerialization
 
         public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
+            
             ref var array = ref Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
@@ -111,9 +117,8 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public class GenericUnmanagedListSerializer<T, TLogic> : CustomDataSerializer
+    public class GenericUnmanagedListSerializer<T> : CustomDataSerializer
         where T : unmanaged
-        where TLogic : IDataSkipper, new()
     {
         private DataType _elementDataType;
         

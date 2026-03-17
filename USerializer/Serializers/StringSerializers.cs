@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
@@ -14,6 +15,7 @@ namespace USerialization
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
             ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(span));
 
             if (value == null)
@@ -33,6 +35,7 @@ namespace USerialization
 
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
             ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(span));
 
             var length = input.Read7BitEncodedInt();

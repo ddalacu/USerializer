@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -76,6 +77,8 @@ namespace USerialization
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
+            
             ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
 
             if (obj == null)
@@ -103,6 +106,7 @@ namespace USerialization
 
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
             ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))

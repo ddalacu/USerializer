@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -347,6 +348,8 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
+            
             ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
 
             fixed (byte* objectAddress = &obj.Pinnable)
@@ -359,6 +362,8 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
+            
             ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
 
             fixed (byte* objectAddress = &obj.Pinnable)
@@ -393,6 +398,8 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
+            
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
             var value = _get(instance);
             var ptr = Unsafe.AsPointer(ref value);
@@ -403,6 +410,8 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
+            
             TMember def = default;
             var ptr = Unsafe.AsPointer(ref def);
             _dataSerializer.Read(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), input, context);
@@ -438,6 +447,8 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == Unsafe.SizeOf<T>());
+            
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
 
             var value = _get(ref instance);
@@ -449,6 +460,8 @@ namespace USerialization
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == Unsafe.SizeOf<T>());
+            
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
 
             TMember def = default;

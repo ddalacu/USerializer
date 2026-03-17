@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
@@ -28,7 +29,7 @@ namespace USerialization
 
     [Il2CppSetOption(Option.NullChecks, false)]
     [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-    public sealed unsafe class StructDataSerializer : DataSerializer
+    public sealed class StructDataSerializer : DataSerializer
     {
         private readonly Type _type;
         
@@ -42,13 +43,18 @@ namespace USerialization
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
         }
 
+        private int _stackSize;
+        
         public StructDataSerializer(Type type)
         {
             _type = type;
+            _stackSize= UnsafeUtils.GetStackSize(type);
         }
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == _stackSize);
+            
             var track = output.BeginSizeTrack();
             _fieldsSerializer.Write(span, output, context);
             output.WriteSizeTrack(track);
@@ -56,6 +62,8 @@ namespace USerialization
 
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == _stackSize);
+            
             if (input.BeginReadSize(out var end))
             {
                 _fieldsSerializer.Read(span, input, context);

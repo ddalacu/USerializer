@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Unity.IL2CPP.CompilerServices;
 
@@ -37,15 +38,17 @@ namespace USerialization
         }
     }
 
-    public readonly unsafe struct MemberSerializer
+    public readonly struct MemberSerializer
     {
         public readonly FinalMemberSerializerStruct[] Members;
 
+        private readonly int _size;
+        
         private readonly DataTypesDatabase _dataTypesDatabase;
 
         private readonly byte[] _headerData;
 
-        public MemberSerializer(MemberSerializerStruct[] members, DataTypesDatabase dataTypesDatabase)
+        public MemberSerializer(int size, MemberSerializerStruct[] members, DataTypesDatabase dataTypesDatabase)
         {
             var final = new FinalMemberSerializerStruct[members.Length];
             for (var i = 0; i < members.Length; i++)
@@ -53,6 +56,7 @@ namespace USerialization
 
             Members = final;
 
+            _size = size;
             _dataTypesDatabase = dataTypesDatabase;
             _headerData = CreateHeaderData(Members);
         }
@@ -90,8 +94,10 @@ namespace USerialization
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlySpan<byte> objectAddress, SerializerOutput output, object context)
+        public void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == _size);
+            
             var typeDataFields = Members;
 
             var fieldsLength = typeDataFields.Length;
@@ -101,15 +107,17 @@ namespace USerialization
             for (var index = 0; index < fieldsLength; index++)
             {
                 var fieldData = typeDataFields[index];
-                fieldData.Serializer.Write(objectAddress, output, context);
+                fieldData.Serializer.Write(span, output, context);
             }
         }
 
         [Il2CppSetOption(Option.NullChecks, false)]
         [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Read(Span<byte> objectAddress, SerializerInput input, object context)
+        public void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == _size);
+            
             var fieldDatas = Members;
 
             var fieldCount = input.ReadByte();
@@ -123,15 +131,15 @@ namespace USerialization
                 for (var i = 0; i < fieldCount; i++)
                 {
                     var fieldData = fieldDatas[i];
-                    fieldData.Serializer.Read(objectAddress, input, context);
+                    fieldData.Serializer.Read(span, input, context);
                 }
             }
             else
             {
                 int position = 0;
 
-                var indexes = stackalloc byte[fieldCount];
-                var dataTypes = stackalloc DataType[fieldCount];
+                Span<byte> indexes = stackalloc byte[fieldCount];
+                Span<DataType> dataTypes = stackalloc DataType[fieldCount];
 
                 var fieldsLength = fieldDatas.Length;
 
@@ -186,7 +194,7 @@ namespace USerialization
                     }
 
                     var fieldData = fieldDatas[index];
-                    fieldData.Serializer.Read(objectAddress, input, context);
+                    fieldData.Serializer.Read(span, input, context);
                 }
             }
         }

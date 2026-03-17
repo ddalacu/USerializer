@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.IL2CPP.CompilerServices;
@@ -32,12 +33,13 @@ namespace USerialization
 
             foreach (var member in members)
                 member.DataSerializer.RootInitialize(serializer);
-
-            _memberSerializer = new MemberSerializer(members, serializer.DataTypesDatabase);
+            
+            _memberSerializer = new MemberSerializer(IntPtr.Size, members, serializer.DataTypesDatabase);
         }
 
-        public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
             ref var obj = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
 
             if (obj == null)
@@ -53,8 +55,10 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
+            Debug.Assert(span.Length == IntPtr.Size);
+            
             ref var objectInstance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
