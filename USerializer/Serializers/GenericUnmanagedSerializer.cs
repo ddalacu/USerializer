@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+
     public class GenericUnmanagedSerializer<T> : CustomDataSerializer
         where T : unmanaged
     {
@@ -42,8 +40,6 @@ namespace USerialization
         }
     }
 
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public class GenericUnmanagedArraySerializer<T> : CustomDataSerializer
         where T : unmanaged
     {
@@ -114,9 +110,7 @@ namespace USerialization
             }
         }
     }
-
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    
     public class GenericUnmanagedListSerializer<T> : CustomDataSerializer
         where T : unmanaged
     {

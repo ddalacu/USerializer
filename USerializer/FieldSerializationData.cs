@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
@@ -226,9 +225,7 @@ namespace USerialization
 
             return headerData;
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlySpan<byte> objectAddress, SerializerOutput output, object context)
         {
@@ -245,9 +242,7 @@ namespace USerialization
                 fieldData.DataSerializer.Write(tempSpan, output, context);
             }
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Read(Span<byte> objectAddress, SerializerInput input, object context)
         {

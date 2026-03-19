@@ -19,11 +19,11 @@ namespace USerialization
 
     public class CustomSerializerProvider : ISerializationProvider
     {
-        private readonly Dictionary<Type, Type> _map;
+        private readonly TypeDictionary<Type> _map;
     
         public CustomSerializerProvider(ILogger logger)
         {
-            _map = new Dictionary<Type, Type>(512);
+            _map = new TypeDictionary<Type>(512);
     
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
     

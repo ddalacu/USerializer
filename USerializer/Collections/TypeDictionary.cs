@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
     public sealed class TypeDictionary<TValue>
     {
-        private Type[] _keys;
+        private IntPtr[] _keys;
         private TValue[] _values;
 
         private int _count;
@@ -34,22 +29,24 @@ namespace USerialization
             var expanded = PrimeHelpers.ExpandPrime(capacity);
 
             _rehash = (int)(expanded * 0.75f);
-            _keys = new Type[expanded];
+            _keys = new IntPtr[expanded];
             _values = new TValue[expanded];
         }
 
-        public bool Add(Type key, TValue value)
+        public bool Add(Type type, TValue value)
         {
-            var hash = RuntimeHelpers.GetHashCode(key);
+            IntPtr handle = type.TypeHandle.Value;
+            
+            var hash = handle.GetHashCode();
             var capacity = _keys.Length;
             int position = (hash & 0x7FFFFFFF) % capacity;
 
             assign:
             var sampledKey = _keys[position];
 
-            if (sampledKey != null)
+            if (sampledKey != default)
             {
-                if (sampledKey == key) //already added
+                if (sampledKey == handle) //already added
                 {
                     _values[position] = value;
                     return false;
@@ -62,7 +59,7 @@ namespace USerialization
             }
 
             _count++;
-            _keys[position] = key;
+            _keys[position] = handle;
             _values[position] = value;
 
             if (_count != _rehash)
@@ -77,7 +74,7 @@ namespace USerialization
         {
             int newCapacity = PrimeHelpers.ExpandPrime(capacity);
 
-            var expandedKeys = new Type[newCapacity];
+            var expandedKeys = new IntPtr[newCapacity];
             var expandedValues = new TValue[newCapacity];
 
             int rehashed = 0;
@@ -85,12 +82,12 @@ namespace USerialization
             {
                 var existingKey = _keys[i];
 
-                if (existingKey != null)
+                if (existingKey != default)
                 {
-                    var hash = RuntimeHelpers.GetHashCode(existingKey);
+                    var hash = existingKey.GetHashCode();
 
-                    int newPosition = (hash& 0x7FFFFFFF) % newCapacity;
-                    while (expandedKeys[newPosition] != null)
+                    int newPosition = (hash & 0x7FFFFFFF) % newCapacity;
+                    while (expandedKeys[newPosition] != default)
                     {
                         newPosition++;
                         if (newPosition == newCapacity)
@@ -113,28 +110,20 @@ namespace USerialization
             _values = expandedValues;
         }
 
-        public IEnumerable<TValue> Values()
+        public bool TryGetValue(Type type, out TValue value)
         {
-            for (var index = 0; index < _keys.Length; index++)
-            {
-                var type = _keys[index];
-                if (type != null)
-                    yield return _values[index];
-            }
-        }
-
-        public bool TryGetValue(Type key, out TValue value)
-        {
-            var hash = RuntimeHelpers.GetHashCode(key);
+            IntPtr handle = type.TypeHandle.Value;
+            
+            var hash = handle.GetHashCode();
             var capacity = _keys.Length;
             int position = (hash & 0x7FFFFFFF) % capacity;
 
             assign:
             var sampledKey = _keys[position];
 
-            while (sampledKey != null)
+            while (sampledKey != default)
             {
-                if (sampledKey == key) //already added
+                if (sampledKey == handle) //already added
                 {
                     value = _values[position];
                     return true;
@@ -150,29 +139,6 @@ namespace USerialization
             return false;
         }
 
-        public bool ContainsKey(Type key)
-        {
-            var hash = RuntimeHelpers.GetHashCode(key);
-            var capacity = _keys.Length;
-            int position = (hash& 0x7FFFFFFF) % capacity;
-
-            assign:
-            var sampledKey = _keys[position];
-
-            while (sampledKey != null)
-            {
-                if (sampledKey == key) //already added
-                    return true;
-
-                position++;
-                if (position == capacity)
-                    position = 0;
-                goto assign;
-            }
-
-            return false;
-        }
-
         public void Clear()
         {
             if (_count > 0)
@@ -182,7 +148,5 @@ namespace USerialization
                 _count = 0;
             }
         }
-
     }
-
 }

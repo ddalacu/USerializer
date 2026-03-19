@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
@@ -30,8 +29,7 @@ namespace USerialization
             _keys = (IntPtr*)Marshal.AllocHGlobal(size);
             Unsafe.InitBlockUnaligned(_keys, 0, (uint)size);
         }
-
-        [Il2CppSetOption(Option.NullChecks, false), Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public bool Insert(IntPtr key)
         {
             if (key == IntPtr.Zero)
@@ -96,8 +94,7 @@ namespace USerialization
 
             return true;
         }
-
-        [Il2CppSetOption(Option.NullChecks, false), Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public bool Contains(IntPtr key)
         {
             if (key == IntPtr.Zero)

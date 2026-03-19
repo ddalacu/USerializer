@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
@@ -297,16 +296,12 @@ namespace USerialization
             _stackSize = UnsafeUtils.GetStackSize(fieldInfo.FieldType);
             _dataSerializer = dataSerializer;
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             _dataSerializer.Write(span.Slice(_fieldOffset, _stackSize), output, context);
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             _dataSerializer.Read(span.Slice(_fieldOffset, _stackSize), input, context);
@@ -343,9 +338,7 @@ namespace USerialization
             _stackSize = UnsafeUtils.GetStackSize(fieldInfo.FieldType);
             _dataSerializer = dataSerializer;
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
@@ -357,9 +350,7 @@ namespace USerialization
                 _dataSerializer.Write(new Span<byte>(objectAddress + _fieldOffset, _stackSize), output, context);
             }
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
@@ -393,9 +384,7 @@ namespace USerialization
             _get = get;
             _dataSerializer = dataSerializer;
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
@@ -405,9 +394,7 @@ namespace USerialization
             var ptr = Unsafe.AsPointer(ref value);
             _dataSerializer.Write(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), output, context);
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
@@ -442,9 +429,7 @@ namespace USerialization
             _get = get;
             _dataSerializer = dataSerializer;
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
@@ -455,9 +440,7 @@ namespace USerialization
             var ptr = Unsafe.AsPointer(ref value);
             _dataSerializer.Write(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), output, context);
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
@@ -506,9 +489,7 @@ namespace USerialization
             _getElementDelegate = getElementDelegate;
             _setElementDelegate = setElementDelegate;
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
@@ -536,9 +517,7 @@ namespace USerialization
             }
             output.WriteSizeTrack(sizeTracker);
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));

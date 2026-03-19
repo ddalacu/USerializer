@@ -5,11 +5,11 @@ namespace USerialization
 {
     public class PrimitivesSerializerProvider : ISerializationProvider
     {
-        private readonly Dictionary<Type, CustomDataSerializer> _map;
+        private readonly TypeDictionary<CustomDataSerializer> _map;
         
         public PrimitivesSerializerProvider()
         {
-            _map = new Dictionary<Type, CustomDataSerializer>(64);
+            _map = new TypeDictionary<CustomDataSerializer>(64);
             
             _map.Add(typeof(double), new GenericUnmanagedSerializer<double>(DataType.Double));
             _map.Add(typeof(double[]), new GenericUnmanagedArraySerializer<double>());

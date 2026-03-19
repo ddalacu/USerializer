@@ -3,8 +3,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
-using System.Threading;
-using Unity.IL2CPP.CompilerServices;
 using USerialization;
 
 namespace USerializerTests
@@ -45,9 +43,7 @@ namespace USerializerTests
             return true;
         }
     }
-
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    
     public sealed unsafe class CustomClassDataSerializer : DataSerializer
     {
         private readonly Type _type;

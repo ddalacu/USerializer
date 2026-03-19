@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using System.Threading;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
@@ -40,9 +35,7 @@ namespace USerialization
             return true;
         }
     }
-
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    
     public sealed unsafe class ClassDataSerializer : DataSerializer
     {
         private FieldsSerializer _fieldsSerializer;
@@ -117,7 +110,7 @@ namespace USerialization
                 }
 
                 ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
-                fixed (byte* objectAddress = &pinnable.Pinnable)
+                fixed (byte* objectAddress = &pinnable.Pinnable)        
                 {
                     _fieldsSerializer.Read(new Span<byte>(objectAddress, _heapSize), input, context);
                 }

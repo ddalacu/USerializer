@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
@@ -90,9 +89,7 @@ namespace USerialization
 
             return headerData;
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
@@ -110,9 +107,7 @@ namespace USerialization
                 fieldData.Serializer.Write(span, output, context);
             }
         }
-
-        [Il2CppSetOption(Option.NullChecks, false)]
-        [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Read(Span<byte> span, SerializerInput input, object context)
         {

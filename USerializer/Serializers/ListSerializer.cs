@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using Unity.IL2CPP.CompilerServices;
 
 namespace USerialization
 {
@@ -33,10 +31,7 @@ namespace USerialization
             return true;
         }
     }
-
-
-    [Il2CppSetOption(Option.NullChecks, false)]
-    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    
     public sealed unsafe class ListDataSerializer : DataSerializer
     {
         private readonly Type _elementType;
