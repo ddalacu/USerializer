@@ -32,7 +32,7 @@ jobs:
     needs: TestAndBuild
     runs-on: ubuntu-latest 
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: UserializerPublished
         path: PublishDirectory
