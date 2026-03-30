@@ -91,7 +91,8 @@ namespace USerialization
 
             fixed (byte* objectAddress = &obj.Pinnable)
             {
-                _fieldsSerializer.Write(new Span<byte>(objectAddress, _heapSize), output, context);
+                var readOnlySpan = new Span<byte>(objectAddress, _heapSize);
+                _fieldsSerializer.Write(readOnlySpan, output, context);
             }
 
             output.WriteSizeTrack(track);

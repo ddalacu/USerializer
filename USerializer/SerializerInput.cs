@@ -13,7 +13,7 @@ namespace USerialization
     {
         private Stream _stream;
 
-        private byte* _buffer;
+        private byte[] _buffer;
 
         private int _bufferCapacity;
 
@@ -37,7 +37,7 @@ namespace USerialization
 
         public SerializerInput(int capacity)
         {
-            _buffer = (byte*)Marshal.AllocHGlobal(capacity).ToPointer();
+            _buffer = new byte[capacity];
             _bufferCapacity = capacity;
 
             _bufferPosition = -1;
@@ -144,7 +144,11 @@ namespace USerialization
         public T Read<T>() where T : unmanaged
         {
             EnsureNext(sizeof(T));
-            var value = Unsafe.ReadUnaligned<T>(_buffer + _bufferPosition);
+            T value;
+            fixed (byte* bPtr = &_buffer[_bufferPosition])
+            {
+                value = Unsafe.ReadUnaligned<T>(bPtr);
+            }
             _bufferPosition += sizeof(T);
             return value;
         }
@@ -209,7 +213,7 @@ namespace USerialization
 
             var byteCount = count * sizeof(T);
             EnsureNext(byteCount);
-            var span = new ReadOnlySpan<T>(_buffer + _bufferPosition, count);
+            var span = MemoryMarshal.Cast<byte, T>(_buffer.AsSpan(_bufferPosition, byteCount));
             _bufferPosition += byteCount;
             return span;
         }
@@ -223,7 +227,10 @@ namespace USerialization
                 throw new Exception("Count is negative!");
 #endif
 
-            Unsafe.CopyBlockUnaligned(readPtr, _buffer + _bufferPosition, (uint)count);
+            fixed (byte* bPtr = _buffer)
+            {
+                Unsafe.CopyBlockUnaligned(readPtr, bPtr + _bufferPosition, (uint)count);
+            }
 
             _bufferPosition += count;
         }
@@ -265,12 +272,10 @@ namespace USerialization
             {
                 var expanded = count * 2;
 
-                var newBuffer = (byte*)Marshal.AllocHGlobal(expanded).ToPointer();
+                var newBuffer = new byte[expanded];
 
                 if (unusedBytes > 0)
-                    Unsafe.CopyBlockUnaligned(newBuffer, _buffer + _bufferPosition, (uint)unusedBytes);
-
-                Marshal.FreeHGlobal(new IntPtr(_buffer));
+                    _buffer.AsSpan(_bufferPosition, unusedBytes).CopyTo(newBuffer);
 
                 _buffer = newBuffer;
                 _bufferCapacity = expanded;
@@ -278,12 +283,12 @@ namespace USerialization
             else
             {
                 if (unusedBytes > 0)
-                    Unsafe.CopyBlockUnaligned(_buffer, _buffer + _bufferPosition, (uint)unusedBytes);
+                    _buffer.AsSpan(_bufferPosition, unusedBytes).CopyTo(_buffer);
             }
 
             _bufferPosition = 0;
 
-            var toRead = new Span<byte>(_buffer + unusedBytes, _bufferCapacity - unusedBytes);
+            var toRead = _buffer.AsSpan(unusedBytes, _bufferCapacity - unusedBytes);
 
             var read = ReadInSpan(toRead);
             _streamPosition += read;
@@ -295,10 +300,6 @@ namespace USerialization
 
         private void InternalDispose()
         {
-            if (_buffer == null)
-                return;
-
-            Marshal.FreeHGlobal(new IntPtr(_buffer));
             _buffer = null;
         }
 

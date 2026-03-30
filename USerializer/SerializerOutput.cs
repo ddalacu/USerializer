@@ -16,9 +16,9 @@ namespace USerialization
     {
     }
 
-    public sealed unsafe class SerializerOutput : IDisposable
+    public sealed class SerializerOutput
     {
-        private byte* _buffer;
+        private byte[] _buffer;
 
         private int _bufferSize;
 
@@ -26,7 +26,7 @@ namespace USerialization
 
         public SerializerOutput(int capacity)
         {
-            _buffer = (byte*)Marshal.AllocHGlobal(capacity).ToPointer();
+            _buffer = new byte[capacity];
             _bufferSize = capacity;
             _position = 0;
         }
@@ -42,12 +42,7 @@ namespace USerialization
         private void Expand()
         {
             var capacity = _bufferSize * 2;
-            var expanded = (byte*)Marshal.AllocHGlobal(capacity).ToPointer();
-
-            Unsafe.CopyBlock(expanded, _buffer, (uint)_position);
-            Marshal.FreeHGlobal(new IntPtr(_buffer));
-
-            _buffer = expanded;
+            Array.Resize(ref _buffer, capacity);
             _bufferSize = capacity;
         }
 
@@ -56,7 +51,7 @@ namespace USerialization
         /// </summary>
         public void Flush(Stream stream)
         {
-            var span = new ReadOnlySpan<byte>(_buffer, _position);
+            var span = new ReadOnlySpan<byte>(_buffer, 0, _position);
             stream.Write(span);
             _position = 0;
         }
@@ -101,16 +96,16 @@ namespace USerialization
         public void WriteNull()
         {
             EnsureNext(4);
-            Unsafe.WriteUnaligned(_buffer + _position, (int)-1);
+            Unsafe.WriteUnaligned(ref _buffer[_position], (int)-1);
             _position += 4;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
+            EnsureNext(span.Length);
             var byteSpan = MemoryMarshal.AsBytes(span);
-            fixed (byte* ptr = &byteSpan.GetPinnableReference())
-                Unsafe.CopyBlockUnaligned(_buffer + _position, ptr, (uint)byteSpan.Length);
+            byteSpan.CopyTo(_buffer.AsSpan(_position));
             _position += byteSpan.Length;
         }
 
@@ -135,36 +130,16 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write<T>(T value) where T : unmanaged
         {
-            EnsureNext(sizeof(T));
-            Unsafe.WriteUnaligned(_buffer + _position, value);
-            _position += sizeof(T);
+            EnsureNext(Unsafe.SizeOf<T>());
+            Unsafe.WriteUnaligned(ref _buffer[_position], value);
+            _position += Unsafe.SizeOf<T>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUnchecked<T>(T value) where T : unmanaged
         {
-            Unsafe.WriteUnaligned(_buffer + _position, value);
-            _position += sizeof(T);
-        }
-
-        private void InternalDispose()
-        {
-            if (_buffer == null)
-                return;
-
-            Marshal.FreeHGlobal(new IntPtr(_buffer));
-            _buffer = null;
-        }
-
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-            InternalDispose();
-        }
-
-        ~SerializerOutput()
-        {
-            InternalDispose();
+            Unsafe.WriteUnaligned(ref _buffer[_position], value);
+            _position += Unsafe.SizeOf<T>();
         }
     }
 }
