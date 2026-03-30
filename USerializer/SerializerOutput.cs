@@ -110,10 +110,14 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
-            EnsureNext(span.Length);
-            var byteSpan = MemoryMarshal.AsBytes(span);
-            byteSpan.CopyTo(_buffer.AsSpan(_position));
-            _position += byteSpan.Length;
+            var byteSpanLength = span.Length * Unsafe.SizeOf<T>();
+            EnsureNext(byteSpanLength);
+            
+            ref byte src = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
+            ref byte dest = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), _position);
+
+            Unsafe.CopyBlockUnaligned(ref dest, ref src, (uint)byteSpanLength);
+            _position += byteSpanLength;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
