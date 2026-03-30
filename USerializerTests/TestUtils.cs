@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -85,7 +86,7 @@ namespace USerializerTests
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
 
-            var output = new SerializerOutput(2048);
+            using var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             valueSerializer.Serialize(ref value, output, null);
             output.Flush(initialSerialize);
 
@@ -95,7 +96,7 @@ namespace USerializerTests
 
             T deserialize = default;
 
-            var serializerInput = new SerializerInput(2048, initialSerialize);
+            using var serializerInput = new SerializerInput(2048, initialSerialize, ArrayPool<byte>.Shared);
             valueSerializer.Populate(ref deserialize, serializerInput, null);
             serializerInput.FinishRead();
 
@@ -103,20 +104,20 @@ namespace USerializerTests
 
             var secondSerialize = new MemoryStream();
 
-            var output2 = new SerializerOutput(2048);
+            using var output2 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             valueSerializer.Serialize(ref deserialize, output2, null);
             output2.Flush(secondSerialize);
 
             var ob = default(T);
             secondSerialize.Position = 0;
 
-            var serializerInput2 = new SerializerInput(2048, secondSerialize);
+            using var serializerInput2 = new SerializerInput(2048, secondSerialize, ArrayPool<byte>.Shared);
             valueSerializer.Populate(ref ob, serializerInput2, null);
             serializerInput2.FinishRead();
 
             var reserialize = new MemoryStream();
 
-            var output3 = new SerializerOutput(2048);
+            using var output3 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             valueSerializer.Serialize(ref ob, output3, null);
             output3.Flush(reserialize);
 

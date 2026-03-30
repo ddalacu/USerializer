@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -545,7 +546,7 @@ namespace USerializerTests
 
             var structSer=new ClassSerializationHelper(data, typeof(BaseDog));
             var stream = new MemoryStream();
-            var output = new SerializerOutput(2048);
+            using var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
 
             var baseDog = new BaseDog();
             var pechinez = new Pechinez();
@@ -562,7 +563,7 @@ namespace USerializerTests
             output.Flush(stream);
             stream.Position = 0;
 
-            var input = new SerializerInput(2048, stream);
+            using var input = new SerializerInput(2048, stream, ArrayPool<byte>.Shared);
             structSer.PopulateObject(baseDog, input, null);
             structSer.PopulateObject(pechinez, input, null);
             Assert.Throws<ArgumentException>(() => { structSer.PopulateObject(animal, input, null); });
@@ -570,10 +571,10 @@ namespace USerializerTests
             
             {
                 stream.Position = 0;
-                input = new SerializerInput(2048, stream);
-                var instance = structSer.DeserializeObject(input, null);
+                using var input2 = new SerializerInput(2048, stream, ArrayPool<byte>.Shared);
+                var instance = structSer.DeserializeObject(input2, null);
                 Assert.True(instance is BaseDog);
-                input.FinishRead();
+                input2.FinishRead();
             }
 
             //var result = structSer.Deserialize<Animal>(input, null);

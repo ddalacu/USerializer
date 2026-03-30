@@ -2,6 +2,7 @@
 using System;
 #endif
 using System;
+using System.Buffers;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -16,7 +17,7 @@ namespace USerialization
     {
     }
 
-    public sealed class SerializerOutput
+    public sealed class SerializerOutput : IDisposable
     {
         private byte[] _buffer;
 
@@ -24,10 +25,13 @@ namespace USerialization
 
         private int _position;
 
-        public SerializerOutput(int capacity)
+        private readonly ArrayPool<byte> _pool;
+
+        public SerializerOutput(int capacity, ArrayPool<byte> pool)
         {
-            _buffer = new byte[capacity];
-            _bufferSize = capacity;
+            _pool = pool;
+            _buffer = _pool.Rent(capacity);
+            _bufferSize = _buffer.Length;
             _position = 0;
         }
 
@@ -36,14 +40,17 @@ namespace USerialization
         {
             var size = _position + count;
             if (size > _bufferSize)
-                Expand();
+                Expand(size);
         }
 
-        private void Expand()
+        private void Expand(int minCapacity)
         {
-            var capacity = _bufferSize * 2;
-            Array.Resize(ref _buffer, capacity);
-            _bufferSize = capacity;
+            var capacity = Math.Max(_bufferSize * 2, minCapacity);
+            var newBuffer = _pool.Rent(capacity);
+            Array.Copy(_buffer, 0, newBuffer, 0, _position);
+            _pool.Return(_buffer);
+            _buffer = newBuffer;
+            _bufferSize = _buffer.Length;
         }
 
         /// <summary>
@@ -140,6 +147,26 @@ namespace USerialization
         {
             Unsafe.WriteUnaligned(ref _buffer[_position], value);
             _position += Unsafe.SizeOf<T>();
+        }
+
+        private void InternalDispose()
+        {
+            if (_buffer != null)
+            {
+                _pool.Return(_buffer);
+                _buffer = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+            InternalDispose();
+        }
+
+        ~SerializerOutput()
+        {
+            InternalDispose();
         }
     }
 }

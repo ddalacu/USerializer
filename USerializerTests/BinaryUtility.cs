@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -197,7 +198,7 @@ namespace USerializerTests
 
             var serializer = new ClassSerializationHelper(data, obj.GetType());
 
-            var output = new SerializerOutput(bufferSize);
+            using var output = new SerializerOutput(bufferSize, ArrayPool<byte>.Shared);
             serializer.SerializeObject(obj, output, context);
             output.Flush(stream);
             return true;
@@ -223,7 +224,7 @@ namespace USerializerTests
 
             var serializer = new ClassSerializationHelper(data, typeof(T));
 
-            var serializerInput = new SerializerInput(bufferSize, stream);
+            using var serializerInput = new SerializerInput(bufferSize, stream, ArrayPool<byte>.Shared);
             if (result == null)
             {
                 result = (T)serializer.DeserializeObject(serializerInput, context);

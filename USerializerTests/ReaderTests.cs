@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using NUnit.Framework;
 using USerialization;
@@ -17,7 +18,7 @@ public class ReaderTests
         });
         stream.Position = 0;
 
-        var input = new SerializerInput(1024, stream);
+        using var input = new SerializerInput(1024, stream, ArrayPool<byte>.Shared);
 
         input.Read<int>();
         input.Read<int>();

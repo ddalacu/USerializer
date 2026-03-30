@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -153,8 +154,8 @@ namespace PerformanceTests
             _uSerializer = new USerializer(new UnitySerializationPolicy(), serializationProviders,
                 new DataTypesDatabase(), consoleLogger);
 
-            _output = new SerializerOutput(2048 * 10);
-            _input = new SerializerInput(2048 * 10);
+            _output = new SerializerOutput(2048 * 10, ArrayPool<byte>.Shared);
+            _input = new SerializerInput(2048 * 10, ArrayPool<byte>.Shared);
 
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
             {

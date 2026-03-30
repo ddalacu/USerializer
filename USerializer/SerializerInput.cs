@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -20,6 +21,9 @@ namespace USerialization
         private int _bufferPosition;
 
         private int _bufferCount;
+
+        private readonly ArrayPool<byte> _pool;
+
         public Stream Stream => _stream;
 
         private long _streamPosition;
@@ -35,16 +39,17 @@ namespace USerialization
             }
         }
 
-        public SerializerInput(int capacity)
+        public SerializerInput(int capacity, ArrayPool<byte> pool)
         {
-            _buffer = new byte[capacity];
-            _bufferCapacity = capacity;
+            _pool = pool;
+            _buffer = _pool.Rent(capacity);
+            _bufferCapacity = _buffer.Length;
 
             _bufferPosition = -1;
             _bufferCount = -1;
         }
 
-        public SerializerInput(int capacity, Stream stream) : this(capacity)
+        public SerializerInput(int capacity, Stream stream, ArrayPool<byte> pool) : this(capacity, pool)
         {
             _stream = stream;
             _streamPosition = stream.Position;
@@ -270,15 +275,16 @@ namespace USerialization
 
             if (count > _bufferCapacity)
             {
-                var expanded = count * 2;
+                var expanded = Math.Max(_bufferCapacity * 2, count + unusedBytes);
 
-                var newBuffer = new byte[expanded];
+                var newBuffer = _pool.Rent(expanded);
 
                 if (unusedBytes > 0)
                     _buffer.AsSpan(_bufferPosition, unusedBytes).CopyTo(newBuffer);
 
+                _pool.Return(_buffer);
                 _buffer = newBuffer;
-                _bufferCapacity = expanded;
+                _bufferCapacity = _buffer.Length;
             }
             else
             {
@@ -300,7 +306,11 @@ namespace USerialization
 
         private void InternalDispose()
         {
-            _buffer = null;
+            if (_buffer != null)
+            {
+                _pool.Return(_buffer);
+                _buffer = null;
+            }
         }
 
         public void Dispose()

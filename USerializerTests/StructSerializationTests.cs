@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
@@ -197,7 +198,7 @@ namespace USerializerTests
             
             var stream = new MemoryStream();
 
-            var output = new SerializerOutput(2048);
+            using var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             
             structSer.Serialize(ref initial, output, null);
 
@@ -207,7 +208,7 @@ namespace USerializerTests
             
             Assert.True(stream.Length > 0);
 
-            var input = new SerializerInput(2048, stream);
+            using var input = new SerializerInput(2048, stream, ArrayPool<byte>.Shared);
             var result = structSer.Deserialize(input, null);
             input.FinishRead();
             
