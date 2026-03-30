@@ -2,11 +2,11 @@
 
 namespace USerialization
 {
-    public abstract unsafe class DataSerializer
+    public abstract class DataSerializer
     {
         public bool Initialized { get; private set; }
 
-        public abstract DataType GetDataType();
+        public abstract DataType DataType { get; }
 
         public abstract void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context);
 
@@ -21,7 +21,7 @@ namespace USerialization
             
             Initialize(serializer);
 
-            var dataType = GetDataType();
+            var dataType = DataType;
 
             if (dataType == DataType.None)
                 serializer.Logger.Error($"Data type is none {this}, something went wrong!");

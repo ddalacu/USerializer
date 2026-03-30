@@ -9,7 +9,7 @@ namespace USerialization
     {
         private MemberSerializer _memberSerializer;
 
-        public override DataType GetDataType() => DataType.Object;
+        public override DataType DataType => DataType.Object;
 
         protected override void Initialize(USerializer serializer)
         {

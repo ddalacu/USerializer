@@ -7,7 +7,7 @@ namespace USerialization
 {
     public sealed class StringSerializer : CustomDataSerializer
     {
-        public override DataType GetDataType() => DataType.String;
+        public override DataType DataType => DataType.String;
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {

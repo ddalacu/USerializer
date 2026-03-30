@@ -8,7 +8,7 @@ namespace USerialization
     /// <typeparam name="T"></typeparam>
     public class NotImplementedCustomSerializer<T> : CustomDataSerializer
     {
-        public override DataType GetDataType() => DataType.None;
+        public override DataType DataType => DataType.None;
 
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {

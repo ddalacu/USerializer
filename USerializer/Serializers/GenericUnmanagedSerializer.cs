@@ -12,7 +12,7 @@ namespace USerialization
     {
         private DataType _dataType;
 
-        public override DataType GetDataType() => _dataType;
+        public override DataType DataType => _dataType;
 
         public GenericUnmanagedSerializer(DataType dataType)
         {
@@ -45,7 +45,7 @@ namespace USerialization
     {
         private DataType _elementDataType;
 
-        public override DataType GetDataType() => DataType.Array;
+        public override DataType DataType => DataType.Array;
         
         public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
@@ -116,7 +116,7 @@ namespace USerialization
     {
         private DataType _elementDataType;
         
-        public override DataType GetDataType() => DataType.Array;
+        public override DataType DataType => DataType.Array;
 
         public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {

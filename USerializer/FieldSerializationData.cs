@@ -19,7 +19,7 @@ namespace USerialization
         public FieldMetaData(string fieldName, string[] alternateFieldNames, FieldInfo info,
             DataSerializer serializationMethods)
         {
-            DataType = serializationMethods.GetDataType();
+            DataType = serializationMethods.DataType;
 
             if (DataType == DataType.None)
                 throw new Exception();

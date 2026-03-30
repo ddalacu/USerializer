@@ -283,7 +283,7 @@ namespace USerialization
 
         private int _stackSize;
 
-        public override DataType GetDataType() => _dataSerializer.GetDataType();
+        public override DataType DataType => _dataSerializer.DataType;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -316,7 +316,7 @@ namespace USerialization
 
         private int _stackSize;
 
-        public override DataType GetDataType() => _dataSerializer.GetDataType();
+        public override DataType DataType => _dataSerializer.DataType;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -370,7 +370,7 @@ namespace USerialization
         private readonly GetPropertyDelegate<T, TMember> _get;
 
         private DataSerializer _dataSerializer;
-        public override DataType GetDataType() => _dataSerializer.GetDataType();
+        public override DataType DataType => _dataSerializer.DataType;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -416,7 +416,7 @@ namespace USerialization
         private readonly SetDelegate _set;
         private readonly GetDelegate _get;
         private DataSerializer _dataSerializer;
-        public override DataType GetDataType() => _dataSerializer.GetDataType();
+        public override DataType DataType => _dataSerializer.DataType;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -470,7 +470,7 @@ namespace USerialization
 
         public delegate void SetLengthDelegate(ref T obj, int length);
 
-        public override DataType GetDataType() => DataType.Array;
+        public override DataType DataType => DataType.Array;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -505,7 +505,7 @@ namespace USerialization
             var sizeTracker = output.BeginSizeTrack();
             {
                 output.EnsureNext(6);
-                output.WriteByteUnchecked((byte)_elementSerializer.GetDataType());
+                output.WriteByteUnchecked((byte)_elementSerializer.DataType);
                 output.Write7BitEncodedIntUnchecked(count);
 
                 for (var index = 0; index < count; index++)
@@ -530,7 +530,7 @@ namespace USerialization
 
                 _setLengthDelegate(ref instance, count);
 
-                if (type == _elementSerializer.GetDataType())
+                if (type == _elementSerializer.DataType)
                 {
                     for (var index = 0; index < count; index++)
                     {

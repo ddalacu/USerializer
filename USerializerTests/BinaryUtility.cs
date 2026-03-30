@@ -43,7 +43,7 @@ namespace USerializerTests
             return true;
         }
     }
-    
+
     public sealed unsafe class CustomClassDataSerializer : DataSerializer
     {
         private readonly Type _type;
@@ -51,10 +51,10 @@ namespace USerializerTests
         private FieldsSerializer _fieldsSerializer;
 
         private readonly bool _haveCtor;
-        
+
         private readonly int _dataSize;
 
-        public override DataType GetDataType() => DataType.Object;
+        public override DataType DataType => DataType.Object;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -192,8 +192,10 @@ namespace USerializerTests
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            if (_uSerializer.TryGetClassHelper(out var serializer, obj.GetType()) == false)
+            if (_uSerializer.TryGetDataSerializer(obj.GetType(), out var data, true) == false)
                 return false;
+
+            var serializer = new ClassSerializationHelper(data, obj.GetType());
 
             var output = new SerializerOutput(bufferSize);
             serializer.SerializeObject(obj, output, context);
@@ -216,8 +218,10 @@ namespace USerializerTests
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            if (_uSerializer.TryGetClassHelper(out var serializer, typeof(T)) == false)
+            if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
                 return false;
+
+            var serializer = new ClassSerializationHelper(data, typeof(T));
 
             var serializerInput = new SerializerInput(bufferSize, stream);
             if (result == null)

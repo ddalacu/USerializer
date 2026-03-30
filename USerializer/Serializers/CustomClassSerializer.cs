@@ -13,7 +13,7 @@ namespace USerialization
 
         private DataType _dataType;
 
-        public override DataType GetDataType() => DataType.Object;
+        public override DataType DataType => DataType.Object;
 
         protected CustomClassSerializer()
         {

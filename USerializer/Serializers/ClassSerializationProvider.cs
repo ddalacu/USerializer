@@ -42,7 +42,7 @@ namespace USerialization
 
         private readonly int _heapSize;
 
-        public override DataType GetDataType() => DataType.Object;
+        public override DataType DataType => DataType.Object;
 
         protected override void Initialize(USerializer serializer)
         {
@@ -68,6 +68,8 @@ namespace USerialization
 
         private const int MaxStack = 32;
 
+        
+        
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);

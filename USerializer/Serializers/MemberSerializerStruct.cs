@@ -19,7 +19,7 @@ namespace USerialization
 
             Serializer = dataSerializer;
 
-            var data = dataSerializer.GetDataType();
+            var data = dataSerializer.DataType;
             if (data == DataType.None)
                 throw new Exception();
         }
@@ -79,7 +79,7 @@ namespace USerialization
                 headerData[position++] = (byte)(hash >> 16);
                 headerData[position++] = (byte)(hash >> 24);
 
-                var dataType = fieldData.Serializer.GetDataType();
+                var dataType = fieldData.Serializer.DataType;
 
                 headerData[position++] = (byte)dataType;
 
@@ -153,7 +153,7 @@ namespace USerialization
 
                         if (field == fieldData.Hash)
                         {
-                            if (type == fieldData.Serializer.GetDataType())
+                            if (type == fieldData.Serializer.DataType)
                             {
                                 indexes[i] = (byte)searchIndex;
                                 deserialized = true;

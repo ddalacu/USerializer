@@ -106,7 +106,7 @@ namespace PerformanceTests
         public string[] GetAlternateNames(FieldInfo fieldInfo)
         {
             var formerly =
-                (FormerlySerializedAsAttribute[]) Attribute.GetCustomAttributes(fieldInfo,
+                (FormerlySerializedAsAttribute[])Attribute.GetCustomAttributes(fieldInfo,
                     typeof(FormerlySerializedAsAttribute));
 
             var length = formerly.Length;
@@ -156,8 +156,12 @@ namespace PerformanceTests
             _output = new SerializerOutput(2048 * 10);
             _input = new SerializerInput(2048 * 10);
 
-            if (_uSerializer.TryGetClassHelper(out _serializer, typeof(T)) == false)
+            if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
+            {
                 throw new Exception($"Cannot serialize {typeof(T)}");
+            }
+
+            _serializer = new ClassSerializationHelper(data, typeof(T));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

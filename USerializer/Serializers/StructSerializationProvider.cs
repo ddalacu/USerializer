@@ -32,7 +32,7 @@ namespace USerialization
         
         private FieldsSerializer _fieldsSerializer;
 
-        public override DataType GetDataType() => DataType.Object;
+        public override DataType DataType => DataType.Object;
 
         protected override void Initialize(USerializer serializer)
         {

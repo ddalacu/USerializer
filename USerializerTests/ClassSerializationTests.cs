@@ -540,9 +540,10 @@ namespace USerializerTests
         [Test]
         public void SerializeDeserializeTypes()
         {
-            if (BinaryUtility.USerializer.TryGetClassHelper(out var structSer, typeof(BaseDog)) == false)
+            if (BinaryUtility.USerializer.TryGetDataSerializer(typeof(BaseDog), out var data, true) == false)
                 throw new Exception("Cannot get data serialzier!");
 
+            var structSer=new ClassSerializationHelper(data, typeof(BaseDog));
             var stream = new MemoryStream();
             var output = new SerializerOutput(2048);
 

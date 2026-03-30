@@ -42,7 +42,7 @@ namespace USerialization
 
         private readonly Type _fieldType;
         
-        public override DataType GetDataType() => DataType.Array;
+        public override DataType DataType => DataType.Array;
 
         private DataType _elementDataType;
 
@@ -50,7 +50,7 @@ namespace USerialization
         {
             _elementSerializer.RootInitialize(serializer);
 
-            _elementDataType = _elementSerializer.GetDataType();
+            _elementDataType = _elementSerializer.DataType;
 
             if (_elementDataType == DataType.None)
             {
