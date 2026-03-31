@@ -114,9 +114,8 @@ namespace USerialization
             EnsureNext(byteSpanLength);
             
             ref byte src = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
-            ref byte dest = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), _position);
 
-            Unsafe.CopyBlockUnaligned(ref dest, ref src, (uint)byteSpanLength);
+            Unsafe.CopyBlockUnaligned(ref _buffer[_position], ref src, (uint)byteSpanLength);
             _position += byteSpanLength;
         }
 

@@ -214,7 +214,7 @@ namespace USerializerTests
         /// <param name="bufferSize"></param>
         /// <returns>false if type is not serializable</returns>
         public static bool TryDeserialize<T>(Stream stream, ref T result, object context = null,
-            int bufferSize = 4096 * 2) where T : class
+            int bufferSize = 512) where T : class
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
