@@ -200,28 +200,25 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadBytes(Span<byte> readPtr)
+        public void ReadSpan(Span<byte> readPtr)
         {
             EnsureNext(readPtr.Length);
-            Unsafe.CopyBlockUnaligned(ref readPtr[0], ref _buffer[_bufferPosition], (uint)readPtr.Length);
+            Unsafe.CopyBlockUnaligned(ref readPtr[0], ref Unsafe.Add(ref _buffer[0], _bufferPosition),
+                (uint)readPtr.Length);
             _bufferPosition += readPtr.Length;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadSpan<T>(Span<T> span) where T : unmanaged
         {
-            var byteSpan = MemoryMarshal.AsBytes(span);
-            var byteSpanLength = byteSpan.Length;
-            EnsureNext(byteSpanLength);
-            Unsafe.CopyBlockUnaligned(ref byteSpan[0], ref _buffer[_bufferPosition], (uint)byteSpanLength);
-            _bufferPosition += byteSpanLength;
+            ReadSpan(MemoryMarshal.AsBytes(span));
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void EnsureNext(int count)
+        private void EnsureNext(int count)
         {
             var end = _bufferPosition + count;
-            if (end > _bufferCount) 
+            if (end > _bufferCount)
                 ReadMore(count);
         }
 
@@ -280,7 +277,7 @@ namespace USerialization
 
             return cRead;
         }
-        
+
         private void InternalDispose()
         {
             if (_buffer != null)
