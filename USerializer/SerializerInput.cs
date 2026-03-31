@@ -9,7 +9,7 @@ namespace USerialization
     public enum EndObject : long
     {
     }
-    
+
     public sealed unsafe class SerializerInput : IDisposable
     {
         private Stream _stream;
@@ -66,8 +66,8 @@ namespace USerialization
         public void FinishRead()
         {
             _stream.Position = StreamPosition;
-            _bufferPosition = -1;
-            _bufferCount = -1;
+            _bufferPosition = 0;
+            _bufferCount = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -149,11 +149,7 @@ namespace USerialization
         public T Read<T>() where T : unmanaged
         {
             EnsureNext(sizeof(T));
-            T value;
-            fixed (byte* bPtr = &_buffer[_bufferPosition])
-            {
-                value = Unsafe.ReadUnaligned<T>(bPtr);
-            }
+            var value = Unsafe.ReadUnaligned<T>(ref _buffer[_bufferPosition]);
             _bufferPosition += sizeof(T);
             return value;
         }
@@ -163,26 +159,6 @@ namespace USerialization
             int count = 0;
             int shift = 0;
             byte b;
-
-            var unusedBytes = _bufferCount - _bufferPosition;
-
-            if (unusedBytes >= 5)
-            {
-                do
-                {
-#if DEBUG
-                    if (shift == 5 * 7) // 5 bytes max
-                        throw new FormatException("WTF");
-#endif
-
-                    b = _buffer[_bufferPosition++];
-
-                    count |= (b & 0x7F) << shift;
-                    shift += 7;
-                } while ((b & 0x80) != 0);
-
-                return count;
-            }
 
             do
             {
@@ -224,48 +200,30 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadBytes(void* readPtr, int count)
+        public void ReadBytes(Span<byte> readPtr)
         {
-            EnsureNext(count);
-#if DEBUG
-            if (count < 0)
-                throw new Exception("Count is negative!");
-#endif
-
-            fixed (byte* bPtr = _buffer)
-            {
-                Unsafe.CopyBlockUnaligned(readPtr, bPtr + _bufferPosition, (uint)count);
-            }
-
-            _bufferPosition += count;
+            EnsureNext(readPtr.Length);
+            Unsafe.CopyBlockUnaligned(ref readPtr[0], ref _buffer[_bufferPosition], (uint)readPtr.Length);
+            _bufferPosition += readPtr.Length;
         }
-
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadSpan<T>(Span<T> span) where T : unmanaged
+        {
+            var byteSpan = MemoryMarshal.AsBytes(span);
+            var byteSpanLength = byteSpan.Length;
+            EnsureNext(byteSpanLength);
+            Unsafe.CopyBlockUnaligned(ref byteSpan[0], ref _buffer[_bufferPosition], (uint)byteSpanLength);
+            _bufferPosition += byteSpanLength;
+        }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EnsureNext(int count)
         {
             var end = _bufferPosition + count;
-            if (end > _bufferCount)
-                ReadMore(count);
-        }
-
-        private int ReadInSpan(Span<byte> span)
-        {
-            var cRead = 0;
-
-            while (cRead < span.Length)
-            {
-                var read = _stream.Read(span.Slice(cRead));
-                if (read == 0)
-                    break;
-
-                cRead += read;
-            }
-
-            return cRead;
-        }
-
-        private void ReadMore(int count)
-        {
+            if (end <= _bufferCount) 
+                return;
+            
             var unusedBytes = _bufferCount - _bufferPosition;
 
 #if DEBUG
@@ -284,7 +242,7 @@ namespace USerialization
 
                 _pool.Return(_buffer);
                 _buffer = newBuffer;
-                _bufferCapacity = _buffer.Length;
+                _bufferCapacity = newBuffer.Length;
             }
             else
             {
@@ -304,6 +262,22 @@ namespace USerialization
                 throw new Exception("Trying to read pass the stream!"); //read out of stream
         }
 
+        private int ReadInSpan(Span<byte> span)
+        {
+            var cRead = 0;
+
+            while (cRead < span.Length)
+            {
+                var read = _stream.Read(span.Slice(cRead));
+                if (read == 0)
+                    break;
+
+                cRead += read;
+            }
+
+            return cRead;
+        }
+        
         private void InternalDispose()
         {
             if (_buffer != null)

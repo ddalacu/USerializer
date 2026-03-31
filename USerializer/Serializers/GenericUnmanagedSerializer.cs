@@ -97,8 +97,7 @@ namespace USerialization
                     var type = (DataType)input.ReadByte();
                     if (type == _elementDataType)
                     {
-                        fixed (void* buf = array)
-                            input.ReadBytes(buf, count * sizeof(T));
+                        input.ReadSpan(array.AsSpan());
                     }
                 }
 
@@ -171,8 +170,7 @@ namespace USerialization
 
                     if (type == _elementDataType)
                     {
-                        fixed (void* buf = array)
-                            input.ReadBytes(buf, count * sizeof(T));
+                        input.ReadSpan(array.AsSpan().Slice(0, count));
                     }
                     else
                     {
