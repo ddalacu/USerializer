@@ -221,9 +221,12 @@ namespace USerialization
         public void EnsureNext(int count)
         {
             var end = _bufferPosition + count;
-            if (end <= _bufferCount) 
-                return;
-            
+            if (end > _bufferCount) 
+                ReadMore(count);
+        }
+
+        private void ReadMore(int count)
+        {
             var unusedBytes = _bufferCount - _bufferPosition;
 
 #if DEBUG
