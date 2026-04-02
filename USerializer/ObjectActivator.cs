@@ -8,8 +8,7 @@ namespace USerialization
 {
     public static class ObjectActivator
     {
-        private static readonly ConcurrentDictionary<Type, Func<object>> Activators =
-            new ConcurrentDictionary<Type, Func<object>>();
+        private static readonly ConcurrentDictionary<Type, Func<object>> Activators = new();
 
         public static object CreateInstance(Type type)
         {
@@ -21,14 +20,19 @@ namespace USerialization
 
         public static Func<object> GetActivator(Type type)
         {
-            if (RuntimeFeature.IsDynamicCodeSupported == false)
-                return () => Activator.CreateInstance(type);
-
             if (Activators.TryGetValue(type, out var activator))
                 return activator;
+            
+            if (RuntimeFeature.IsDynamicCodeSupported == false)
+            {
+                activator= () => Activator.CreateInstance(type);
+                Activators.TryAdd(type, CreateActivator(type));
+                return activator;
+            }
 
             activator = CreateActivator(type);
             Activators.TryAdd(type, activator);
+
             return activator;
         }
 
@@ -39,8 +43,6 @@ namespace USerialization
 
             if (constructor == null)
             {
-                // Fallback to Activator.CreateInstance if no parameterless constructor exists.
-                // Activator.CreateInstance might still work for some types (e.g., structs, which shouldn't be here based on ClassDataSerializer checks).
                 return () => Activator.CreateInstance(type);
             }
 
