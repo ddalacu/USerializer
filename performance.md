@@ -12,9 +12,9 @@ WarmupCount=3
 ```
 |                 Method |     Mean |    Error |   StdDev |
 |----------------------- |---------:|---------:|---------:|
-|   USerializerSerialize | 10.55 ms | 0.790 ms | 0.043 ms |
-| USerializerDeserialize | 25.82 ms | 3.494 ms | 0.192 ms |
-|    MemoryPackSerialize | 13.77 ms | 0.230 ms | 0.013 ms |
-|  MemoryPackDeserialize | 19.27 ms | 1.717 ms | 0.094 ms |
-|         CerasSerialize | 41.40 ms | 0.416 ms | 0.023 ms |
-|       CerasDeserialize | 45.41 ms | 1.704 ms | 0.093 ms |
+|   USerializerSerialize | 10.63 ms | 0.428 ms | 0.023 ms |
+| USerializerDeserialize | 24.02 ms | 0.484 ms | 0.027 ms |
+|    MemoryPackSerialize | 13.94 ms | 0.211 ms | 0.012 ms |
+|  MemoryPackDeserialize | 20.39 ms | 1.930 ms | 0.106 ms |
+|         CerasSerialize | 42.13 ms | 2.552 ms | 0.140 ms |
+|       CerasDeserialize | 48.39 ms | 2.492 ms | 0.137 ms |
