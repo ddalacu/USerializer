@@ -41,6 +41,7 @@ namespace USerialization
         private FieldsSerializer _fieldsSerializer;
 
         private readonly int _heapSize;
+        private readonly Func<object> _activator;
 
         public override DataType DataType => DataType.Object;
 
@@ -60,6 +61,7 @@ namespace USerialization
 
             _type = type;
             _heapSize = UnsafeUtils.GetClassHeapSize(type);
+            _activator = ObjectActivator.GetActivator(type);
         }
 
         private int _stack;
@@ -109,7 +111,7 @@ namespace USerialization
             {
                 if (instance == null)
                 {
-                    instance = Activator.CreateInstance(_type);
+                    instance = _activator();
                 }
 
                 ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));

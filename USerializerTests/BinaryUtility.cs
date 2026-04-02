@@ -121,7 +121,7 @@ namespace USerializerTests
                 {
                     if (_haveCtor)
                     {
-                        instance = Activator.CreateInstance(_type);
+                        instance = ObjectActivator.CreateInstance(_type);
                     }
                     else
                         instance = FormatterServices.GetUninitializedObject(_type);

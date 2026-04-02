@@ -8,6 +8,7 @@ namespace USerialization
     public abstract class CustomClassSerializer<T> : CustomDataSerializer where T : class
     {
         private readonly Type _type;
+        private readonly Func<object> _activator;
 
         private MemberSerializer _memberSerializer;
 
@@ -18,6 +19,7 @@ namespace USerialization
         protected CustomClassSerializer()
         {
             _type = typeof(T);
+            _activator = ObjectActivator.GetActivator(typeof(T));
         }
         
         public abstract void LocalInit(ClassMemberAdder<T> adder);
@@ -61,7 +63,7 @@ namespace USerialization
             if (input.BeginReadSize(out var end))
             {
                 if (objectInstance == null)
-                    objectInstance = Activator.CreateInstance(_type);
+                    objectInstance = _activator();
 
                 _memberSerializer.Read(span, input, context);
 
