@@ -253,6 +253,18 @@ namespace USerializerTests
             public List<double> ListToSkip;
 
             public SkipFieldClass1 ObjectToSkip;
+            
+            public byte ByteValue;
+            public sbyte SByteValue;
+            public char CharValue;
+            public bool BoolValue;
+            public short Int16Value;
+            public long Int64Value;
+            public ushort UInt16Value;
+            public uint UInt32Value;
+            public ulong UInt64Value;
+            public float FloatValue;
+            public double DoubleValue;
         }
 
         [Serializable]
@@ -270,7 +282,18 @@ namespace USerializerTests
                 IntValue = 1234,
                 IntValue2 = 223,
                 Test = "Lol",
-                ObjectToSkip = new SkipFieldClass1()
+                ObjectToSkip = new SkipFieldClass1(),
+                ByteValue = 1,
+                SByteValue = 2,
+                CharValue = 'c',
+                BoolValue = true,
+                Int16Value = 3,
+                Int64Value = 4,
+                UInt16Value = 5,
+                UInt32Value = 6,
+                UInt64Value = 7,
+                FloatValue = 8.0f,
+                DoubleValue = 9.0
             };
 
             var stream = new MemoryStream();
