@@ -141,14 +141,17 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ReadByte()
         {
-            EnsureNext(1);
+            if (_bufferPosition + 1 > _bufferCount)
+                ReadMore(1);
             return _buffer[_bufferPosition++];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Read<T>() where T : unmanaged
         {
-            EnsureNext(Unsafe.SizeOf<T>());
+            int count = Unsafe.SizeOf<T>();
+            if (_bufferPosition + count > _bufferCount)
+                ReadMore(count);
             var value = Unsafe.ReadUnaligned<T>(ref _buffer[_bufferPosition]);
             _bufferPosition += Unsafe.SizeOf<T>();
             return value;
@@ -167,8 +170,7 @@ namespace USerialization
                     throw new FormatException("WTF");
 #endif
 
-                EnsureNext(1);
-                b = _buffer[_bufferPosition++];
+                b = ReadByte();
 
                 count |= (b & 0x7F) << shift;
                 shift += 7;
@@ -182,7 +184,8 @@ namespace USerialization
             if (toSkip < 0)
                 throw new Exception("Skip needs to be positive!");
 
-            EnsureNext(toSkip);
+            if (_bufferPosition + toSkip > _bufferCount)
+                ReadMore(toSkip);
             _bufferPosition += toSkip;
         }
 
@@ -193,7 +196,8 @@ namespace USerialization
                 throw new Exception("Skip needs to be positive!");
 
             var byteCount = count * Unsafe.SizeOf<T>();
-            EnsureNext(byteCount);
+            if (_bufferPosition + byteCount > _bufferCount)
+                ReadMore(byteCount);
             var span = MemoryMarshal.Cast<byte, T>(_buffer.AsSpan(_bufferPosition, byteCount));
             _bufferPosition += byteCount;
             return span;
@@ -202,24 +206,20 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadSpan(Span<byte> readPtr)
         {
-            EnsureNext(readPtr.Length);
+            var length = readPtr.Length;
+
+            if (_bufferPosition + length > _bufferCount)
+                ReadMore(length);
+
             Unsafe.CopyBlockUnaligned(ref readPtr[0], ref Unsafe.Add(ref _buffer[0], _bufferPosition),
-                (uint)readPtr.Length);
-            _bufferPosition += readPtr.Length;
+                (uint)length);
+            _bufferPosition += length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadSpan<T>(Span<T> span) where T : unmanaged
         {
             ReadSpan(MemoryMarshal.AsBytes(span));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EnsureNext(int count)
-        {
-            var end = _bufferPosition + count;
-            if (end > _bufferCount)
-                ReadMore(count);
         }
 
         private void ReadMore(int count)
@@ -265,8 +265,9 @@ namespace USerialization
         private int ReadInSpan(Span<byte> span)
         {
             var cRead = 0;
+            var length = span.Length;
 
-            while (cRead < span.Length)
+            while (cRead < length)
             {
                 var read = _stream.Read(span.Slice(cRead));
                 if (read == 0)
