@@ -10,7 +10,7 @@ namespace USerialization
     {
     }
 
-    public sealed unsafe class SerializerInput : IDisposable
+    public sealed class SerializerInput : IDisposable
     {
         private Stream _stream;
 
@@ -148,9 +148,9 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Read<T>() where T : unmanaged
         {
-            EnsureNext(sizeof(T));
+            EnsureNext(Unsafe.SizeOf<T>());
             var value = Unsafe.ReadUnaligned<T>(ref _buffer[_bufferPosition]);
-            _bufferPosition += sizeof(T);
+            _bufferPosition += Unsafe.SizeOf<T>();
             return value;
         }
 
@@ -192,7 +192,7 @@ namespace USerialization
             if (count < 0)
                 throw new Exception("Skip needs to be positive!");
 
-            var byteCount = count * sizeof(T);
+            var byteCount = count * Unsafe.SizeOf<T>();
             EnsureNext(byteCount);
             var span = MemoryMarshal.Cast<byte, T>(_buffer.AsSpan(_bufferPosition, byteCount));
             _bufferPosition += byteCount;
