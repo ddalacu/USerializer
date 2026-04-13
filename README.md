@@ -10,7 +10,6 @@ It uses no code generation, making it ideal for AOT (Ahead-Of-Time) environments
 - **High Performance:** Uses object pinning and direct memory access for speed, comparable to MessagePackSerializer.
 - **Version Tolerant:** Supports adding or removing fields without breaking compatibility.
 - **AOT Friendly:** No runtime or build-time code generation required.
-- **Null Support:** Unlike Unity's built-in serialization, USerializer supports null values.
 - **Extensive Type Support:**
   - Primitive types
   - Enums
