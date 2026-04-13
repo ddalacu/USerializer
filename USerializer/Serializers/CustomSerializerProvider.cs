@@ -50,7 +50,7 @@ namespace USerialization
         {
             if (_map.TryGetValue(type, out var serializerType))
             {
-                var instance = (CustomDataSerializer)Activator.CreateInstance(serializerType);
+                var instance = (CustomDataSerializer)ObjectActivator.CreateInstance(serializerType);
     
                 if (instance.TryInitialize(serializer) == false)
                 {

@@ -106,6 +106,15 @@ namespace PerformanceTests
         [MemoryPackOrder(1)]
         public List<Book> Books { get; set; }
 
+        [MemoryPackOrder(2)]
+        public int Id;
+
+        [MemoryPackOrder(3)]
+        public double DoubleValue;
+        
+        [MemoryPackOrder(4)]
+        public byte ByteValue;
+        
         // [SerializeField]
         // public string Secret;
 
@@ -131,6 +140,13 @@ namespace PerformanceTests
         //public string Title;
         [MemoryPackOrder(1)]
         public int Id;
+
+        [MemoryPackOrder(2)]
+        public double DoubleValue;
+        
+        [MemoryPackOrder(2)]
+        public byte ByteValue;
+        
         //
         // public byte[] BookData;
     }
