@@ -61,12 +61,6 @@ if (serializer.TryGetDataSerializer(typeof(MyClass), out var data))
 - **Circular References:** Throws an exception if a circular reference is detected.
 - **No Reference Tracking:** If the same object is referenced multiple times, it is serialized as a separate copy each time.
 - **Properties:** Properties are not serialized automatically. Use custom serializers or back them with fields.
-
-### Unity Integration
-- Copy `link.xml` from the project root into your Unity project to prevent code stripping.
-- Mark custom `DataSerializer` classes with Unity's `[Preserve]` attribute.
-- Requires `System.Runtime.CompilerServices.Unsafe`. It is recommended to use the [UnityNuGet](https://github.com/xoofx/UnityNuGet) scoped registry to add it via the Package Manager.
-
 ---
 ![Performance image](../gh-pages/output.png)
 
