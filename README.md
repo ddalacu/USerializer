@@ -2,45 +2,72 @@
 
 [![.NET](https://github.com/ddalacu/USerializer/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/ddalacu/USerializer/actions/workflows/dotnet.yml)
 
-USerializer is a version tolerant binary serializer.
+USerializer is a version-tolerant binary serializer designed for high performance and compatibility across .NET Core, .NET Framework, and Mono.
 
-Will run on net core, net framework and mono (at least it should :)).
+It uses no code generation, making it ideal for AOT (Ahead-Of-Time) environments like Unity. It supports versioning (without field type changes) and uses reflection only during the first encounter of a type to cache serialization metadata.
 
-It uses no code generation so it works AOT and it supports versioning(no support for changing field types),
- it does however use reflection when first encountering a type to extract type data so you will see a perf penality first time serailizing a certain type
- 
-Uses same principles as Unity's serialization pipeline to make serialization as fast as possible.
-As a difference to unity serialization there is null serialization support.
+### Key Features
+- **High Performance:** Uses object pinning and direct memory access for speed, comparable to MessagePackSerializer.
+- **Version Tolerant:** Supports adding or removing fields without breaking compatibility.
+- **AOT Friendly:** No runtime or build-time code generation required.
+- **Null Support:** Unlike Unity's built-in serialization, USerializer supports null values.
+- **Extensive Type Support:**
+  - Primitive types
+  - Enums
+  - Custom classes and structs
+  - Lists and Dictionaries
+  - One-dimensional arrays
+  - Custom serialization via `ISerializationPolicy` and custom serializers
 
-Features:<br/>
-- Serializes primitive data
-- Serializes enums
-- Serializes custom classes, structs
-- Serializes Lists
-- Serializes one dimmension arrays
-- Control on what fields/types get serialized is obtained by implementing ISerializationPolicy
+### Usage Example
 
+```csharp
+// Setup the serializer with desired providers
+var consoleLogger = new MyLogger();
+ISerializationProvider[] providers =
+{
+    new PrimitivesSerializerProvider(),
+    new CustomSerializerProvider(consoleLogger),
+    new EnumSerializer(),
+    new ArraySerializer(),
+    new ListSerializer(),
+    new DictionarySerializerProvider(),
+    new ClassSerializationProvider(),
+    new StructSerializationProvider(),
+};
 
-Limitations and downsides:<br/>
-- No support for polimorphism.
-- No support for Dictionaries :( (can be implemented but would require a AOT generation step)
-- Throws exception in case of circular references
-- Properties won't serialize auttomaticaly (add custom serializers and serialize properties too,for examples on how to do this check ExampleClassSerializer inside tests project)
-- If a object is referenced multiple times then the object would be serialized each time, so after deserialization you would get multiple objects
+var serializer = new USerializer(new UnitySerializationPolicy(), providers, new DataTypesDatabase(), consoleLogger);
 
-This project is best used in cases where no code generation is allowed and you don't want to run any AOT generation, i use this as a direct replacement for unity's JsonUtillity
+// Serialization
+using var output = new SerializerOutput(8192, ArrayPool<byte>.Shared);
+if (serializer.TryGetDataSerializer(myObject.GetType(), out var data))
+{
+    data.Write(SpanUtils.GetByteSpan(ref myObject), output, context);
+    output.Flush(myStream);
+}
 
+// Deserialization
+using var input = new SerializerInput(512, myStream, ArrayPool<byte>.Shared);
+if (serializer.TryGetDataSerializer(typeof(MyClass), out var data))
+{
+    MyClass result = null;
+    data.Read(SpanUtils.GetByteSpan(ref result), input, context);
+    input.FinishRead();
+}
+```
+
+### Limitations
+- **No Polymorphism:** Only the exact type is serialized; derived types are not handled automatically.
+- **Circular References:** Throws an exception if a circular reference is detected.
+- **No Reference Tracking:** If the same object is referenced multiple times, it is serialized as a separate copy each time.
+- **Properties:** Properties are not serialized automatically. Use custom serializers or back them with fields.
+
+### Unity Integration
+- Copy `link.xml` from the project root into your Unity project to prevent code stripping.
+- Mark custom `DataSerializer` classes with Unity's `[Preserve]` attribute.
+- Requires `System.Runtime.CompilerServices.Unsafe`. It is recommended to use the [UnityNuGet](https://github.com/xoofx/UnityNuGet) scoped registry to add it via the Package Manager.
+
+---
 ![Performance image](../gh-pages/output.png)
 
-[Performance.md](../gh-pages/performance.md)
-
-Performance comes close to MessagePackSerializer even if no code is generated(it uses object pinning and direct memory reading for accesing field data)!
-Ceras is slower in perf tests because version tolerance is set to VersionToleranceMode.Standard also ceras offers way more features than this library does
-
-For proper examples on how to use this system, please check the BinaryUtility.cs inside tests project
-
-When using in unity make sure you copy the link.xml from the project root inside your unity project
-Also when creating a custom DataSerializer make sure you mark it with unity's preserve attribute
-
-Note that if you want to add this inside unity you will need System.Runtime.CompilerServices.Unsafe.
-To get it please add the scoped registry found at https://github.com/xoofx/UnityNuGet and then use package manager to add System.Runtime.CompilerServices.Unsafe. 
+Detailed benchmarks can be found in [Performance.md](../gh-pages/performance.md).
