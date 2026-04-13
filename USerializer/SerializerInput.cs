@@ -86,6 +86,8 @@ namespace USerialization
             return true;
         }
         
+        public bool NotNull() => Read<int>() != -1;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {

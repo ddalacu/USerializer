@@ -81,7 +81,7 @@ namespace USerialization
             }
         }
 
-        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, SerializerInput input, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -98,6 +98,11 @@ namespace USerialization
                     if (type == _elementDataType)
                     {
                         input.ReadSpan(array.AsSpan());
+                    }
+                    else
+                    {
+                        ArrayHelpers.CleanArray(array, 0, (uint)count);
+                        input.EndObject(end);
                     }
                 }
             }
@@ -152,7 +157,7 @@ namespace USerialization
             }
         }
 
-        public override unsafe void Read(Span<byte> span, SerializerInput input, object context)
+        public override  void Read(Span<byte> span, SerializerInput input, object context)
         {
             ref var list = ref Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(span));
 
@@ -173,6 +178,7 @@ namespace USerialization
                     else
                     {
                         ArrayHelpers.CleanArray(array, 0, (uint)count);
+                        input.EndObject(end);
                     }
                 }
                 else

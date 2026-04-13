@@ -37,7 +37,7 @@ namespace USerialization
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
 
-            if (input.BeginReadSize(out var end))
+            if (input.NotNull())
             {
                 _memberSerializer.Read(span, input, context);
             }

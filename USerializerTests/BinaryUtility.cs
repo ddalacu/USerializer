@@ -121,7 +121,7 @@ namespace USerializerTests
         {
             ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
-            if (input.BeginReadSize(out var end))
+            if (input.NotNull())
             {
                 if (instance == null)
                 {

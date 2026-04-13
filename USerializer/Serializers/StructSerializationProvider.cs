@@ -68,7 +68,7 @@ namespace USerialization
         {
             Debug.Assert(span.Length == _stackSize);
 
-            if (input.BeginReadSize(out var end))
+            if (input.NotNull())
             {
                 _fieldsSerializer.Read(span, input, context);
             }

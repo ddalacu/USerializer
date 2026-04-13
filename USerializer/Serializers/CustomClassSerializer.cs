@@ -60,7 +60,7 @@ namespace USerialization
             
             ref var objectInstance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
-            if (input.BeginReadSize(out var end))
+            if (input.NotNull())
             {
                 if (objectInstance == null)
                     objectInstance = _activator();
