@@ -134,8 +134,6 @@ namespace PerformanceTests
 
         private SerializerInput _input;
 
-        private ClassSerializationHelper _serializer;
-
         private class ConsoleLogger : ILogger
         {
             public void Error(string error)
@@ -149,26 +147,27 @@ namespace PerformanceTests
         {
             var consoleLogger = new ConsoleLogger();
 
-            var serializationProviders = ProvidersUtils.GetDefaultProviders(consoleLogger);
+            var serializationProviders = ProvidersUtils.GetDefaultProviders();
 
             _uSerializer = new USerializer(new UnitySerializationPolicy(), serializationProviders,
                 new DataTypesDatabase(), consoleLogger);
 
-            _output = new SerializerOutput(2048 * 10, ArrayPool<byte>.Shared);
-            _input = new SerializerInput(2048 * 10, ArrayPool<byte>.Shared);
+            _output = new SerializerOutput(2048 * 20, ArrayPool<byte>.Shared);
+            _input = new SerializerInput(2048 * 20, ArrayPool<byte>.Shared);
 
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
             {
                 throw new Exception($"Cannot serialize {typeof(T)}");
             }
-
-            _serializer = new ClassSerializationHelper(data, typeof(T));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         protected override void Serialize(T obj, Stream stream)
         {
-            _serializer.SerializeObject(obj, _output, null);
+            if (_uSerializer.TryGetDataSerializer(typeof(T), out var data) == false)
+                throw new Exception($"Cannot serialize {typeof(T)}");
+
+            data.Write(SpanUtils.GetByteSpan(ref obj), _output, null);
             _output.Flush(stream);
         }
 
@@ -177,7 +176,13 @@ namespace PerformanceTests
         protected override T Deserialize(Stream stream)
         {
             _input.SetStream(stream);
-            var result = (T)_serializer.DeserializeObject(_input, null);
+
+            if (_uSerializer.TryGetDataSerializer(typeof(T), out var dataSerializer, true) == false)
+                throw new Exception($"Cannot serialize {typeof(T)}");
+
+            T result = default;
+            dataSerializer.Read(SpanUtils.GetByteSpan(ref result), _input, null);
+
             _input.FinishRead();
             return result;
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -39,7 +40,8 @@ namespace USerializerTests
             if (typeof(ISerializationCallbacks).IsAssignableFrom(type) == false)
                 return false;
 
-            serializationMethods = new CustomClassDataSerializer(type);
+            serializationMethods = new CustomClassDataSerializer(type,
+                (fieldInfo) => serializer.SerializationPolicy.ShouldSerialize(fieldInfo));
 
             return true;
         }
@@ -48,6 +50,7 @@ namespace USerializerTests
     public sealed unsafe class CustomClassDataSerializer : DataSerializer
     {
         private readonly Type _type;
+        private readonly Func<FieldInfo, bool> _shouldSerialize;
 
         private FieldsSerializer _fieldsSerializer;
 
@@ -59,11 +62,13 @@ namespace USerializerTests
 
         protected override void Initialize(USerializer serializer)
         {
-            var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer);
+            var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer,
+                _shouldSerialize);
+
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
         }
 
-        public CustomClassDataSerializer(Type type)
+        public CustomClassDataSerializer(Type type, Func<FieldInfo, bool> shouldSerialize)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
@@ -72,6 +77,7 @@ namespace USerializerTests
                 throw new ArgumentException(nameof(type));
 
             _type = type;
+            _shouldSerialize = shouldSerialize;
             _dataSize = UnsafeUtils.GetClassHeapSize(type);
 
             var constructor = _type.GetConstructor(Type.EmptyTypes);
@@ -169,6 +175,9 @@ namespace USerializerTests
                 new EnumSerializer(),
                 new ArraySerializer(),
                 new ListSerializer(),
+                new TupleSerializationProvider(),
+                new KeyValuePairSerializationProvider(),
+                new DictionarySerializerProvider(),
                 new CustomClassSerializationProvider(),
                 new ClassSerializationProvider(),
                 new StructSerializationProvider(),
@@ -196,10 +205,10 @@ namespace USerializerTests
             if (_uSerializer.TryGetDataSerializer(obj.GetType(), out var data, true) == false)
                 return false;
 
-            var serializer = new ClassSerializationHelper(data, obj.GetType());
-
             using var output = new SerializerOutput(bufferSize, ArrayPool<byte>.Shared);
-            serializer.SerializeObject(obj, output, context);
+
+            data.Write(SpanUtils.GetByteSpan(ref obj), output, context);
+
             output.Flush(stream);
             return true;
         }
@@ -221,18 +230,10 @@ namespace USerializerTests
 
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
                 return false;
-
-            var serializer = new ClassSerializationHelper(data, typeof(T));
-
+            
             using var serializerInput = new SerializerInput(bufferSize, stream, ArrayPool<byte>.Shared);
-            if (result == null)
-            {
-                result = (T)serializer.DeserializeObject(serializerInput, context);
-            }
-            else
-            {
-                serializer.PopulateObject(result, serializerInput, context);
-            }
+            
+            data.Read(SpanUtils.GetByteSpan(ref result), serializerInput, context);
 
             serializerInput.FinishRead();
             return true;

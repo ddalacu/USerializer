@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
-using Ceras;
 using MemoryPack;
 
 namespace PerformanceTests
@@ -14,8 +13,6 @@ namespace PerformanceTests
 
         private MemoryPackBenchmark<BookShelf> _memoryPackBenchmark;
 
-        private CerasBenchmark<BookShelf> _cerasBenchmark;
-
         private BookShelf _toSerialize;
 
         [GlobalSetup]
@@ -23,12 +20,10 @@ namespace PerformanceTests
         {
             _uSerializer = new USerializerBenchmark<BookShelf>();
             _memoryPackBenchmark = new MemoryPackBenchmark<BookShelf>();
-            _cerasBenchmark = new CerasBenchmark<BookShelf>();
             _toSerialize = Data(10000);
 
             _uSerializer.Init(_toSerialize);
             _memoryPackBenchmark.Init(_toSerialize);
-            _cerasBenchmark.Init(_toSerialize);
         }
 
         public const int BookDataSize = 64;
@@ -47,13 +42,13 @@ namespace PerformanceTests
 
         public static BookShelf Data(int nToCreate)
         {
-            var lret = new BookShelf("private member value")
+            var lret = new BookShelf()
             {
                 Books = Enumerable.Range(1, nToCreate).Select(i => new Book
                     {
                         Id = i,
-                        // Title = $"Book {i}",
-                        // BookData = CreateAndFillByteBuffer(),
+                        ByteValue = 123,
+                        DoubleValue = 123
                     }
                 ).ToList()
             };
@@ -83,23 +78,10 @@ namespace PerformanceTests
         {
             _memoryPackBenchmark.TestDeserialize(_toSerialize);
         }
-
-        [Benchmark()]
-        public void CerasSerialize()
-        {
-            _cerasBenchmark.TestSerialize(_toSerialize);
-        }
-
-        [Benchmark()]
-        public void CerasDeserialize()
-        {
-            _cerasBenchmark.TestDeserialize(_toSerialize);
-        }
     }
 
     [Serializable]
     [MemoryPackable(GenerateType.VersionTolerant)]
-    [MemberConfig(TargetMember.All)]
     public partial class BookShelf
     {
         [field: SerializeField]
@@ -114,26 +96,9 @@ namespace PerformanceTests
         
         [MemoryPackOrder(4)]
         public byte ByteValue;
-        
-        // [SerializeField]
-        // public string Secret;
-
-        //[IgnoreMember]
-        //public string GetSecret => Secret;
-
-        public BookShelf(string secret)
-        {
-            //Secret = secret;
-        }
-
-        [MemoryPackConstructor()]
-        public BookShelf()
-        {
-        }
     }
 
     [Serializable]
-    [MemberConfig(TargetMember.All)]
     [MemoryPackable(GenerateType.VersionTolerant)]
     public partial class Book
     {

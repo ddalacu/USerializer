@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -26,16 +27,20 @@ namespace USerialization
 
             if (type.IsPrimitive)
                 return false;
-            
+
             if (serializer.SerializationPolicy.ShouldSerialize(type) == false)
                 return false;
 
-            serializationMethods = new ClassDataSerializer(type);
+            var activator = ObjectActivator.GetActivator(type);
+
+            serializationMethods = new ClassDataSerializer(type,
+                activator,
+                (fieldInfo) => serializer.SerializationPolicy.ShouldSerialize(fieldInfo));
 
             return true;
         }
     }
-    
+
     public sealed unsafe class ClassDataSerializer : DataSerializer
     {
         private FieldsSerializer _fieldsSerializer;
@@ -47,11 +52,13 @@ namespace USerialization
 
         protected override void Initialize(USerializer serializer)
         {
-            var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer);
+            var (metas, serializationDatas) = FieldSerializationData.GetFields(_type, serializer,
+                _shouldSerialize);
+
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
         }
 
-        public ClassDataSerializer(Type type)
+        public ClassDataSerializer(Type type, Func<object> activator, Func<FieldInfo, bool> shouldSerialize)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
@@ -61,21 +68,23 @@ namespace USerialization
 
             _type = type;
             _heapSize = UnsafeUtils.GetClassHeapSize(type);
-            _activator = ObjectActivator.GetActivator(type);
+            _activator = activator;
+            _shouldSerialize = shouldSerialize;
         }
 
         private int _stack;
 
         private readonly Type _type;
 
+        private readonly Func<FieldInfo, bool> _shouldSerialize;
+
         private const int MaxStack = 32;
 
-        
-        
+
         public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
-            
+
             ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
 
             if (obj == null)
@@ -115,7 +124,7 @@ namespace USerialization
                 }
 
                 ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
-                fixed (byte* objectAddress = &pinnable.Pinnable)        
+                fixed (byte* objectAddress = &pinnable.Pinnable)
                 {
                     _fieldsSerializer.Read(new Span<byte>(objectAddress, _heapSize), input, context);
                 }

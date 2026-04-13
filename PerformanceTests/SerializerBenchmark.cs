@@ -6,13 +6,13 @@ namespace PerformanceTests
     {
         private MemoryStream _memoryStream;
 
-        private const int Iterations = 100;
-
         private MemoryStream _deserializeStream;
 
+        public MemoryStream DeserializeStream => _deserializeStream;
+        
         protected SerializerBenchmark()
         {
-            _memoryStream = new MemoryStream(1000 * 1000 * 1000);
+            _memoryStream = new MemoryStream(1024 * 4);
         }
 
         public void Init(T obj)
@@ -23,21 +23,15 @@ namespace PerformanceTests
 
         public void TestSerialize(T obj)
         {
-            for (var i = 0; i < Iterations; i++)
-            {
-                Serialize(obj, _memoryStream);
-                _memoryStream.SetLength(0);
-                _memoryStream.Position = 0;
-            }
+            Serialize(obj, _memoryStream);
+            _memoryStream.SetLength(0);
+            _memoryStream.Position = 0;
         }
 
         public void TestDeserialize(T obj)
         {
-            for (var i = 0; i < Iterations; i++)
-            {
-                _deserializeStream.Position = 0;
-                Deserialize(_deserializeStream);
-            }
+            _deserializeStream.Position = 0;
+            Deserialize(_deserializeStream);
         }
 
         protected abstract void Serialize(T obj, Stream stream);

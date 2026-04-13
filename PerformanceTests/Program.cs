@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using CommandLine;
@@ -11,10 +12,8 @@ using Microcharts;
 using SkiaSharp;
 
 
-
 namespace PerformanceTests
 {
-
     class Program
     {
         public class Options
@@ -25,9 +24,27 @@ namespace PerformanceTests
 
         static int Main(string[] args)
         {
+            // var shelf = SerializationBenchmarks.Data(10000);
+            //
+            // var serializer = new USerializerBenchmark<BookShelf>();
+            //
+            // serializer.Init(shelf);
+            // serializer.TestSerialize(shelf);
+            // serializer.TestDeserialize(shelf);
+            //
+            // Console.WriteLine(serializer.DeserializeStream.Length);
+            // while (true)
+            // {
+            //     serializer.TestSerialize(shelf);
+            //     serializer.TestDeserialize(shelf);
+            //     Thread.Sleep(1);
+            // }
+            //
+            // return 0;
+
             var fail = 0;
             Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(Execute).WithNotParsed(
-                delegate (IEnumerable<Error> errors)
+                delegate(IEnumerable<Error> errors)
                 {
                     foreach (var error in errors)
                     {
@@ -41,14 +58,6 @@ namespace PerformanceTests
 
         private static void Execute(Options options)
         {
-            // var shelf = SerializationBenchmarks.Data(10000);
-            //
-            // var serializer = new USerializerBenchmark<BookShelf>();
-            //
-            // serializer.TestSerialize(shelf);
-            //
-            // return;
-
             var summary = BenchmarkRunner.Run<SerializationBenchmarks>();
 
             var directory = "public";
@@ -126,9 +135,11 @@ namespace PerformanceTests
                 MaxValue = 1.15f,
                 AnimationDuration = TimeSpan.Zero,
             };
-            
-            chart.IsAnimated = true;//seems stupid but there is some strange bug when building on git actions where it tries to animate so do not remove this
-            chart.IsAnimated = false;//seems stupid but there is some strange bug when building on git actions where it tries to animate so do not remove this
+
+            chart.IsAnimated =
+                true; //seems stupid but there is some strange bug when building on git actions where it tries to animate so do not remove this
+            chart.IsAnimated =
+                false; //seems stupid but there is some strange bug when building on git actions where it tries to animate so do not remove this
 
             var width = 1400;
 
@@ -164,7 +175,7 @@ namespace PerformanceTests
 
                 using (var data = snapshot.Encode(SKEncodedImageFormat.Png, 80))
                 {
-                    if(File.Exists(file))
+                    if (File.Exists(file))
                         File.Delete(file);
 
                     using (var stream = File.OpenWrite(file))

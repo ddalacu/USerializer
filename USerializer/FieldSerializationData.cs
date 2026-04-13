@@ -123,7 +123,7 @@ namespace USerialization
         }
 
         public static (FieldMetaData[] Metas, FieldSerializationData[] SerializationDatas) GetFields(Type type,
-            USerializer uSerializer, bool initializeDataSerializer = true)
+            USerializer uSerializer,Func<FieldInfo,bool> shouldSerialize, bool initializeDataSerializer = true)
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
@@ -133,7 +133,7 @@ namespace USerialization
 
             while (fieldsIterator.MoveNext(out var fieldInfo))
             {
-                if (uSerializer.SerializationPolicy.ShouldSerialize(fieldInfo) == false)
+                if (shouldSerialize(fieldInfo) == false)
                     continue;
 
                 if (uSerializer.TryGetDataSerializer(fieldInfo.FieldType,
@@ -180,11 +180,11 @@ namespace USerialization
         //used more frequently
         private readonly byte[] _headerData;
         private readonly FieldSerializationData[] _fields;
-
-
+        
         //used less often
         private readonly DataTypesDatabase _dataTypesDatabase;
         private readonly FieldMetaData[] _fieldsMetas;
+        
 
         public FieldsSerializer(FieldMetaData[] metas, FieldSerializationData[] fields,
             DataTypesDatabase dataTypesDatabase)

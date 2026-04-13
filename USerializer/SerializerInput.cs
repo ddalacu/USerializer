@@ -16,8 +16,6 @@ namespace USerialization
 
         private byte[] _buffer;
 
-        private int _bufferCapacity;
-
         private int _bufferPosition;
 
         private int _bufferCount;
@@ -43,8 +41,6 @@ namespace USerialization
         {
             _pool = pool;
             _buffer = _pool.Rent(capacity);
-            _bufferCapacity = _buffer.Length;
-
             _bufferPosition = -1;
             _bufferCount = -1;
         }
@@ -114,10 +110,13 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {
+            if (StreamPosition == (long)endObject)
+                return;
+            
             SetPosition((long)endObject);
         }
 
-        public void SetPosition(long initialPosition)
+        private void SetPosition(long initialPosition)
         {
             if (_bufferCount >= _bufferPosition) //if these are equal then we might have no valid data
             {
@@ -231,9 +230,9 @@ namespace USerialization
                 throw new Exception("Unused bytes is negative!");
 #endif
 
-            if (count > _bufferCapacity)
+            if (count > _buffer.Length)
             {
-                var expanded = Math.Max(_bufferCapacity * 2, count + unusedBytes);
+                var expanded = Math.Max(_buffer.Length * 2, count + unusedBytes);
 
                 var newBuffer = _pool.Rent(expanded);
 
@@ -242,7 +241,6 @@ namespace USerialization
 
                 _pool.Return(_buffer);
                 _buffer = newBuffer;
-                _bufferCapacity = newBuffer.Length;
             }
             else
             {
@@ -252,7 +250,7 @@ namespace USerialization
 
             _bufferPosition = 0;
 
-            var toRead = _buffer.AsSpan(unusedBytes, _bufferCapacity - unusedBytes);
+            var toRead = _buffer.AsSpan(unusedBytes, _buffer.Length - unusedBytes);
 
             var read = ReadInSpan(toRead);
             _streamPosition += read;
