@@ -31,9 +31,6 @@ namespace USerializerTests
             if (type.IsPrimitive)
                 return false;
 
-            if (serializer.DataTypesDatabase.TryGet(out ObjectDataSkipper objectDataTypeLogic) == false)
-                return false;
-
             if (serializer.SerializationPolicy.ShouldSerialize(type) == false)
                 return false;
 
