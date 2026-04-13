@@ -128,8 +128,6 @@ namespace USerialization
                 {
                     _fieldsSerializer.Read(new Span<byte>(objectAddress, _heapSize), input, context);
                 }
-
-                input.EndObject(end);
             }
             else
             {

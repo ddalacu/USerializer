@@ -85,28 +85,7 @@ namespace USerialization
             endObject = (EndObject)(StreamPosition + length);
             return true;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool BeginReadSize(out EndObject endObject, out int length)
-        {
-            length = Read<int>();
-
-#if DEBUG
-            if (length < -1)
-                throw new Exception("Something went wrong!");
-#endif
-
-            if (length == -1)
-            {
-                endObject = default;
-                return false;
-            }
-
-            endObject = (EndObject)(StreamPosition + length);
-            return true;
-        }
-
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void EndObject(EndObject endObject)
         {

@@ -40,8 +40,6 @@ namespace USerialization
             if (input.BeginReadSize(out var end))
             {
                 _memberSerializer.Read(span, input, context);
-
-                input.EndObject(end);
             }
             else
             {

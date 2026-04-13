@@ -139,7 +139,6 @@ namespace USerializerTests
                     _fieldsSerializer.Read(new Span<byte>(objectAddress, _dataSize), input, context);
                 }
 
-                input.EndObject(end);
                 Unsafe.As<ISerializationCallbacks>(instance).OnAfterSerialize(context);
             }
             else

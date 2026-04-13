@@ -71,7 +71,6 @@ namespace USerialization
             if (input.BeginReadSize(out var end))
             {
                 _fieldsSerializer.Read(span, input, context);
-                input.EndObject(end);
             }
             else
             {

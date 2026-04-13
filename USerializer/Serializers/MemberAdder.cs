@@ -540,8 +540,6 @@ namespace USerialization
                         _setElementDelegate(ref instance, index, ref def);
                     }
                 }
-
-                input.EndObject(end);
             }
             else
             {

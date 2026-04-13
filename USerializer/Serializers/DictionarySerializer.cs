@@ -78,9 +78,11 @@ namespace USerialization
                             instance.Add(copy.Key, copy.Value);
                         }
                     }
+                    else
+                    {
+                        input.EndObject(end);
+                    }
                 }
-
-                input.EndObject(end);
             }
             else
             {

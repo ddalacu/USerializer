@@ -100,8 +100,6 @@ namespace USerialization
                         input.ReadSpan(array.AsSpan());
                     }
                 }
-
-                input.EndObject(end);
             }
             else
             {
@@ -184,8 +182,6 @@ namespace USerialization
                     else
                         ListHelpers.SetCount(list, 0);
                 }
-
-                input.EndObject(end);
             }
             else
             {

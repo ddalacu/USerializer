@@ -146,9 +146,12 @@ namespace USerialization
                             }
                         }
                     }
+                    else
+                    {
+                        ArrayHelpers.CleanArray(array, 0, (uint)count, (uint)_size);
+                        input.EndObject(end);
+                    }
                 }
-
-                input.EndObject(end);
             }
             else
             {

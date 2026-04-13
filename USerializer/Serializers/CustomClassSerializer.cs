@@ -66,8 +66,6 @@ namespace USerialization
                     objectInstance = _activator();
 
                 _memberSerializer.Read(span, input, context);
-
-                input.EndObject(end);
             }
             else
             {
