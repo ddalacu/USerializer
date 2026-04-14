@@ -64,13 +64,13 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == _stackSize);
 
             if (input.NotNull())
             {
-                _fieldsSerializer.Read(span, input, context);
+                _fieldsSerializer.Read(span, ref input, context);
             }
             else
             {

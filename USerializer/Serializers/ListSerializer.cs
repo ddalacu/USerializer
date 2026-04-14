@@ -111,7 +111,7 @@ namespace USerialization
             }
         }
 
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -126,7 +126,7 @@ namespace USerialization
                 if (list == null)
                 {
                     list = RuntimeHelpers.GetUninitializedObject(_fieldType);
-                    array = ArrayHelpers.CreateArray(_elementType, count);
+                    array = Array.CreateInstance(_elementType, count);
                     ListHelpers.SetArray(list, array, count);
                 }
                 else
@@ -136,7 +136,7 @@ namespace USerialization
 
                     if (len < count) //if we need more elements in the array then we allocate a array
                     {
-                        array = ArrayHelpers.CreateArray(_elementType, count);
+                        array = Array.CreateInstance(_elementType, count);
                         ListHelpers.SetArray(list, array, count);
                     }
                     else
@@ -168,7 +168,7 @@ namespace USerialization
                             var serializer = _elementSerializer;
                             for (var i = 0; i < count; i++)
                             {
-                                serializer.Read(new Span<byte>(tempAddress, _size), input, context);
+                                serializer.Read(new Span<byte>(tempAddress, _size), ref input, context);
                                 tempAddress += _size;
                             }
                         }

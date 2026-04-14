@@ -29,7 +29,7 @@ namespace USerialization
             output.WriteSpan(value.AsSpan());
         }
 
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(span));
@@ -62,7 +62,7 @@ namespace USerialization
 
     public sealed class StringDataSkipper : IDataSkipper
     {
-        public void Skip(SerializerInput input)
+        public void Skip(ref SerializerInput input)
         {
             var chars = input.Read7BitEncodedInt();
 

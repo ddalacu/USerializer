@@ -33,13 +33,13 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
 
             if (input.NotNull())
             {
-                _memberSerializer.Read(span, input, context);
+                _memberSerializer.Read(span, ref input, context);
             }
             else
             {

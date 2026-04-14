@@ -208,10 +208,11 @@ namespace USerializerTests
             
             Assert.True(stream.Length > 0);
 
-            using var input = new SerializerInput(2048, stream, ArrayPool<byte>.Shared);
-            var result = structSer.Deserialize(input, null);
+            var input = new SerializerInput(2048, stream, ArrayPool<byte>.Shared);
+            var result = structSer.Deserialize(ref input, null);
             input.FinishRead();
             
+            input.Dispose();
             Assert.True(EqualityComparer<SimpleStruct>.Default.Equals(initial, result));
         }
         

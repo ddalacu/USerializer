@@ -18,12 +18,14 @@ public class ReaderTests
         });
         stream.Position = 0;
 
-        using var input = new SerializerInput(5, stream, ArrayPool<byte>.Shared);
+        var input = new SerializerInput(5, stream, ArrayPool<byte>.Shared);
 
         input.Read<byte>();
         
         input.Read<int>();
         input.Read<int>();
         input.Read<byte>();
+        
+        input.Dispose();
     }
 }

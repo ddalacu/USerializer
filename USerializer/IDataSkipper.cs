@@ -5,13 +5,13 @@ namespace USerialization
 {
     public interface IDataSkipper
     {
-        void Skip(SerializerInput input);
+        void Skip(ref SerializerInput input);
     }
 
     public class DataTypesDatabase
     {
         private IDataSkipper[] _dataEntries;
-        
+
         public DataTypesDatabase()
         {
             _dataEntries = new IDataSkipper[]
@@ -34,7 +34,7 @@ namespace USerialization
                 new UnmanagedDataSkipper<double>(), // DataType.Double
             };
         }
-        
+
         public bool TryGet<T>(out T result) where T : IDataSkipper, new()
         {
             foreach (var dataEntry in _dataEntries)
@@ -63,11 +63,11 @@ namespace USerialization
             return false;
         }
 
-        public void SkipData(DataType type, SerializerInput serializerInput)
+        public void SkipData(DataType type, ref SerializerInput serializerInput)
         {
             if (GetForType(type, out var dataEntry))
             {
-                dataEntry.Skip(serializerInput);
+                dataEntry.Skip(ref serializerInput);
             }
             else
             {

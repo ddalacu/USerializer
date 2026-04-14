@@ -114,7 +114,7 @@ namespace USerializerTests
             _stack--;
         }
 
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
@@ -133,7 +133,7 @@ namespace USerializerTests
                 ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
                 fixed (byte* objectAddress = &pinnable.Pinnable)
                 {
-                    _fieldsSerializer.Read(new Span<byte>(objectAddress, _dataSize), input, context);
+                    _fieldsSerializer.Read(new Span<byte>(objectAddress, _dataSize), ref input, context);
                 }
 
                 Unsafe.As<ISerializationCallbacks>(instance).OnAfterSerialize(context);
@@ -203,7 +203,8 @@ namespace USerializerTests
 
             using var output = new SerializerOutput(bufferSize, ArrayPool<byte>.Shared);
 
-            data.Write(SpanUtils.GetByteSpan(ref obj), output, context);
+            ref var data1 = ref Unsafe.As<object, byte>(ref obj);
+            data.Write(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<object>()), output, context);
 
             output.Flush(stream);
             return true;
@@ -218,7 +219,7 @@ namespace USerializerTests
         /// <param name="context"></param>
         /// <param name="bufferSize"></param>
         /// <returns>false if type is not serializable</returns>
-        public static bool TryDeserialize<T>(Stream stream, ref T result, object context = null,
+        public static bool TryDeserialize<T>(MemoryStream stream, ref T result, object context = null,
             int bufferSize = 512) where T : class
         {
             if (stream == null)
@@ -226,10 +227,13 @@ namespace USerializerTests
 
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
                 return false;
-            
-            using var serializerInput = new SerializerInput(bufferSize, stream, ArrayPool<byte>.Shared);
-            
-            data.Read(SpanUtils.GetByteSpan(ref result), serializerInput, context);
+
+            var serializerInput = new SerializerInput(stream.GetBuffer(), (int)stream.Length);
+
+            ref var data1 = ref Unsafe.As<T, byte>(ref result);
+            data.Read(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<T>()), ref serializerInput, context);
+
+            serializerInput.Dispose();
 
             serializerInput.FinishRead();
             return true;

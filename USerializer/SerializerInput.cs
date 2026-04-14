@@ -10,7 +10,8 @@ namespace USerialization
     {
     }
 
-    public sealed class SerializerInput : IDisposable
+    [StructLayout(LayoutKind.Auto)]
+    public ref struct SerializerInput // : IDisposable
     {
         private Stream _stream;
 
@@ -37,30 +38,32 @@ namespace USerialization
             }
         }
 
-        public SerializerInput(int capacity, ArrayPool<byte> pool)
+        public SerializerInput(int capacity, Stream stream, ArrayPool<byte> pool)
         {
             _pool = pool;
             _buffer = _pool.Rent(capacity);
             _bufferPosition = -1;
             _bufferCount = -1;
-        }
-
-        public SerializerInput(int capacity, Stream stream, ArrayPool<byte> pool) : this(capacity, pool)
-        {
+            _stream = null;
             _stream = stream;
             _streamPosition = stream.Position;
         }
 
-        public void SetStream(Stream stream)
+        public SerializerInput(byte[] buffer, int count)
         {
-            _stream = stream;
+            _pool = null;
+            _buffer = buffer;
             _bufferPosition = 0;
-            _bufferCount = 0;
-            _streamPosition = _stream.Position;
+            _bufferCount = count;
+            _stream = null;
+            _streamPosition = 0;
         }
 
         public void FinishRead()
         {
+            if (_stream == null)
+                return;
+
             _stream.Position = StreamPosition;
             _bufferPosition = 0;
             _bufferCount = 0;
@@ -85,7 +88,7 @@ namespace USerialization
             endObject = (EndObject)(StreamPosition + length);
             return true;
         }
-        
+
         public bool NotNull() => Read<int>() != -1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -93,7 +96,7 @@ namespace USerialization
         {
             if (StreamPosition == (long)endObject)
                 return;
-            
+
             SetPosition((long)endObject);
         }
 
@@ -123,17 +126,23 @@ namespace USerialization
         {
             if (_bufferPosition + 1 > _bufferCount)
                 ReadMore(1);
-            return _buffer[_bufferPosition++];
+
+            ref byte bufferRef = ref _buffer.AsSpan().GetPinnableReference();
+            var value = Unsafe.Add(ref bufferRef, _bufferPosition);
+            _bufferPosition++;
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Read<T>() where T : unmanaged
         {
-            int count = Unsafe.SizeOf<T>();
+            var count = Unsafe.SizeOf<T>();
             if (_bufferPosition + count > _bufferCount)
                 ReadMore(count);
-            var value = Unsafe.ReadUnaligned<T>(ref _buffer[_bufferPosition]);
-            _bufferPosition += Unsafe.SizeOf<T>();
+
+            ref byte bufferRef = ref _buffer.AsSpan().GetPinnableReference();
+            var value = Unsafe.ReadUnaligned<T>(ref Unsafe.Add(ref bufferRef, _bufferPosition));
+            _bufferPosition += count;
             return value;
         }
 
@@ -172,14 +181,22 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<T> GetNext<T>(int count) where T : unmanaged
         {
-            if (count < 0)
-                throw new Exception("Skip needs to be positive!");
-
             var byteCount = count * Unsafe.SizeOf<T>();
             if (_bufferPosition + byteCount > _bufferCount)
                 ReadMore(byteCount);
             var span = MemoryMarshal.Cast<byte, T>(_buffer.AsSpan(_bufferPosition, byteCount));
             _bufferPosition += byteCount;
+            return span;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> GetNext(int count)
+        {
+            if (_bufferPosition + count > _bufferCount)
+                ReadMore(count);
+
+            var span = _buffer.AsSpan(_bufferPosition, count);
+            _bufferPosition += count;
             return span;
         }
 
@@ -191,7 +208,8 @@ namespace USerialization
             if (_bufferPosition + length > _bufferCount)
                 ReadMore(length);
 
-            Unsafe.CopyBlockUnaligned(ref readPtr[0], ref Unsafe.Add(ref _buffer[0], _bufferPosition),
+            ref byte bufferRef = ref _buffer.AsSpan().GetPinnableReference();
+            Unsafe.CopyBlockUnaligned(ref readPtr[0], ref Unsafe.Add(ref bufferRef, _bufferPosition),
                 (uint)length);
             _bufferPosition += length;
         }
@@ -258,24 +276,13 @@ namespace USerialization
             return cRead;
         }
 
-        private void InternalDispose()
+        public void Dispose()
         {
-            if (_buffer != null)
+            if (_pool != null)
             {
                 _pool.Return(_buffer);
                 _buffer = null;
             }
-        }
-
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-            InternalDispose();
-        }
-
-        ~SerializerInput()
-        {
-            InternalDispose();
         }
     }
 }

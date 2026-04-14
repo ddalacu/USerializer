@@ -21,7 +21,7 @@ namespace USerialization
             _type = typeof(T);
             _activator = ObjectActivator.GetActivator(typeof(T));
         }
-        
+
         public abstract void LocalInit(ClassMemberAdder<T> adder);
 
         protected override void Initialize(USerializer serializer)
@@ -32,7 +32,7 @@ namespace USerialization
 
             foreach (var member in members)
                 member.DataSerializer.RootInitialize(serializer);
-            
+
             _memberSerializer = new MemberSerializer(IntPtr.Size, members, serializer.DataTypesDatabase);
         }
 
@@ -54,10 +54,10 @@ namespace USerialization
             output.WriteSizeTrack(track);
         }
 
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
-            
+
             ref var objectInstance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
             if (input.NotNull())
@@ -65,7 +65,7 @@ namespace USerialization
                 if (objectInstance == null)
                     objectInstance = _activator();
 
-                _memberSerializer.Read(span, input, context);
+                _memberSerializer.Read(span, ref input, context);
             }
             else
             {

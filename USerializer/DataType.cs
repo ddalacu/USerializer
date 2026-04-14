@@ -25,7 +25,7 @@
 
     public unsafe class UnmanagedDataSkipper<T> : IDataSkipper where T : unmanaged
     {
-        public void Skip(SerializerInput input)
+        public void Skip(ref SerializerInput input)
         {
             input.Skip(sizeof(T));
         }
@@ -33,7 +33,7 @@
 
     public sealed class ObjectDataSkipper : IDataSkipper
     {
-        public void Skip(SerializerInput input)
+        public void Skip(ref SerializerInput input)
         {
             var toSkip = input.Read<int>();
             if (toSkip == -1)//null
@@ -45,7 +45,7 @@
 
     public sealed class ArrayDataSkipper : IDataSkipper
     {
-        public void Skip(SerializerInput input)
+        public void Skip(ref SerializerInput input)
         {
             var toSkip = input.Read<int>();
             if (toSkip == -1)//null

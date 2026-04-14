@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace USerialization
 {
@@ -20,21 +21,24 @@ namespace USerialization
         {
             if (output == null)
                 throw new NullReferenceException(nameof(output));
-            
-            _dataSerializer.Write(SpanUtils.GetByteSpan(ref item), output, context);
+
+            ref var data = ref Unsafe.As<T, byte>(ref item);
+            _dataSerializer.Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), output, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Populate(ref T item, SerializerInput input, object context)
+        public void Populate(ref T item, ref SerializerInput input, object context)
         {
-            _dataSerializer.Read(SpanUtils.GetByteSpan(ref item), input, context);
+            ref var data = ref Unsafe.As<T, byte>(ref item);
+            _dataSerializer.Read(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref input, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Deserialize(SerializerInput input, object context)
+        public T Deserialize(ref SerializerInput input, object context)
         {
             T item = default;
-            _dataSerializer.Read(SpanUtils.GetByteSpan(ref item), input, context);
+            ref var data = ref Unsafe.As<T, byte>(ref item);
+            _dataSerializer.Read(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref input, context);
             return item;
         }
     }

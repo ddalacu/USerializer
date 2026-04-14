@@ -123,7 +123,7 @@ namespace USerialization
         }
 
         public static (FieldMetaData[] Metas, FieldSerializationData[] SerializationDatas) GetFields(Type type,
-            USerializer uSerializer,Func<FieldInfo,bool> shouldSerialize, bool initializeDataSerializer = true)
+            USerializer uSerializer, Func<FieldInfo, bool> shouldSerialize, bool initializeDataSerializer = true)
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
@@ -180,11 +180,11 @@ namespace USerialization
         //used more frequently
         private readonly byte[] _headerData;
         private readonly FieldSerializationData[] _fields;
-        
+
         //used less often
         private readonly DataTypesDatabase _dataTypesDatabase;
         private readonly FieldMetaData[] _fieldsMetas;
-        
+
 
         public FieldsSerializer(FieldMetaData[] metas, FieldSerializationData[] fields,
             DataTypesDatabase dataTypesDatabase)
@@ -225,7 +225,7 @@ namespace USerialization
 
             return headerData;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlySpan<byte> objectAddress, SerializerOutput output, object context)
         {
@@ -242,15 +242,15 @@ namespace USerialization
                 fieldData.DataSerializer.Write(tempSpan, output, context);
             }
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Read(Span<byte> objectAddress, SerializerInput input, object context)
+        public void Read(Span<byte> objectAddress, ref SerializerInput input, object context)
         {
             var fieldCount = input.ReadByte();
             //we just skipped the required data so we have it in the buffer
             var fieldDatas = _fields;
 
-            var streamData = input.GetNext<byte>(fieldCount * 5);
+            var streamData = input.GetNext(fieldCount * 5);
             var localData = new ReadOnlySpan<byte>(_headerData, 1, _headerData.Length - 1);
 
             if (streamData.SequenceEqual(localData))
@@ -259,7 +259,7 @@ namespace USerialization
                 {
                     var fieldData = fieldDatas[i];
                     var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
-                    fieldData.DataSerializer.Read(tempSpan, input, context);
+                    fieldData.DataSerializer.Read(tempSpan, ref input, context);
                 }
             }
             else
@@ -322,7 +322,7 @@ namespace USerialization
 
                     if ((byte)dataTypes[i] != 0)
                     {
-                        _dataTypesDatabase.SkipData(dataTypes[i], input);
+                        _dataTypesDatabase.SkipData(dataTypes[i], ref input);
                         continue;
                     }
 
@@ -331,7 +331,7 @@ namespace USerialization
                     //var dataSerializer = fieldData.SerializationMethods;
                     //dataSerializer.Read(fieldDataOffset, input);
 
-                    fieldData.DataSerializer.Read(tempSpan, input, context);
+                    fieldData.DataSerializer.Read(tempSpan, ref input, context);
                 }
             }
         }

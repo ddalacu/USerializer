@@ -302,9 +302,9 @@ namespace USerialization
             _dataSerializer.Write(span.Slice(_fieldOffset, _stackSize), output, context);
         }
         
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
-            _dataSerializer.Read(span.Slice(_fieldOffset, _stackSize), input, context);
+            _dataSerializer.Read(span.Slice(_fieldOffset, _stackSize), ref input, context);
         }
     }
 
@@ -351,7 +351,7 @@ namespace USerialization
             }
         }
         
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -359,7 +359,7 @@ namespace USerialization
 
             fixed (byte* objectAddress = &obj.Pinnable)
             {
-                _dataSerializer.Read(new Span<byte>(objectAddress + _fieldOffset, _stackSize), input, context);
+                _dataSerializer.Read(new Span<byte>(objectAddress + _fieldOffset, _stackSize), ref input, context);
             }
         }
     }
@@ -395,13 +395,13 @@ namespace USerialization
             _dataSerializer.Write(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), output, context);
         }
         
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
             TMember def = default;
             var ptr = Unsafe.AsPointer(ref def);
-            _dataSerializer.Read(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), input, context);
+            _dataSerializer.Read(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), ref input, context);
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
             _set(instance, def);
         }
@@ -441,7 +441,7 @@ namespace USerialization
             _dataSerializer.Write(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), output, context);
         }
         
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
             
@@ -449,7 +449,7 @@ namespace USerialization
 
             TMember def = default;
             var ptr = Unsafe.AsPointer(ref def);
-            _dataSerializer.Read(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), input, context);
+            _dataSerializer.Read(new Span<byte>(ptr, Unsafe.SizeOf<TMember>()), ref input, context);
             _set(ref instance, def);
         }
     }
@@ -518,7 +518,7 @@ namespace USerialization
             output.WriteSizeTrack(sizeTracker);
         }
         
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
 
@@ -536,7 +536,7 @@ namespace USerialization
                     {
                         TElement def = default;
                         var ptr = Unsafe.AsPointer(ref def);
-                        _elementSerializer.Read(new Span<byte>(ptr, Unsafe.SizeOf<TElement>()), input, context);
+                        _elementSerializer.Read(new Span<byte>(ptr, Unsafe.SizeOf<TElement>()), ref input, context);
                         _setElementDelegate(ref instance, index, ref def);
                     }
                 }

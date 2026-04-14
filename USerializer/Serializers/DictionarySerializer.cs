@@ -38,7 +38,8 @@ namespace USerialization
                 foreach (var kvPair in instance)
                 {
                     var copy = kvPair;
-                    _serializer.Write(SpanUtils.GetByteSpan(ref copy), output, context);
+                    ref var data = ref Unsafe.As<KeyValuePair<TKey, TValue>, byte>(ref copy);
+                    _serializer.Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<KeyValuePair<TKey, TValue>>()), output, context);
                 }
 
                 output.WriteSizeTrack(sizeTracker);
@@ -51,7 +52,7 @@ namespace USerialization
             }
         }
 
-        public override void Read(Span<byte> span, SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             ref var instance = ref Unsafe.As<byte, Dictionary<TKey, TValue>>(ref MemoryMarshal.GetReference(span));
             if (input.BeginReadSize(out var end))
@@ -74,7 +75,8 @@ namespace USerialization
                         for (int i = 0; i < count; i++)
                         {
                             var copy = new KeyValuePair<TKey, TValue>();
-                            _serializer.Read(SpanUtils.GetByteSpan(ref copy), input, context);
+                            ref var data = ref Unsafe.As<KeyValuePair<TKey, TValue>, byte>(ref copy);
+                            _serializer.Read(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<KeyValuePair<TKey, TValue>>()), ref input, context);
                             instance.Add(copy.Key, copy.Value);
                         }
                     }

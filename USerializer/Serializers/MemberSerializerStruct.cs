@@ -42,7 +42,7 @@ namespace USerialization
         public readonly FinalMemberSerializerStruct[] Members;
 
         private readonly int _size;
-        
+
         private readonly DataTypesDatabase _dataTypesDatabase;
 
         private readonly byte[] _headerData;
@@ -89,12 +89,12 @@ namespace USerialization
 
             return headerData;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == _size);
-            
+
             var typeDataFields = Members;
 
             var fieldsLength = typeDataFields.Length;
@@ -107,17 +107,17 @@ namespace USerialization
                 fieldData.Serializer.Write(span, output, context);
             }
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Read(Span<byte> span, SerializerInput input, object context)
+        public void Read(Span<byte> span, ref SerializerInput input, object context)
         {
             Debug.Assert(span.Length == _size);
-            
+
             var fieldDatas = Members;
 
             var fieldCount = input.ReadByte();
 
-            var streamData = input.GetNext<byte>(fieldCount * 5);
+            var streamData = input.GetNext(fieldCount * 5);
 
             var localData = new ReadOnlySpan<byte>(_headerData, 1, _headerData.Length - 1);
 
@@ -126,7 +126,7 @@ namespace USerialization
                 for (var i = 0; i < fieldCount; i++)
                 {
                     var fieldData = fieldDatas[i];
-                    fieldData.Serializer.Read(span, input, context);
+                    fieldData.Serializer.Read(span, ref input, context);
                 }
             }
             else
@@ -184,12 +184,12 @@ namespace USerialization
 
                     if (index == 255)
                     {
-                        _dataTypesDatabase.SkipData(dataTypes[i], input);
+                        _dataTypesDatabase.SkipData(dataTypes[i], ref input);
                         continue;
                     }
 
                     var fieldData = fieldDatas[index];
-                    fieldData.Serializer.Read(span, input, context);
+                    fieldData.Serializer.Read(span, ref input, context);
                 }
             }
         }

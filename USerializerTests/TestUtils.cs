@@ -96,9 +96,10 @@ namespace USerializerTests
 
             T deserialize = default;
 
-            using var serializerInput = new SerializerInput(2048, initialSerialize, ArrayPool<byte>.Shared);
-            valueSerializer.Populate(ref deserialize, serializerInput, null);
+            var serializerInput = new SerializerInput(2048, initialSerialize, ArrayPool<byte>.Shared);
+            valueSerializer.Populate(ref deserialize, ref serializerInput, null);
             serializerInput.FinishRead();
+            serializerInput.Dispose();
 
             Assert.True(initial == initialSerialize.Position);
 
@@ -111,9 +112,10 @@ namespace USerializerTests
             var ob = default(T);
             secondSerialize.Position = 0;
 
-            using var serializerInput2 = new SerializerInput(2048, secondSerialize, ArrayPool<byte>.Shared);
-            valueSerializer.Populate(ref ob, serializerInput2, null);
+            var serializerInput2 = new SerializerInput(2048, secondSerialize, ArrayPool<byte>.Shared);
+            valueSerializer.Populate(ref ob,ref serializerInput2, null);
             serializerInput2.FinishRead();
+            serializerInput2.Dispose();
 
             var reserialize = new MemoryStream();
 

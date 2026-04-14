@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using USerialization;
 
 namespace PerformanceTests
@@ -132,8 +133,6 @@ namespace PerformanceTests
 
         private SerializerOutput _output;
 
-        private SerializerInput _input;
-
         private class ConsoleLogger : ILogger
         {
             public void Error(string error)
@@ -153,7 +152,6 @@ namespace PerformanceTests
                 new DataTypesDatabase(), consoleLogger);
 
             _output = new SerializerOutput(2048 * 20, ArrayPool<byte>.Shared);
-            _input = new SerializerInput(2048 * 20, ArrayPool<byte>.Shared);
 
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
             {
@@ -167,7 +165,8 @@ namespace PerformanceTests
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data) == false)
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
-            data.Write(SpanUtils.GetByteSpan(ref obj), _output, null);
+            ref var data1 = ref Unsafe.As<T, byte>(ref obj);
+            data.Write(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<T>()), _output, null);
             _output.Flush(stream);
         }
 
@@ -175,15 +174,19 @@ namespace PerformanceTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         protected override T Deserialize(Stream stream)
         {
-            _input.SetStream(stream);
+            //var input = new SerializerInput(2048 * 20, stream, ArrayPool<byte>.Shared);
 
+            var input = new SerializerInput(((MemoryStream)stream).GetBuffer(), (int)stream.Length);
+            
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var dataSerializer, true) == false)
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
             T result = default;
-            dataSerializer.Read(SpanUtils.GetByteSpan(ref result), _input, null);
+            ref var data = ref Unsafe.As<T, byte>(ref result);
+            dataSerializer.Read(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref input, null);
 
-            _input.FinishRead();
+            input.FinishRead();
+            input.Dispose();
             return result;
         }
     }
