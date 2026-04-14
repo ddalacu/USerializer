@@ -49,16 +49,6 @@ namespace USerialization
             _streamPosition = stream.Position;
         }
 
-        public SerializerInput(byte[] buffer, int count)
-        {
-            _pool = null;
-            _buffer = buffer;
-            _bufferPosition = 0;
-            _bufferCount = count;
-            _stream = null;
-            _streamPosition = 0;
-        }
-
         public void FinishRead()
         {
             if (_stream == null)

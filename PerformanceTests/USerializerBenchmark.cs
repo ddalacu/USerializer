@@ -174,10 +174,8 @@ namespace PerformanceTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         protected override T Deserialize(Stream stream)
         {
-            //var input = new SerializerInput(2048 * 20, stream, ArrayPool<byte>.Shared);
-
-            var input = new SerializerInput(((MemoryStream)stream).GetBuffer(), (int)stream.Length);
-            
+            var input = new SerializerInput(2048 * 20, stream, ArrayPool<byte>.Shared);
+     
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var dataSerializer, true) == false)
                 throw new Exception($"Cannot serialize {typeof(T)}");
 

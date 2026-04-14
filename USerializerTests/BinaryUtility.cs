@@ -228,7 +228,7 @@ namespace USerializerTests
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
                 return false;
 
-            var serializerInput = new SerializerInput(stream.GetBuffer(), (int)stream.Length);
+            var serializerInput = new SerializerInput(bufferSize, stream, ArrayPool<byte>.Shared);
 
             ref var data1 = ref Unsafe.As<T, byte>(ref result);
             data.Read(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<T>()), ref serializerInput, context);
