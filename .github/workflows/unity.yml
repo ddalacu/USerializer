@@ -17,7 +17,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 9.x.x
+        dotnet-version: 10.x.x
     - name: Test
       run: dotnet test USerializer --verbosity normal
     - name: Publish
