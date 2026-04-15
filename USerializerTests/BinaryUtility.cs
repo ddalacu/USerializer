@@ -202,10 +202,7 @@ namespace USerializerTests
                 return false;
 
             var output = new SerializerOutput(bufferSize, ArrayPool<byte>.Shared);
-
-            ref var data1 = ref Unsafe.As<object, byte>(ref obj);
-            data.Write(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<object>()), ref output, context);
-
+            data.Serialize(ref obj, ref output, context);
             output.Flush(stream);
             output.Dispose();
 
@@ -227,16 +224,12 @@ namespace USerializerTests
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
+            if (_uSerializer.TryGetDataSerializer(typeof(T), out var data) == false)
                 return false;
 
             var serializerInput = new SerializerInput(bufferSize, stream, ArrayPool<byte>.Shared);
-
-            ref var data1 = ref Unsafe.As<T, byte>(ref result);
-            data.Read(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<T>()), ref serializerInput, context);
-
+            data.Deserialize(ref result, ref serializerInput, context);
             serializerInput.Dispose();
-
             serializerInput.FinishRead();
             return true;
         }

@@ -3,6 +3,8 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using NUnit.Framework;
 using USerialization;
 
@@ -82,12 +84,12 @@ namespace USerializerTests
         {
             var initialSerialize = new MemoryStream();
 
-            if (BinaryUtility.USerializer.TryGetValueHelper<T>(out var valueSerializer) == false)
+            if (BinaryUtility.USerializer.TryGetDataSerializer(typeof(T), out var valueSerializer) == false)
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
 
             var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
-            valueSerializer.Serialize(ref value, ref output, null);
+            valueSerializer.Serialize(ref value, ref output);
             output.Flush(initialSerialize);
             output.Dispose();
 
@@ -98,7 +100,7 @@ namespace USerializerTests
             T deserialize = default;
 
             var serializerInput = new SerializerInput(2048, initialSerialize, ArrayPool<byte>.Shared);
-            valueSerializer.Populate(ref deserialize, ref serializerInput, null);
+            valueSerializer.Deserialize(ref deserialize, ref serializerInput, null);
             serializerInput.FinishRead();
             serializerInput.Dispose();
 
@@ -115,14 +117,14 @@ namespace USerializerTests
             secondSerialize.Position = 0;
 
             var serializerInput2 = new SerializerInput(2048, secondSerialize, ArrayPool<byte>.Shared);
-            valueSerializer.Populate(ref ob, ref serializerInput2, null);
+            valueSerializer.Deserialize(ref ob, ref serializerInput2, null);
             serializerInput2.FinishRead();
             serializerInput2.Dispose();
 
             var reserialize = new MemoryStream();
 
             var output3 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
-            valueSerializer.Serialize(ref ob,ref output3, null);
+            valueSerializer.Serialize(ref ob, ref output3, null);
             output3.Flush(reserialize);
             output3.Dispose();
 

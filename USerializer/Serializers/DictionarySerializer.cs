@@ -38,8 +38,7 @@ namespace USerialization
                 foreach (var kvPair in instance)
                 {
                     var copy = kvPair;
-                    ref var data = ref Unsafe.As<KeyValuePair<TKey, TValue>, byte>(ref copy);
-                    _serializer.Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<KeyValuePair<TKey, TValue>>()), ref output, context);
+                    _serializer.Serialize(ref copy, ref output, context);
                 }
 
                 output.WriteSizeTrack(sizeTracker);
@@ -75,8 +74,7 @@ namespace USerialization
                         for (int i = 0; i < count; i++)
                         {
                             var copy = new KeyValuePair<TKey, TValue>();
-                            ref var data = ref Unsafe.As<KeyValuePair<TKey, TValue>, byte>(ref copy);
-                            _serializer.Read(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<KeyValuePair<TKey, TValue>>()), ref input, context);
+                            _serializer.Deserialize(ref copy, ref input, context);
                             instance.Add(copy.Key, copy.Value);
                         }
                     }

@@ -158,12 +158,11 @@ namespace PerformanceTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         protected override void Serialize(T obj, Stream stream)
         {
-            if (_uSerializer.TryGetDataSerializer(typeof(T), out var data) == false)
+            if (_uSerializer.TryGetDataSerializer(typeof(T), out var dataSerializer) == false)
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
-            ref var data1 = ref Unsafe.As<T, byte>(ref obj);
             var output = new SerializerOutput(2048 * 20, ArrayPool<byte>.Shared);
-            data.Write(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<T>()), ref output, null);
+            dataSerializer.Serialize(ref obj, ref output);
             output.Flush(stream);
             output.Dispose();
         }
@@ -178,9 +177,7 @@ namespace PerformanceTests
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
             T result = default;
-            ref var data = ref Unsafe.As<T, byte>(ref result);
-            dataSerializer.Read(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref input, null);
-
+            dataSerializer.Deserialize(ref result, ref input);
             input.FinishRead();
             input.Dispose();
             return result;
