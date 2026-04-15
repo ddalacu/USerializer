@@ -24,7 +24,7 @@ jobs:
       run: dotnet publish USerializer --configuration Release -o TempDirectory
     - name: Copy Data
       run: cp -r USerializer/ PublishDirectory
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v6
       with:
         name: UserializerPublished
         path: PublishDirectory
@@ -32,7 +32,7 @@ jobs:
     needs: TestAndBuild
     runs-on: ubuntu-latest 
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v6
       with:
         name: UserializerPublished
         path: PublishDirectory
@@ -48,6 +48,6 @@ jobs:
           target-branch: master
           target-directory: 'Runtime/USerializer'
     - name: DeleteArtefact
-      uses: geekyeggo/delete-artifact@v1
+      uses: geekyeggo/delete-artifact@v6
       with:
         name: UserializerPublished
