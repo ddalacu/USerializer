@@ -20,8 +20,6 @@ jobs:
         dotnet-version: 10.0.x
     - name: Test
       run: dotnet test USerializer --verbosity normal
-    - name: Publish
-      run: dotnet publish USerializer --configuration Release -o TempDirectory
     - name: Copy Data
       run: cp -r USerializer/ PublishDirectory
     - uses: actions/upload-artifact@v6
