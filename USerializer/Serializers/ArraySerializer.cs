@@ -41,7 +41,7 @@ namespace USerialization
 
         private readonly DataSerializer _elementSerializer;
 
-        private readonly int _size;
+        private int _size;
         
         public override DataType DataType => DataType.Array;
 
@@ -57,11 +57,12 @@ namespace USerialization
             {
                 serializer.Logger.Error("Element data type is none, something went wrong!");
             }
+
+            _size = serializer.RuntimeUtils.GetStackSize(_elementType);
         }
 
         public ArrayDataSerializer(Type elementType, DataSerializer elementSerializer)
         {
-            _size = UnsafeUtils.GetStackSize(elementType);
             _elementType = elementType;
             _elementSerializer = elementSerializer;
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -116,6 +117,23 @@ namespace USerialization
         where T : unmanaged
     {
         private DataType _elementDataType;
+
+        private int _itemsOffset;
+        private int _sizeOffset;
+
+        public override bool TryInitialize(USerializer serializer)
+        {
+            var listType = typeof(List<T>);
+            var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
+            var sizeMember = listType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            if (itemsMember == null || sizeMember == null)
+                throw new InvalidOperationException("Could not find List internal fields.");
+
+            _itemsOffset = serializer.RuntimeUtils.GetFieldOffset(itemsMember);
+            _sizeOffset = serializer.RuntimeUtils.GetFieldOffset(sizeMember);
+            return true;
+        }
         
         public override DataType DataType => DataType.Array;
 
@@ -141,7 +159,7 @@ namespace USerialization
                     output.Write7BitEncodedIntUnchecked(count);
                     output.WriteByteUnchecked((byte)_elementDataType);
 
-                    var array = ListHelpers.GetArray(list, out _);
+                    var array = ListHelpers.GetArray(list, _itemsOffset, _sizeOffset, out _);
                     var slice = array.AsSpan().Slice(0, count);
                     output.WriteSpan<T>(slice);
                 }
@@ -166,13 +184,13 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var array = ListHelpers.PrepareArray(ref list, count);
+                    var array = ListHelpers.PrepareArray(ref list, count, _itemsOffset, _sizeOffset);
 
                     var type = (DataType)input.ReadByte();
 
                     if (type == _elementDataType)
                     {
-                        input.ReadSpan(array.AsSpan().Slice(0, count));
+                        input.ReadSpan(array.AsSpan().Slice(0, (int)count));
                     }
                     else
                     {
@@ -185,7 +203,7 @@ namespace USerialization
                     if (list == null)
                         list = new List<T>();
                     else
-                        ListHelpers.SetCount(list, 0);
+                        ListHelpers.SetCount(list, 0, _sizeOffset);
                 }
             }
             else

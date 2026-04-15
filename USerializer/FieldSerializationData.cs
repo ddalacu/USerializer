@@ -144,13 +144,13 @@ namespace USerialization
                 if (serializationMethods == null)
                     throw new Exception($"Returned null serializer for {fieldInfo.FieldType}");
 
-                var fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
+                var fieldOffset = uSerializer.RuntimeUtils.GetFieldOffset(fieldInfo);
                 if (fieldOffset > short.MaxValue)
                     throw new Exception("Field offset way to big!");
 
                 var alternateNames = uSerializer.SerializationPolicy.GetAlternateNames(fieldInfo);
 
-                var stackSize = UnsafeUtils.GetStackSize(fieldInfo.FieldType);
+                var stackSize = uSerializer.RuntimeUtils.GetStackSize(fieldInfo.FieldType);
 
                 var fieldSerializationData =
                     new FieldSerializationData(serializationMethods, (ushort)fieldOffset, (ushort)stackSize);

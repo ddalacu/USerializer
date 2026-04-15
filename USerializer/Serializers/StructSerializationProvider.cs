@@ -44,6 +44,7 @@ namespace USerialization
                 _shouldSerialize);
 
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
+            _stackSize = serializer.RuntimeUtils.GetStackSize(_type);
         }
 
         private int _stackSize;
@@ -51,7 +52,6 @@ namespace USerialization
         public StructDataSerializer(Type type, Func<FieldInfo, bool> shouldSerialize)
         {
             _type = type;
-            _stackSize = UnsafeUtils.GetStackSize(type);
             _shouldSerialize = shouldSerialize;
         }
 

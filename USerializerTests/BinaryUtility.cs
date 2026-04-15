@@ -53,7 +53,7 @@ namespace USerializerTests
 
         private readonly bool _haveCtor;
 
-        private readonly int _dataSize;
+        private int _dataSize;
 
         public override DataType DataType => DataType.Object;
 
@@ -63,6 +63,7 @@ namespace USerializerTests
                 _shouldSerialize);
 
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
+            _dataSize = serializer.RuntimeUtils.GetClassHeapSize(_type);
         }
 
         public CustomClassDataSerializer(Type type, Func<FieldInfo, bool> shouldSerialize)
@@ -75,7 +76,6 @@ namespace USerializerTests
 
             _type = type;
             _shouldSerialize = shouldSerialize;
-            _dataSize = UnsafeUtils.GetClassHeapSize(type);
 
             var constructor = _type.GetConstructor(Type.EmptyTypes);
             _haveCtor = constructor != null;
@@ -180,7 +180,7 @@ namespace USerializerTests
             };
 
             _uSerializer = new USerializer(new UnitySerializationPolicy(), providers,
-                new DataTypesDatabase(), consoleLogger);
+                new DataTypesDatabase(), consoleLogger, new NETRuntimeUtils());
         }
 
         /// <summary>

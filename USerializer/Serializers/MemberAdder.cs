@@ -283,17 +283,20 @@ namespace USerialization
 
         private int _stackSize;
 
+        private FieldInfo _fieldInfo;
+
         public override DataType DataType => _dataSerializer.DataType;
 
         protected override void Initialize(USerializer serializer)
         {
             _dataSerializer.RootInitialize(serializer);
+            _fieldOffset = serializer.RuntimeUtils.GetFieldOffset(_fieldInfo);
+            _stackSize = serializer.RuntimeUtils.GetStackSize(_fieldInfo.FieldType);
         }
 
         public StructFieldWriter(DataSerializer dataSerializer, FieldInfo fieldInfo)
         {
-            _fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
-            _stackSize = UnsafeUtils.GetStackSize(fieldInfo.FieldType);
+            _fieldInfo = fieldInfo;
             _dataSerializer = dataSerializer;
         }
         
@@ -316,11 +319,15 @@ namespace USerialization
 
         private int _stackSize;
 
+        private FieldInfo _fieldInfo;
+
         public override DataType DataType => _dataSerializer.DataType;
 
         protected override void Initialize(USerializer serializer)
         {
             _dataSerializer.RootInitialize(serializer);
+            _fieldOffset = serializer.RuntimeUtils.GetFieldOffset(_fieldInfo);
+            _stackSize = serializer.RuntimeUtils.GetStackSize(_fieldInfo.FieldType);
         }
 
         public ClassFieldWriter(DataSerializer dataSerializer, FieldInfo fieldInfo)
@@ -334,8 +341,7 @@ namespace USerialization
             if (fieldInfo.DeclaringType.IsClass == false)
                 throw new ArgumentException(nameof(fieldInfo));
 
-            _fieldOffset = UnsafeUtils.GetFieldOffset(fieldInfo);
-            _stackSize = UnsafeUtils.GetStackSize(fieldInfo.FieldType);
+            _fieldInfo = fieldInfo;
             _dataSerializer = dataSerializer;
         }
         

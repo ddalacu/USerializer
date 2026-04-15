@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -38,7 +39,10 @@ namespace USerialization
 
         private readonly DataSerializer _elementSerializer;
 
-        private readonly int _size;
+        private int _size;
+
+        private int _itemsOffset;
+        private int _sizeOffset;
 
         private readonly Type _fieldType;
         
@@ -56,6 +60,18 @@ namespace USerialization
             {
                 serializer.Logger.Error("Element data type is none, something went wrong!");
             }
+
+            _size = serializer.RuntimeUtils.GetStackSize(_elementType);
+
+            var listType = typeof(List<object>);
+            var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
+            var sizeMember = listType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            if (itemsMember == null || sizeMember == null)
+                throw new InvalidOperationException("Could not find List internal fields.");
+
+            _itemsOffset = serializer.RuntimeUtils.GetFieldOffset(itemsMember);
+            _sizeOffset = serializer.RuntimeUtils.GetFieldOffset(sizeMember);
         }
 
         public ListDataSerializer(Type fieldType, Type elementType, DataSerializer elementSerializer)
@@ -63,7 +79,6 @@ namespace USerialization
             _fieldType = fieldType;
             _elementType = elementType;
             _elementSerializer = elementSerializer;
-            _size = UnsafeUtils.GetStackSize(elementType);
         }
 
         public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
@@ -78,7 +93,7 @@ namespace USerialization
                 return;
             }
 
-            var array = ListHelpers.GetArray(list, out var count);
+            var array = ListHelpers.GetArray(list, _itemsOffset, _sizeOffset, out var count);
 
             if (count > 0)
             {
@@ -127,17 +142,17 @@ namespace USerialization
                 {
                     list = RuntimeHelpers.GetUninitializedObject(_fieldType);
                     array = Array.CreateInstance(_elementType, count);
-                    ListHelpers.SetArray(list, array, count);
+                    ListHelpers.SetArray(list, array, count, _itemsOffset, _sizeOffset);
                 }
                 else
                 {
-                    array = ListHelpers.GetArray(list, out var currentCount);
+                    array = ListHelpers.GetArray(list, _itemsOffset, _sizeOffset, out var currentCount);
                     var len = array.Length;
 
                     if (len < count) //if we need more elements in the array then we allocate a array
                     {
                         array = Array.CreateInstance(_elementType, count);
-                        ListHelpers.SetArray(list, array, count);
+                        ListHelpers.SetArray(list, array, count, _itemsOffset, _sizeOffset);
                     }
                     else
                     {
@@ -150,7 +165,7 @@ namespace USerialization
                             if (remaining > 0)
                                 ArrayHelpers.CleanArray(array, (uint)count, (uint)remaining, (uint)_size);
 
-                            ListHelpers.SetCount(list, count);
+                            ListHelpers.SetCount(list, count, _sizeOffset);
                         }
                     }
                 }

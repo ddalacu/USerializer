@@ -22,14 +22,16 @@ namespace USerialization
 
         public ILogger Logger { get; set; }
 
+        public IRuntimeUtils RuntimeUtils { get; }
 
         public USerializer(ISerializationPolicy serializationPolicy, ISerializationProvider[] providers,
-            DataTypesDatabase dataTypesDatabase, ILogger logger)
+            DataTypesDatabase dataTypesDatabase, ILogger logger, IRuntimeUtils runtimeUtils)
         {
             SerializationPolicy = serializationPolicy;
             _providers = providers;
             DataTypesDatabase = dataTypesDatabase;
             Logger = logger;
+            RuntimeUtils = runtimeUtils;
         }
 
         public void Clear()

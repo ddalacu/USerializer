@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using NUnit.Framework;
 using USerialization;
 
@@ -21,8 +22,19 @@ namespace USerializerTests
             }
 
             var memStream = new MemoryStream();
+            
+            var listType = typeof(List<T>);
+            var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
+            var sizeMember = listType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
 
-            var array = ListHelpers.GetArray(list, out var count);
+            if (itemsMember == null || sizeMember == null)
+                throw new InvalidOperationException("Could not find List internal fields.");
+
+            var runtimeUtils = BinaryUtility.USerializer.RuntimeUtils;
+            var itemsOffset = runtimeUtils.GetFieldOffset(itemsMember);
+            var sizeOffset = runtimeUtils.GetFieldOffset(sizeMember);
+            
+            var array = ListHelpers.GetArray(list, itemsOffset, sizeOffset, out var count);
 
             BinaryUtility.Serialize(list, memStream);
             
@@ -34,7 +46,7 @@ namespace USerializerTests
             memStream.Position = 0;
             BinaryUtility.TryDeserialize(memStream, ref list);
             
-            var deserializeArray = ListHelpers.GetArray(list, out var deserializeCount);
+            var deserializeArray = ListHelpers.GetArray(list, itemsOffset, sizeOffset, out var deserializeCount);
 
             Assert.AreEqual(count, deserializeCount);
             Assert.AreSame(array, deserializeArray);

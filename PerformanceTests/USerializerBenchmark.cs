@@ -143,11 +143,10 @@ namespace PerformanceTests
         public USerializerBenchmark()
         {
             var consoleLogger = new ConsoleLogger();
-            
-            var serializationProviders = ProvidersUtils.GetDefaultProviders(consoleLogger);
 
+            var serializationProviders = ProvidersUtils.GetDefaultProviders(consoleLogger);
             _uSerializer = new USerializer(new UnitySerializationPolicy(), serializationProviders,
-                new DataTypesDatabase(), consoleLogger);
+                new DataTypesDatabase(), consoleLogger, new NETRuntimeUtils());
 
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
             {
@@ -172,7 +171,7 @@ namespace PerformanceTests
         protected override T Deserialize(Stream stream)
         {
             var input = new SerializerInput(2048 * 20, stream, ArrayPool<byte>.Shared);
-     
+
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var dataSerializer, true) == false)
                 throw new Exception($"Cannot serialize {typeof(T)}");
 

@@ -45,7 +45,7 @@ namespace USerialization
     {
         private FieldsSerializer _fieldsSerializer;
 
-        private readonly int _heapSize;
+        private int _heapSize;
         private readonly Func<object> _activator;
 
         public override DataType DataType => DataType.Object;
@@ -56,6 +56,7 @@ namespace USerialization
                 _shouldSerialize);
 
             _fieldsSerializer = new FieldsSerializer(metas, serializationDatas, serializer.DataTypesDatabase);
+            _heapSize = serializer.RuntimeUtils.GetClassHeapSize(_type);
         }
 
         public ClassDataSerializer(Type type, Func<object> activator, Func<FieldInfo, bool> shouldSerialize)
@@ -67,7 +68,6 @@ namespace USerialization
                 throw new ArgumentException(nameof(type));
 
             _type = type;
-            _heapSize = UnsafeUtils.GetClassHeapSize(type);
             _activator = activator;
             _shouldSerialize = shouldSerialize;
         }
