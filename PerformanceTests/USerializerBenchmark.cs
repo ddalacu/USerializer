@@ -143,8 +143,8 @@ namespace PerformanceTests
         public USerializerBenchmark()
         {
             var consoleLogger = new ConsoleLogger();
-
-            var serializationProviders = ProvidersUtils.GetDefaultProviders();
+            
+            var serializationProviders = ProvidersUtils.GetDefaultProviders(consoleLogger);
 
             _uSerializer = new USerializer(new UnitySerializationPolicy(), serializationProviders,
                 new DataTypesDatabase(), consoleLogger);
