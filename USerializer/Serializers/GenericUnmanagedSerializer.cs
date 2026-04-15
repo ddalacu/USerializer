@@ -20,7 +20,7 @@ namespace USerialization
             _dataType = dataType;
         }
         
-        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
             
@@ -32,7 +32,7 @@ namespace USerialization
             // output.Write(value);
         }
 
-        public override void Read(Span<byte> span, ref SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
             ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
@@ -47,7 +47,7 @@ namespace USerialization
 
         public override DataType DataType => DataType.Array;
         
-        public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -81,7 +81,7 @@ namespace USerialization
             }
         }
 
-        public override void Read(Span<byte> span, ref SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -137,7 +137,7 @@ namespace USerialization
         
         public override DataType DataType => DataType.Array;
 
-        public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             ref var list = ref Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(span));
 
@@ -174,7 +174,7 @@ namespace USerialization
             }
         }
 
-        public override void Read(Span<byte> span, ref SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
             ref var list = ref Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(span));
 

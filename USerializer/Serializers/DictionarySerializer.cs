@@ -18,7 +18,7 @@ namespace USerialization
                 throw new Exception("Could not find serializer for KeyValuePair<TKey,TValue>");
         }
 
-        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             ref var instance = ref Unsafe.As<byte, Dictionary<TKey, TValue>>(ref MemoryMarshal.GetReference(span));
             if (instance == null)
@@ -38,7 +38,7 @@ namespace USerialization
                 foreach (var kvPair in instance)
                 {
                     var copy = kvPair;
-                    _serializer.Serialize(ref copy, ref output, context);
+                    _serializer.Serialize(ref copy, ref output);
                 }
 
                 output.WriteSizeTrack(sizeTracker);
@@ -51,7 +51,7 @@ namespace USerialization
             }
         }
 
-        public override void Read(Span<byte> span, ref SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
             ref var instance = ref Unsafe.As<byte, Dictionary<TKey, TValue>>(ref MemoryMarshal.GetReference(span));
             if (input.BeginReadSize(out var end))
@@ -74,7 +74,7 @@ namespace USerialization
                         for (int i = 0; i < count; i++)
                         {
                             var copy = new KeyValuePair<TKey, TValue>();
-                            _serializer.Deserialize(ref copy, ref input, context);
+                            _serializer.Deserialize(ref copy, ref input);
                             instance.Add(copy.Key, copy.Value);
                         }
                     }

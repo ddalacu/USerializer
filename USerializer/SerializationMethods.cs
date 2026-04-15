@@ -10,9 +10,9 @@ namespace USerialization
 
         public abstract DataType DataType { get; }
 
-        public abstract void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context);
+        public abstract void Write(ReadOnlySpan<byte> span, ref SerializerOutput output);
 
-        public abstract void Read(Span<byte> span, ref SerializerInput input, object context);
+        public abstract void Read(Span<byte> span, ref SerializerInput input);
 
         public void RootInitialize(USerializer serializer)
         {
@@ -31,16 +31,16 @@ namespace USerialization
 
         protected abstract void Initialize(USerializer serializer);
 
-        public void Serialize<T>(ref T value, ref SerializerOutput output, object context = null)
+        public void Serialize<T>(ref T value, ref SerializerOutput output)
         {
             ref var data = ref Unsafe.As<T, byte>(ref value);
-            Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref output, context);
+            Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref output);
         }
 
-        public void Deserialize<T>(ref T value, ref SerializerInput input, object context = null)
+        public void Deserialize<T>(ref T value, ref SerializerInput input)
         {
             ref var data = ref Unsafe.As<T, byte>(ref value);
-            Read(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref input, context);
+            Read(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref input);
         }
     }
 }

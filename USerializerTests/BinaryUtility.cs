@@ -85,7 +85,7 @@ namespace USerializerTests
 
         private const int MaxStack = 32;
 
-        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
 
@@ -102,11 +102,11 @@ namespace USerializerTests
 
             var track = output.BeginSizeTrack();
 
-            Unsafe.As<ISerializationCallbacks>(obj).OnBeforeSerialize(context);
+            Unsafe.As<ISerializationCallbacks>(obj).OnBeforeSerialize(output.Context);
 
             fixed (byte* objectAddress = &obj.Pinnable)
             {
-                _fieldsSerializer.Write(new Span<byte>(objectAddress, _dataSize), ref output, context);
+                _fieldsSerializer.Write(new Span<byte>(objectAddress, _dataSize), ref output);
             }
 
             output.WriteSizeTrack(track);
@@ -114,7 +114,7 @@ namespace USerializerTests
             _stack--;
         }
 
-        public override void Read(Span<byte> span, ref SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
             ref var instance = ref Unsafe.As<byte, Object>(ref MemoryMarshal.GetReference(span));
 
@@ -133,10 +133,10 @@ namespace USerializerTests
                 ref var pinnable = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
                 fixed (byte* objectAddress = &pinnable.Pinnable)
                 {
-                    _fieldsSerializer.Read(new Span<byte>(objectAddress, _dataSize), ref input, context);
+                    _fieldsSerializer.Read(new Span<byte>(objectAddress, _dataSize), ref input);
                 }
 
-                Unsafe.As<ISerializationCallbacks>(instance).OnAfterSerialize(context);
+                Unsafe.As<ISerializationCallbacks>(instance).OnAfterSerialize(input.Context);
             }
             else
             {
@@ -202,7 +202,8 @@ namespace USerializerTests
                 return false;
 
             var output = new SerializerOutput(bufferSize, ArrayPool<byte>.Shared);
-            data.Serialize(ref obj, ref output, context);
+            output.Context = context;
+            data.Serialize(ref obj, ref output);
             output.Flush(stream);
             output.Dispose();
 
@@ -228,7 +229,8 @@ namespace USerializerTests
                 return false;
 
             var serializerInput = new SerializerInput(bufferSize, stream, ArrayPool<byte>.Shared);
-            data.Deserialize(ref result, ref serializerInput, context);
+            serializerInput.Context = context;
+            data.Deserialize(ref result, ref serializerInput);
             serializerInput.Dispose();
             serializerInput.FinishRead();
             return true;

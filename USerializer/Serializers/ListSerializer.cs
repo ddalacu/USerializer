@@ -81,7 +81,7 @@ namespace USerialization
             _elementSerializer = elementSerializer;
         }
 
-        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -111,7 +111,7 @@ namespace USerialization
                         var serializer = _elementSerializer;
                         for (var index = 0; index < count; index++)
                         {
-                            serializer.Write(new ReadOnlySpan<byte>(tempAddress, _size), ref output, context);
+                            serializer.Write(new ReadOnlySpan<byte>(tempAddress, _size), ref output);
                             tempAddress += _size;
                         }
                     }
@@ -126,7 +126,7 @@ namespace USerialization
             }
         }
 
-        public override void Read(Span<byte> span, ref SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -183,7 +183,7 @@ namespace USerialization
                             var serializer = _elementSerializer;
                             for (var i = 0; i < count; i++)
                             {
-                                serializer.Read(new Span<byte>(tempAddress, _size), ref input, context);
+                                serializer.Read(new Span<byte>(tempAddress, _size), ref input);
                                 tempAddress += _size;
                             }
                         }

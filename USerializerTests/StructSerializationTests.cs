@@ -200,7 +200,7 @@ namespace USerializerTests
 
             var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
 
-            structSer.Serialize(ref initial, ref output, null);
+            structSer.Serialize(ref initial, ref output);
 
             output.Flush(stream);
             output.Dispose();
@@ -212,7 +212,7 @@ namespace USerializerTests
             var input = new SerializerInput(2048, stream, ArrayPool<byte>.Shared);
 
             SimpleStruct result = default;
-            structSer.Deserialize(ref result, ref input, null);
+            structSer.Deserialize(ref result, ref input);
             input.FinishRead();
 
             input.Dispose();

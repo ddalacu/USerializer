@@ -100,7 +100,7 @@ namespace USerializerTests
             T deserialize = default;
 
             var serializerInput = new SerializerInput(2048, initialSerialize, ArrayPool<byte>.Shared);
-            valueSerializer.Deserialize(ref deserialize, ref serializerInput, null);
+            valueSerializer.Deserialize(ref deserialize, ref serializerInput);
             serializerInput.FinishRead();
             serializerInput.Dispose();
 
@@ -109,7 +109,7 @@ namespace USerializerTests
             var secondSerialize = new MemoryStream();
 
             var output2 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
-            valueSerializer.Serialize(ref deserialize, ref output2, null);
+            valueSerializer.Serialize(ref deserialize, ref output2);
             output2.Flush(secondSerialize);
             output2.Dispose();
 
@@ -117,14 +117,14 @@ namespace USerializerTests
             secondSerialize.Position = 0;
 
             var serializerInput2 = new SerializerInput(2048, secondSerialize, ArrayPool<byte>.Shared);
-            valueSerializer.Deserialize(ref ob, ref serializerInput2, null);
+            valueSerializer.Deserialize(ref ob, ref serializerInput2);
             serializerInput2.FinishRead();
             serializerInput2.Dispose();
 
             var reserialize = new MemoryStream();
 
             var output3 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
-            valueSerializer.Serialize(ref ob, ref output3, null);
+            valueSerializer.Serialize(ref ob, ref output3);
             output3.Flush(reserialize);
             output3.Dispose();
 

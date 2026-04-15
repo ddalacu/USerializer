@@ -91,7 +91,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == _size);
 
@@ -104,12 +104,12 @@ namespace USerialization
             for (var index = 0; index < fieldsLength; index++)
             {
                 var fieldData = typeDataFields[index];
-                fieldData.Serializer.Write(span, ref output, context);
+                fieldData.Serializer.Write(span, ref output);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Read(Span<byte> span, ref SerializerInput input, object context)
+        public void Read(Span<byte> span, ref SerializerInput input)
         {
             Debug.Assert(span.Length == _size);
 
@@ -126,7 +126,7 @@ namespace USerialization
                 for (var i = 0; i < fieldCount; i++)
                 {
                     var fieldData = fieldDatas[i];
-                    fieldData.Serializer.Read(span, ref input, context);
+                    fieldData.Serializer.Read(span, ref input);
                 }
             }
             else
@@ -189,7 +189,7 @@ namespace USerialization
                     }
 
                     var fieldData = fieldDatas[index];
-                    fieldData.Serializer.Read(span, ref input, context);
+                    fieldData.Serializer.Read(span, ref input);
                 }
             }
         }

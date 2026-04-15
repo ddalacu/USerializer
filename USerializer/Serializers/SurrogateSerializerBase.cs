@@ -35,22 +35,22 @@ namespace USerialization
 
         public abstract void CopyFromSurrogate(ref TSurrogate from, ref T to);
         
-        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
             var to = default(TSurrogate);
             CopyToSurrogate(ref instance, ref to);
-            _dataSerializer.Serialize(ref to, ref output, context);
+            _dataSerializer.Serialize(ref to, ref output);
         }
 
-        public override void Read(Span<byte> span, ref SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
 
             ref var instance = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
             var from = default(TSurrogate);
-            _dataSerializer.Deserialize(ref from, ref input, context);
+            _dataSerializer.Deserialize(ref from, ref input);
             CopyFromSurrogate(ref from, ref instance);
         }
     }

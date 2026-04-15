@@ -23,7 +23,7 @@ namespace USerialization
 
         private readonly ArrayPool<byte> _pool;
 
-        public Stream Stream => _stream;
+        public object Context;
 
         private long _streamPosition;
 
@@ -47,6 +47,7 @@ namespace USerialization
             _stream = null;
             _stream = stream;
             _streamPosition = stream.Position;
+            Context = null;
         }
 
         public void FinishRead()

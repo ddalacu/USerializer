@@ -36,7 +36,7 @@ namespace USerialization
             _memberSerializer = new MemberSerializer(IntPtr.Size, members, serializer.DataTypesDatabase);
         }
 
-        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             ref var obj = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
@@ -49,12 +49,12 @@ namespace USerialization
 
             var track = output.BeginSizeTrack();
 
-            _memberSerializer.Write(span, ref output, context);
+            _memberSerializer.Write(span, ref output);
 
             output.WriteSizeTrack(track);
         }
 
-        public override void Read(Span<byte> span, ref SerializerInput input, object context)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
             Debug.Assert(span.Length == IntPtr.Size);
 
@@ -65,7 +65,7 @@ namespace USerialization
                 if (objectInstance == null)
                     objectInstance = _activator();
 
-                _memberSerializer.Read(span, ref input, context);
+                _memberSerializer.Read(span, ref input);
             }
             else
             {

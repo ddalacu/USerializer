@@ -27,12 +27,15 @@ namespace USerialization
 
         private readonly ArrayPool<byte> _pool;
 
+        public object Context;
+        
         public SerializerOutput(int capacity, ArrayPool<byte> pool)
         {
             _pool = pool;
             _buffer = _pool.Rent(capacity);
             _bufferSize = _buffer.Length;
             _position = 0;
+            Context = null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

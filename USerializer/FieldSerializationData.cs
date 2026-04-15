@@ -227,7 +227,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlySpan<byte> objectAddress, ref SerializerOutput output, object context)
+        public void Write(ReadOnlySpan<byte> objectAddress, ref SerializerOutput output)
         {
             output.WriteSpan<byte>(_headerData.AsSpan());
 
@@ -239,12 +239,12 @@ namespace USerialization
                 var fieldData = typeDataFields[index];
                 //var dataSerializer = fieldData.SerializationMethods;
                 var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
-                fieldData.DataSerializer.Write(tempSpan, ref output, context);
+                fieldData.DataSerializer.Write(tempSpan, ref output);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Read(Span<byte> objectAddress, ref SerializerInput input, object context)
+        public void Read(Span<byte> objectAddress, ref SerializerInput input)
         {
             var fieldCount = input.ReadByte();
             //we just skipped the required data so we have it in the buffer
@@ -259,7 +259,7 @@ namespace USerialization
                 {
                     var fieldData = fieldDatas[i];
                     var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
-                    fieldData.DataSerializer.Read(tempSpan, ref input, context);
+                    fieldData.DataSerializer.Read(tempSpan, ref input);
                 }
             }
             else
@@ -331,7 +331,7 @@ namespace USerialization
                     //var dataSerializer = fieldData.SerializationMethods;
                     //dataSerializer.Read(fieldDataOffset, input);
 
-                    fieldData.DataSerializer.Read(tempSpan, ref input, context);
+                    fieldData.DataSerializer.Read(tempSpan, ref input);
                 }
             }
         }
