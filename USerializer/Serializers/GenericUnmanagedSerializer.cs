@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -7,7 +8,6 @@ using System.Runtime.InteropServices;
 
 namespace USerialization
 {
-
     public class GenericUnmanagedSerializer<T> : CustomDataSerializer
         where T : unmanaged
     {
@@ -19,11 +19,11 @@ namespace USerialization
         {
             _dataType = dataType;
         }
-        
+
         public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
-            
+
             ref var item = ref Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(span));
             output.Write(item);
             // ref var reference = ref MemoryMarshal.GetReference(fieldAddress);
@@ -46,11 +46,11 @@ namespace USerialization
         private DataType _elementDataType;
 
         public override DataType DataType => DataType.Array;
-        
+
         public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == IntPtr.Size);
-            
+
             var array = Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(span));
             if (array == null)
             {
@@ -84,7 +84,7 @@ namespace USerialization
         public override void Read(Span<byte> span, ref SerializerInput input)
         {
             Debug.Assert(span.Length == IntPtr.Size);
-            
+
             ref var array = ref Unsafe.As<byte, T[]>(ref MemoryMarshal.GetReference(span));
 
             if (input.BeginReadSize(out var end))
@@ -101,7 +101,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.CleanArray(array, 0, (uint)count);
+                        ArrayHelpers.Clear(array, 0, count);
                         input.EndObject(end);
                     }
                 }
@@ -112,14 +112,15 @@ namespace USerialization
             }
         }
     }
-    
+
     public class GenericUnmanagedListSerializer<T> : CustomDataSerializer
         where T : unmanaged
     {
         private DataType _elementDataType;
 
-        private int _itemsOffset;
-        private int _sizeOffset;
+        private FieldAccessHelper<List<T>, T[]> _itemsField;
+
+        private FieldAccessHelper<List<T>, int> _sizeField;
 
         public override bool TryInitialize(USerializer serializer)
         {
@@ -130,11 +131,11 @@ namespace USerialization
             if (itemsMember == null || sizeMember == null)
                 throw new InvalidOperationException("Could not find List internal fields.");
 
-            _itemsOffset = serializer.RuntimeUtils.GetFieldOffset(itemsMember);
-            _sizeOffset = serializer.RuntimeUtils.GetFieldOffset(sizeMember);
+            _itemsField = new FieldAccessHelper<List<T>, T[]>(itemsMember, serializer.RuntimeUtils);
+            _sizeField = new FieldAccessHelper<List<T>, int>(sizeMember, serializer.RuntimeUtils);
             return true;
         }
-        
+
         public override DataType DataType => DataType.Array;
 
         public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
@@ -159,7 +160,7 @@ namespace USerialization
                     output.Write7BitEncodedIntUnchecked(count);
                     output.WriteByteUnchecked((byte)_elementDataType);
 
-                    var array = ListHelpers.GetArray(list, _itemsOffset, _sizeOffset, out _);
+                    ref var array = ref _itemsField.GetFieldRef(ref list);
                     var slice = array.AsSpan().Slice(0, count);
                     output.WriteSpan<T>(slice);
                 }
@@ -184,9 +185,32 @@ namespace USerialization
 
                 if (count > 0)
                 {
-                    var array = ListHelpers.PrepareArray(ref list, count, _itemsOffset, _sizeOffset);
+                    if (list == null)
+                    {
+                        list = new List<T>(count);
+                    }
+                    else
+                    {
+                        if (list.Capacity < count)
+                        {
+                            ref var existingArray = ref _itemsField.GetFieldRef(ref list);
+                            existingArray = new T[count];
+                        }
+                        else
+                        {
+                            var remaining = list.Count - count;
+                            if (remaining > 0)
+                            {
+                                ref var existingArray = ref _itemsField.GetFieldRef(ref list);
+                                ArrayHelpers.Clear(existingArray, count, remaining);
+                            }
+                        }
+                    }
 
                     var type = (DataType)input.ReadByte();
+                    ref var array = ref _itemsField.GetFieldRef(ref list);
+                    ref var size = ref _sizeField.GetFieldRef(ref list);
+                    size = count;
 
                     if (type == _elementDataType)
                     {
@@ -194,7 +218,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.CleanArray(array, 0, (uint)count);
+                        ArrayHelpers.Clear(array, 0, count);
                         input.EndObject(end);
                     }
                 }
@@ -203,7 +227,12 @@ namespace USerialization
                     if (list == null)
                         list = new List<T>();
                     else
-                        ListHelpers.SetCount(list, 0, _sizeOffset);
+                    {
+                        ref var array = ref _itemsField.GetFieldRef(ref list);
+                        ArrayHelpers.Clear(array, 0, array.Length);
+                        ref var size = ref _sizeField.GetFieldRef(ref list);
+                        size = 0;
+                    }
                 }
             }
             else

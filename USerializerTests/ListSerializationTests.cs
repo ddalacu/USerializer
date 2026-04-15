@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -22,7 +23,7 @@ namespace USerializerTests
             }
 
             var memStream = new MemoryStream();
-            
+
             var listType = typeof(List<T>);
             var itemsMember = listType.GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic);
             var sizeMember = listType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -31,13 +32,15 @@ namespace USerializerTests
                 throw new InvalidOperationException("Could not find List internal fields.");
 
             var runtimeUtils = BinaryUtility.USerializer.RuntimeUtils;
-            var itemsOffset = runtimeUtils.GetFieldOffset(itemsMember);
-            var sizeOffset = runtimeUtils.GetFieldOffset(sizeMember);
-            
-            var array = ListHelpers.GetArray(list, itemsOffset, sizeOffset, out var count);
+
+            var itemsField = new FieldAccessHelper<List<T>, Array>(itemsMember, runtimeUtils);
+            var sizeField = new FieldAccessHelper<List<T>, int>(sizeMember, runtimeUtils);
+
+            var array = itemsField.GetFieldRef(ref list);
+            var count = sizeField.GetFieldRef(ref list);
 
             BinaryUtility.Serialize(list, memStream);
-            
+
             for (int i = 0; i < elements.Length; i++)
             {
                 list.Add(elements[i]);
@@ -45,13 +48,14 @@ namespace USerializerTests
 
             memStream.Position = 0;
             BinaryUtility.TryDeserialize(memStream, ref list);
-            
-            var deserializeArray = ListHelpers.GetArray(list, itemsOffset, sizeOffset, out var deserializeCount);
+
+            var deserializeArray = itemsField.GetFieldRef(ref list);
+            var deserializeCount = sizeField.GetFieldRef(ref list);
 
             Assert.AreEqual(count, deserializeCount);
             Assert.AreSame(array, deserializeArray);
 
-            Assert.AreEqual(list.Capacity , elements.Length * 4);
+            Assert.AreEqual(list.Capacity, elements.Length * 4);
         }
 
         [Test]

@@ -171,9 +171,14 @@ namespace USerializerTests
                 new EnumSerializer(),
                 new ArraySerializer(),
                 new ListSerializer(),
+                
                 new TupleSerializationProvider(),
                 new KeyValuePairSerializationProvider(),
                 new DictionarySerializerProvider(),
+                new HashSetSerializerProvider(),
+                new StackSerializerProvider(),
+                new QueueSerializerProvider(),
+                
                 new CustomClassSerializationProvider(),
                 new ClassSerializationProvider(),
                 new StructSerializationProvider(),

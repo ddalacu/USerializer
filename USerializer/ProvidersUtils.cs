@@ -14,6 +14,9 @@
                 new TupleSerializationProvider(),
                 new KeyValuePairSerializationProvider(),
                 new DictionarySerializerProvider(),
+                new HashSetSerializerProvider(),
+                new StackSerializerProvider(),
+                new QueueSerializerProvider(),
                 new ClassSerializationProvider(),
                 new StructSerializationProvider(),
             };

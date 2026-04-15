@@ -17,7 +17,7 @@ namespace USerializerTests
                 4
             };
 
-            ArrayHelpers.CleanArray(array, 1, 2);
+            ArrayHelpers.Clear(array, 1, 2);
 
             Assert.AreEqual(array[0], 1);
             Assert.AreEqual(array[1], 0);
@@ -36,7 +36,7 @@ namespace USerializerTests
                 "d"
             };
 
-            ArrayHelpers.CleanArray(array, 1, 2, (uint) sizeof(IntPtr));
+            ArrayHelpers.Clear(array, 1, 2,  sizeof(IntPtr));
 
             Assert.AreEqual(array[0], "a");
             Assert.AreEqual(array[1], null);

@@ -149,7 +149,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.CleanArray(array, 0, (uint)count, (uint)_size);
+                        Array.Clear(array, 0, count);
                         input.EndObject(end);
                     }
                 }
