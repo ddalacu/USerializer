@@ -41,7 +41,7 @@ namespace USerialization
         }
     }
 
-    public sealed unsafe class ClassDataSerializer : DataSerializer
+    public unsafe class ClassDataSerializer : DataSerializer
     {
         private FieldsSerializer _fieldsSerializer;
 
