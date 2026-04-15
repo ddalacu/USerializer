@@ -1,21 +1,26 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using USerialization;
 
 [assembly: CustomSerializer(typeof(DateTime), typeof(DateTimeSerializer))]
 
 namespace USerialization
 {
-    public sealed class DateTimeSerializer : SurrogateSerializerBase<DateTime, long>
+    public class DateTimeSerializer : CustomDataSerializer
     {
-        public override void CopyToSurrogate(ref DateTime @from, ref long to)
+        public override DataType DataType => DataType.Int64;
+
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
-            to = from.ToBinary();
+            ref var item = ref Unsafe.As<byte, DateTime>(ref MemoryMarshal.GetReference(span));
+            output.Write<long>(item.ToBinary());
         }
 
-        public override void CopyFromSurrogate(ref long @from, ref DateTime to)
+        public override void Read(Span<byte> span, ref SerializerInput input)
         {
-            to = DateTime.FromBinary(from);
+            ref var item = ref Unsafe.As<byte, DateTime>(ref MemoryMarshal.GetReference(span));
+            item = DateTime.FromBinary(input.Read<long>());
         }
     }
-
 }
