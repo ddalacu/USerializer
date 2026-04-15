@@ -26,7 +26,7 @@ namespace USerialization
             if (RuntimeFeature.IsDynamicCodeSupported == false)
             {
                 activator= () => Activator.CreateInstance(type);
-                Activators.TryAdd(type, CreateActivator(type));
+                Activators.TryAdd(type, activator);
                 return activator;
             }
 
