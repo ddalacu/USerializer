@@ -55,12 +55,12 @@ namespace USerialization
             _shouldSerialize = shouldSerialize;
         }
 
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == _stackSize);
 
             var track = output.BeginSizeTrack();
-            _fieldsSerializer.Write(span, output, context);
+            _fieldsSerializer.Write(span, ref output, context);
             output.WriteSizeTrack(track);
         }
 

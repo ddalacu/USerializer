@@ -81,7 +81,7 @@ namespace USerialization
         private const int MaxStack = 32;
 
 
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
 
@@ -103,7 +103,7 @@ namespace USerialization
             fixed (byte* objectAddress = &obj.Pinnable)
             {
                 var readOnlySpan = new Span<byte>(objectAddress, _heapSize);
-                _fieldsSerializer.Write(readOnlySpan, output, context);
+                _fieldsSerializer.Write(readOnlySpan,ref output, context);
             }
 
             output.WriteSizeTrack(track);

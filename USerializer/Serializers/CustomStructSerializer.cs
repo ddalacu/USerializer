@@ -25,11 +25,11 @@ namespace USerialization
 
         public abstract void LocalInit(StructMemberAdder<T> adder);
 
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
             var track = output.BeginSizeTrack();
-            _memberSerializer.Write(span, output, context);
+            _memberSerializer.Write(span, ref output, context);
             output.WriteSizeTrack(track);
         }
 

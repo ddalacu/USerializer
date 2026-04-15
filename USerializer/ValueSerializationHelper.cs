@@ -17,13 +17,10 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Serialize(ref T item, SerializerOutput output, object context)
+        public void Serialize(ref T item, ref SerializerOutput output, object context)
         {
-            if (output == null)
-                throw new NullReferenceException(nameof(output));
-
             ref var data = ref Unsafe.As<T, byte>(ref item);
-            _dataSerializer.Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), output, context);
+            _dataSerializer.Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<T>()), ref output, context);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

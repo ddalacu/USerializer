@@ -17,7 +17,7 @@ namespace USerialization
     {
     }
 
-    public sealed class SerializerOutput : IDisposable
+    public ref struct SerializerOutput
     {
         private byte[] _buffer;
 
@@ -152,24 +152,13 @@ namespace USerialization
             _position += Unsafe.SizeOf<T>();
         }
 
-        private void InternalDispose()
+        public void Dispose()
         {
             if (_buffer != null)
             {
                 _pool.Return(_buffer);
                 _buffer = null;
             }
-        }
-
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-            InternalDispose();
-        }
-
-        ~SerializerOutput()
-        {
-            InternalDispose();
         }
     }
 }

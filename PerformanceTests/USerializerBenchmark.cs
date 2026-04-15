@@ -131,8 +131,6 @@ namespace PerformanceTests
     {
         private USerializer _uSerializer;
 
-        private SerializerOutput _output;
-
         private class ConsoleLogger : ILogger
         {
             public void Error(string error)
@@ -151,8 +149,6 @@ namespace PerformanceTests
             _uSerializer = new USerializer(new UnitySerializationPolicy(), serializationProviders,
                 new DataTypesDatabase(), consoleLogger);
 
-            _output = new SerializerOutput(2048 * 20, ArrayPool<byte>.Shared);
-
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data, true) == false)
             {
                 throw new Exception($"Cannot serialize {typeof(T)}");
@@ -166,8 +162,10 @@ namespace PerformanceTests
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
             ref var data1 = ref Unsafe.As<T, byte>(ref obj);
-            data.Write(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<T>()), _output, null);
-            _output.Flush(stream);
+            var output = new SerializerOutput(2048 * 20, ArrayPool<byte>.Shared);
+            data.Write(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<T>()), ref output, null);
+            output.Flush(stream);
+            output.Dispose();
         }
 
 

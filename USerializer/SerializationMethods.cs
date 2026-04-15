@@ -8,7 +8,7 @@ namespace USerialization
 
         public abstract DataType DataType { get; }
 
-        public abstract void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context);
+        public abstract void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context);
 
         public abstract void Read(Span<byte> span, ref SerializerInput input, object context);
         

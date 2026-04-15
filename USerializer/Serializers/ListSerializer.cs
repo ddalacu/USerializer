@@ -66,7 +66,7 @@ namespace USerialization
             _size = UnsafeUtils.GetStackSize(elementType);
         }
 
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -96,7 +96,7 @@ namespace USerialization
                         var serializer = _elementSerializer;
                         for (var index = 0; index < count; index++)
                         {
-                            serializer.Write(new ReadOnlySpan<byte>(tempAddress, _size), output, context);
+                            serializer.Write(new ReadOnlySpan<byte>(tempAddress, _size), ref output, context);
                             tempAddress += _size;
                         }
                     }

@@ -9,7 +9,7 @@ namespace USerialization
     {
         public override DataType DataType => DataType.String;
 
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(span));

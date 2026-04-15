@@ -85,7 +85,7 @@ namespace USerializerTests
 
         private const int MaxStack = 32;
 
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             ref var obj = ref Unsafe.As<byte, PinnableObject>(ref MemoryMarshal.GetReference(span));
 
@@ -106,7 +106,7 @@ namespace USerializerTests
 
             fixed (byte* objectAddress = &obj.Pinnable)
             {
-                _fieldsSerializer.Write(new Span<byte>(objectAddress, _dataSize), output, context);
+                _fieldsSerializer.Write(new Span<byte>(objectAddress, _dataSize), ref output, context);
             }
 
             output.WriteSizeTrack(track);
@@ -201,12 +201,14 @@ namespace USerializerTests
             if (_uSerializer.TryGetDataSerializer(obj.GetType(), out var data, true) == false)
                 return false;
 
-            using var output = new SerializerOutput(bufferSize, ArrayPool<byte>.Shared);
+            var output = new SerializerOutput(bufferSize, ArrayPool<byte>.Shared);
 
             ref var data1 = ref Unsafe.As<object, byte>(ref obj);
-            data.Write(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<object>()), output, context);
+            data.Write(MemoryMarshal.CreateSpan(ref data1, Unsafe.SizeOf<object>()), ref output, context);
 
             output.Flush(stream);
+            output.Dispose();
+
             return true;
         }
 

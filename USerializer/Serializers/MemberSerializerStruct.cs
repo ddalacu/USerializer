@@ -91,7 +91,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == _size);
 
@@ -104,7 +104,7 @@ namespace USerialization
             for (var index = 0; index < fieldsLength; index++)
             {
                 var fieldData = typeDataFields[index];
-                fieldData.Serializer.Write(span, output, context);
+                fieldData.Serializer.Write(span, ref output, context);
             }
         }
 

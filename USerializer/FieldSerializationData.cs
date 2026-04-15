@@ -227,7 +227,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlySpan<byte> objectAddress, SerializerOutput output, object context)
+        public void Write(ReadOnlySpan<byte> objectAddress, ref SerializerOutput output, object context)
         {
             output.WriteSpan<byte>(_headerData.AsSpan());
 
@@ -239,7 +239,7 @@ namespace USerialization
                 var fieldData = typeDataFields[index];
                 //var dataSerializer = fieldData.SerializationMethods;
                 var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
-                fieldData.DataSerializer.Write(tempSpan, output, context);
+                fieldData.DataSerializer.Write(tempSpan, ref output, context);
             }
         }
 

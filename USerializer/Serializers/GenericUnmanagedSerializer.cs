@@ -19,7 +19,7 @@ namespace USerialization
             _dataType = dataType;
         }
         
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
             
@@ -46,7 +46,7 @@ namespace USerialization
 
         public override DataType DataType => DataType.Array;
         
-        public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == IntPtr.Size);
             
@@ -119,7 +119,7 @@ namespace USerialization
         
         public override DataType DataType => DataType.Array;
 
-        public override unsafe void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             ref var list = ref Unsafe.As<byte, List<T>>(ref MemoryMarshal.GetReference(span));
 

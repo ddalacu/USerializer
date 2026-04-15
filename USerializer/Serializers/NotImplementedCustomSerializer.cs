@@ -10,7 +10,7 @@ namespace USerialization
     {
         public override DataType DataType => DataType.None;
 
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             throw new NotImplementedException();
         }

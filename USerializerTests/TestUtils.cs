@@ -86,9 +86,10 @@ namespace USerializerTests
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
 
-            using var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
-            valueSerializer.Serialize(ref value, output, null);
+            var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
+            valueSerializer.Serialize(ref value, ref output, null);
             output.Flush(initialSerialize);
+            output.Dispose();
 
             var initial = initialSerialize.Position;
 
@@ -105,23 +106,25 @@ namespace USerializerTests
 
             var secondSerialize = new MemoryStream();
 
-            using var output2 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
-            valueSerializer.Serialize(ref deserialize, output2, null);
+            var output2 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
+            valueSerializer.Serialize(ref deserialize, ref output2, null);
             output2.Flush(secondSerialize);
+            output2.Dispose();
 
             var ob = default(T);
             secondSerialize.Position = 0;
 
             var serializerInput2 = new SerializerInput(2048, secondSerialize, ArrayPool<byte>.Shared);
-            valueSerializer.Populate(ref ob,ref serializerInput2, null);
+            valueSerializer.Populate(ref ob, ref serializerInput2, null);
             serializerInput2.FinishRead();
             serializerInput2.Dispose();
 
             var reserialize = new MemoryStream();
 
-            using var output3 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
-            valueSerializer.Serialize(ref ob, output3, null);
+            var output3 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
+            valueSerializer.Serialize(ref ob,ref output3, null);
             output3.Flush(reserialize);
+            output3.Dispose();
 
             Assert.True(EqualArrays(reserialize.ToArray(), reserialize.ToArray()));
 

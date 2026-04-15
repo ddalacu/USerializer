@@ -140,7 +140,7 @@ namespace USerializerTests
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
                 if (obj.GetType() != this.GetType()) return false;
-                return Equals((ToBeReferenced) obj);
+                return Equals((ToBeReferenced)obj);
             }
 
             public static bool operator ==(ToBeReferenced left, ToBeReferenced right)
@@ -195,27 +195,28 @@ namespace USerializerTests
 
             if (BinaryUtility.USerializer.TryGetValueHelper<SimpleStruct>(out var structSer) == false)
                 throw new Exception("Cannot get data serialzier!");
-            
+
             var stream = new MemoryStream();
 
-            using var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
-            
-            structSer.Serialize(ref initial, output, null);
+            var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
+
+            structSer.Serialize(ref initial, ref output, null);
 
             output.Flush(stream);
-            
+            output.Dispose();
+
             stream.Position = 0;
-            
+
             Assert.True(stream.Length > 0);
 
             var input = new SerializerInput(2048, stream, ArrayPool<byte>.Shared);
             var result = structSer.Deserialize(ref input, null);
             input.FinishRead();
-            
+
             input.Dispose();
             Assert.True(EqualityComparer<SimpleStruct>.Default.Equals(initial, result));
         }
-        
+
         [Test]
         public void NestedStructSerialization()
         {

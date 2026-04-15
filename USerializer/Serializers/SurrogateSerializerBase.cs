@@ -36,7 +36,7 @@ namespace USerialization
         public abstract void CopyFromSurrogate(ref TSurrogate from, ref T to);
         
 
-        public override void Write(ReadOnlySpan<byte> span, SerializerOutput output, object context)
+        public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output, object context)
         {
             Debug.Assert(span.Length == Unsafe.SizeOf<T>());
 
@@ -45,7 +45,7 @@ namespace USerialization
             var to = default(TSurrogate);
             CopyToSurrogate(ref instance, ref to);
             ref var data = ref Unsafe.As<TSurrogate, byte>(ref to);
-            _dataSerializer.Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<TSurrogate>()), output, context);
+            _dataSerializer.Write(MemoryMarshal.CreateSpan(ref data, Unsafe.SizeOf<TSurrogate>()), ref output, context);
         }
 
         public override void Read(Span<byte> span, ref SerializerInput input, object context)
