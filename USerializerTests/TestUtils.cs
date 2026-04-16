@@ -79,15 +79,13 @@ namespace USerializerTests
             return ob;
         }
 
-
         public static T SerializeDeserializeStructTest<T>(T value) where T : struct
         {
             var initialSerialize = new MemoryStream();
 
             if (BinaryUtility.USerializer.TryGetDataSerializer(typeof(T), out var valueSerializer) == false)
-                throw new Exception($"Cannot serialize {typeof(T)}");
-
-
+                throw new Exception($"Cannot serialize {typeof(T?)}");
+            
             var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             valueSerializer.Serialize(ref value, ref output);
             output.Flush(initialSerialize);
@@ -113,7 +111,59 @@ namespace USerializerTests
             output2.Flush(secondSerialize);
             output2.Dispose();
 
-            var ob = default(T);
+            T ob = default;
+            secondSerialize.Position = 0;
+
+            var serializerInput2 = new SerializerInput(2048, secondSerialize, ArrayPool<byte>.Shared);
+            valueSerializer.Deserialize(ref ob, ref serializerInput2);
+            serializerInput2.FinishRead();
+            serializerInput2.Dispose();
+
+            var reserialize = new MemoryStream();
+
+            var output3 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
+            valueSerializer.Serialize(ref ob, ref output3);
+            output3.Flush(reserialize);
+            output3.Dispose();
+
+            Assert.True(EqualArrays(reserialize.ToArray(), reserialize.ToArray()));
+
+            return ob;
+        }
+
+        public static T? SerializeDeserializeStructTest<T>(T? value) where T : struct
+        {
+            var initialSerialize = new MemoryStream();
+
+            if (BinaryUtility.USerializer.TryGetDataSerializer(typeof(T?), out var valueSerializer) == false)
+                throw new Exception($"Cannot serialize {typeof(T?)}");
+            
+            var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
+            valueSerializer.Serialize(ref value, ref output);
+            output.Flush(initialSerialize);
+            output.Dispose();
+
+            var initial = initialSerialize.Position;
+
+            initialSerialize.Position = 0;
+
+            T? deserialize = default;
+
+            var serializerInput = new SerializerInput(2048, initialSerialize, ArrayPool<byte>.Shared);
+            valueSerializer.Deserialize(ref deserialize, ref serializerInput);
+            serializerInput.FinishRead();
+            serializerInput.Dispose();
+
+            Assert.True(initial == initialSerialize.Position);
+
+            var secondSerialize = new MemoryStream();
+
+            var output2 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
+            valueSerializer.Serialize(ref deserialize, ref output2);
+            output2.Flush(secondSerialize);
+            output2.Dispose();
+
+            T? ob = default;
             secondSerialize.Position = 0;
 
             var serializerInput2 = new SerializerInput(2048, secondSerialize, ArrayPool<byte>.Shared);

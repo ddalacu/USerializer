@@ -61,11 +61,11 @@ namespace USerializerTests
         public void NullableIntSerialization()
         {
             int? input = 5;
-            int? result = TestUtils.SerializeDeserializeStructTestInternal(input);
+            int? result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.AreEqual(input, result);
 
             input = null;
-            result = TestUtils.SerializeDeserializeStructTestInternal(input);
+            result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.AreEqual(input, result);
         }
 
@@ -73,11 +73,11 @@ namespace USerializerTests
         public void NullableBoolSerialization()
         {
             bool? input = true;
-            bool? result = TestUtils.SerializeDeserializeStructTestInternal(input);
+            bool? result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.AreEqual(input, result);
 
             input = null;
-            result = TestUtils.SerializeDeserializeStructTestInternal(input);
+            result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.AreEqual(input, result);
         }
 
@@ -85,11 +85,11 @@ namespace USerializerTests
         public void NullableEnumSerialization()
         {
             TestEnum? input = TestEnum.Value2;
-            TestEnum? result = TestUtils.SerializeDeserializeStructTestInternal(input);
+            TestEnum? result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.AreEqual(input, result);
 
             input = null;
-            result = TestUtils.SerializeDeserializeStructTestInternal(input);
+            result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.AreEqual(input, result);
         }
 
@@ -97,11 +97,11 @@ namespace USerializerTests
         public void NullableStructSerialization()
         {
             SimpleStruct? input = new SimpleStruct { Value = 42, Name = "Test" };
-            SimpleStruct? result = TestUtils.SerializeDeserializeStructTestInternal(input);
+            SimpleStruct? result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.AreEqual(input, result);
 
             input = null;
-            result = TestUtils.SerializeDeserializeStructTestInternal(input);
+            result = TestUtils.SerializeDeserializeStructTest(input);
             Assert.AreEqual(input, result);
         }
 
