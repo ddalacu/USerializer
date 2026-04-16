@@ -139,7 +139,7 @@ namespace USerialization
                             for (int i = 0; i < currentSize; i++)
                             {
                                 var index = (currentHead + i) % arrayLength;
-                                ArrayHelpers.Clear(array, index, 1, _elementSize);
+                                Array.Clear(array, index, 1);
                             }
                         }
 
@@ -168,7 +168,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.Clear(finalArray, 0, count, _elementSize);
+                        Array.Clear(finalArray, 0, count);
                         input.EndObject(end);
                     }
                 }

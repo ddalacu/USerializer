@@ -84,7 +84,14 @@ namespace USerialization
             _elementType = elementType;
             _elementSerializer = elementSerializer;
         }
-
+  
+        internal sealed class RawArrayData
+        {
+            public uint Length;
+            public uint Padding;
+            public byte Data;
+        }
+        
         public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
             Debug.Assert(span.Length == IntPtr.Size);
@@ -96,7 +103,7 @@ namespace USerialization
                 output.WriteNull();
                 return;
             }
-            
+
             ref var count = ref _sizeField.GetFieldRef(ref list);
 
             if (count > 0)
@@ -106,10 +113,10 @@ namespace USerialization
                     output.EnsureNext(6);
                     output.Write7BitEncodedIntUnchecked(count);
                     output.WriteByteUnchecked((byte)_elementDataType);
-                    
+
                     ref var array = ref _itemsField.GetFieldRef(ref list);
                     var pinnable = Unsafe.As<Array, byte[]>(ref array);
-
+                    
                     fixed (byte* address = pinnable)
                     {
                         var tempAddress = address;
@@ -155,19 +162,21 @@ namespace USerialization
             }
             else
             {
-                array = _itemsField.GetFieldRef(ref list);
+                ref var arrayRef = ref _itemsField.GetFieldRef(ref list);
 
-                if (array.Length < count) //if we need more elements in the array then we allocate a array
+                if (arrayRef.Length < count) //if we need more elements in the array then we allocate a array
                 {
-                    array = Array.CreateInstance(_elementType, count);
-                    _itemsField.GetFieldRef(ref list) = array;
+                    arrayRef = Array.CreateInstance(_elementType, count);
                 }
                 else
                 {
-                    var diff = count - array.Length;
-                    if (diff > 0)
-                        ArrayHelpers.Clear(array, count, diff, _size);
+                    //the difference between the current count and the new count, no reason to clear all elements if we don't need to'
+                    var remaining = list.Count - count;
+                    if (remaining > 0)
+                        Array.Clear(arrayRef, count, remaining);
                 }
+
+                array = arrayRef;
             }
 
             _sizeField.GetFieldRef(ref list) = count;
@@ -192,7 +201,7 @@ namespace USerialization
             }
             else
             {
-                ArrayHelpers.Clear(array, 0, count, _size);
+                Array.Clear(array, 0, count);
                 input.EndObject(end);
             }
         }

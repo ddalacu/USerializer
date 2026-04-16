@@ -30,21 +30,17 @@ namespace USerializerTests
 
             if (itemsMember == null || sizeMember == null)
                 throw new InvalidOperationException("Could not find List internal fields.");
-
+            
             var runtimeUtils = BinaryUtility.USerializer.RuntimeUtils;
-
-            var itemsField = new FieldAccessHelper<List<T>, Array>(itemsMember, runtimeUtils);
+            var itemsField = new FieldAccessHelper<List<T>, T[]>(itemsMember, runtimeUtils);
             var sizeField = new FieldAccessHelper<List<T>, int>(sizeMember, runtimeUtils);
-
             var array = itemsField.GetFieldRef(ref list);
             var count = sizeField.GetFieldRef(ref list);
-
+            
             BinaryUtility.Serialize(list, memStream);
 
-            for (int i = 0; i < elements.Length; i++)
-            {
+            for (var i = 0; i < elements.Length; i++)//fill some of the remaining space with non default values so we can check they are cleared
                 list.Add(elements[i]);
-            }
 
             memStream.Position = 0;
             BinaryUtility.TryDeserialize(memStream, ref list);
@@ -54,6 +50,12 @@ namespace USerializerTests
 
             Assert.AreEqual(count, deserializeCount);
             Assert.AreSame(array, deserializeArray);
+            
+            for (var i = count; i < deserializeArray.Length; i++)
+            {
+                Console.WriteLine(deserializeArray[i]);
+                Assert.AreEqual(default(T), deserializeArray[i]);
+            }
 
             Assert.AreEqual(list.Capacity, elements.Length * 4);
         }

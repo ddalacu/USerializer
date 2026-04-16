@@ -101,7 +101,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.Clear(array, 0, count);
+                        Array.Clear(array, 0, count);
                         input.EndObject(end);
                     }
                 }
@@ -191,9 +191,9 @@ namespace USerialization
                     }
                     else
                     {
+                        ref var existingArray = ref _itemsField.GetFieldRef(ref list);
                         if (list.Capacity < count)
                         {
-                            ref var existingArray = ref _itemsField.GetFieldRef(ref list);
                             existingArray = new T[count];
                         }
                         else
@@ -201,8 +201,7 @@ namespace USerialization
                             var remaining = list.Count - count;
                             if (remaining > 0)
                             {
-                                ref var existingArray = ref _itemsField.GetFieldRef(ref list);
-                                ArrayHelpers.Clear(existingArray, count, remaining);
+                                Array.Clear(existingArray, count, remaining);
                             }
                         }
                     }
@@ -218,7 +217,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.Clear(array, 0, count);
+                        Array.Clear(array, 0, count);
                         input.EndObject(end);
                     }
                 }
@@ -229,7 +228,7 @@ namespace USerialization
                     else
                     {
                         ref var array = ref _itemsField.GetFieldRef(ref list);
-                        ArrayHelpers.Clear(array, 0, array.Length);
+                        Array.Clear(array, 0, array.Length);
                         ref var size = ref _sizeField.GetFieldRef(ref list);
                         size = 0;
                     }

@@ -120,7 +120,7 @@ namespace USerialization
                         {
                             var remaining = currentCountRef - count;
                             if (remaining > 0)
-                                ArrayHelpers.Clear(arrayRef, count, remaining, _elementSize);
+                                Array.Clear(arrayRef, count, remaining);
 
                             currentCountRef = count;
                         }
@@ -146,7 +146,7 @@ namespace USerialization
                     }
                     else
                     {
-                        ArrayHelpers.Clear(array, 0, count, _elementSize);
+                        Array.Clear(array, 0, count);
                         input.EndObject(end);
                     }
                 }
