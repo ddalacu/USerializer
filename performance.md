@@ -12,7 +12,7 @@ WarmupCount=3
 ```
 |                 Method |     Mean |     Error |   StdDev |
 |----------------------- |---------:|----------:|---------:|
-|   USerializerSerialize | 239.9 μs |   1.53 μs |  0.08 μs |
-| USerializerDeserialize | 302.6 μs |  29.06 μs |  1.59 μs |
-|    MemoryPackSerialize | 252.0 μs | 303.80 μs | 16.65 μs |
-|  MemoryPackDeserialize | 262.3 μs |  44.78 μs |  2.45 μs |
+|   USerializerSerialize | 241.9 μs |  36.19 μs |  1.98 μs |
+| USerializerDeserialize | 307.7 μs |  51.36 μs |  2.82 μs |
+|    MemoryPackSerialize | 226.9 μs | 295.12 μs | 16.18 μs |
+|  MemoryPackDeserialize | 260.9 μs |  35.08 μs |  1.92 μs |
