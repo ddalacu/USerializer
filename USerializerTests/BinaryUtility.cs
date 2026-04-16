@@ -173,6 +173,7 @@ namespace USerializerTests
                 new ListSerializer(),
                 
                 new TupleSerializationProvider(),
+                new NullableSerializationProvider(),
                 new KeyValuePairSerializationProvider(),
                 new DictionarySerializerProvider(),
                 new HashSetSerializerProvider(),
