@@ -84,13 +84,7 @@ namespace USerialization
             _elementType = elementType;
             _elementSerializer = elementSerializer;
         }
-  
-        internal sealed class RawArrayData
-        {
-            public uint Length;
-            public uint Padding;
-            public byte Data;
-        }
+
         
         public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
