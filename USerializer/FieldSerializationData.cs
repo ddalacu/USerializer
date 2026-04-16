@@ -247,14 +247,13 @@ namespace USerialization
         public void Read(Span<byte> objectAddress, ref SerializerInput input)
         {
             var fieldCount = input.ReadByte();
-            //we just skipped the required data so we have it in the buffer
-            var fieldDatas = _fields;
-
             var streamData = input.GetNext(fieldCount * 5);
             var localData = new ReadOnlySpan<byte>(_headerData, 1, _headerData.Length - 1);
 
             if (streamData.SequenceEqual(localData))
             {
+                var fieldDatas = _fields;
+                
                 for (var i = 0; i < fieldCount; i++)
                 {
                     var fieldData = fieldDatas[i];
@@ -264,75 +263,80 @@ namespace USerialization
             }
             else
             {
-                var indexes = stackalloc byte[fieldCount];
-                var dataTypes = stackalloc DataType[fieldCount];
+                DeserializeFieldsVersioned(objectAddress, ref input, fieldCount,streamData);
+            }
+        }
 
-                var fieldsLength = fieldDatas.Length;
+        private void DeserializeFieldsVersioned(Span<byte> objectAddress, ref SerializerInput input, byte fieldCount, ReadOnlySpan<byte> streamData)
+        {
+            var indexes = stackalloc byte[fieldCount];
+            var dataTypes = stackalloc DataType[fieldCount];
+            var fieldDatas = _fields;
+            var fieldsLength = fieldDatas.Length;
 
-                var position = 0;
+            var position = 0;
 
-                int searchStart = 0;
-                for (var i = 0; i < fieldCount; i++)
+            int searchStart = 0;
+            for (var i = 0; i < fieldCount; i++)
+            {
+                dataTypes[i] = 0;
+
+                var field = streamData[position++] | streamData[position++] << 8 | streamData[position++] << 16 |
+                            streamData[position++] << 24;
+
+                var type = (DataType)streamData[position++];
+
+                var deserialized = false;
+
+                for (var searchIndex = searchStart; searchIndex < fieldsLength; searchIndex++)
                 {
-                    dataTypes[i] = 0;
+                    //var fieldData = fieldDatas[searchIndex];
+                    var meta = _fieldsMetas[searchIndex];
 
-                    var field = streamData[position++] | streamData[position++] << 8 | streamData[position++] << 16 |
-                                streamData[position++] << 24;
-
-                    var type = (DataType)streamData[position++];
-
-                    var deserialized = false;
-
-                    for (var searchIndex = searchStart; searchIndex < fieldsLength; searchIndex++)
+                    if (field == meta.FieldNameHash)
                     {
-                        //var fieldData = fieldDatas[searchIndex];
-                        var meta = _fieldsMetas[searchIndex];
+                        //var dataSerializer = fieldData.SerializationMethods;
 
-                        if (field == meta.FieldNameHash)
+                        if (type == meta.DataType)
                         {
-                            //var dataSerializer = fieldData.SerializationMethods;
-
-                            if (type == meta.DataType)
-                            {
-                                indexes[i] = (byte)searchIndex;
-                                deserialized = true;
-                            }
-
-                            searchStart = searchIndex + 1;
-                            break;
+                            indexes[i] = (byte)searchIndex;
+                            deserialized = true;
                         }
-                    }
 
-                    if (deserialized == false)
-                    {
-                        if (FieldSerializationData.GetAlternate(_fieldsMetas, type, field, out var alternateIndex))
-                        {
-                            indexes[i] = (byte)alternateIndex;
-                        }
-                        else
-                        {
-                            dataTypes[i] = type;
-                        }
+                        searchStart = searchIndex + 1;
+                        break;
                     }
                 }
 
-                for (var i = 0; i < fieldCount; i++)
+                if (deserialized == false)
                 {
-                    var index = indexes[i];
-
-                    if ((byte)dataTypes[i] != 0)
+                    if (FieldSerializationData.GetAlternate(_fieldsMetas, type, field, out var alternateIndex))
                     {
-                        _dataTypesDatabase.SkipData(dataTypes[i], ref input);
-                        continue;
+                        indexes[i] = (byte)alternateIndex;
                     }
-
-                    var fieldData = fieldDatas[index];
-                    var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
-                    //var dataSerializer = fieldData.SerializationMethods;
-                    //dataSerializer.Read(fieldDataOffset, input);
-
-                    fieldData.DataSerializer.Read(tempSpan, ref input);
+                    else
+                    {
+                        dataTypes[i] = type;
+                    }
                 }
+            }
+
+            for (var i = 0; i < fieldCount; i++)
+            {
+                var index = indexes[i];
+
+                if ((byte)dataTypes[i] != 0)
+                {
+                    _dataTypesDatabase.SkipData(dataTypes[i], ref input);
+                    continue;
+                }
+
+                var fieldData = fieldDatas[index];
+                var tempSpan = objectAddress.Slice(fieldData.Offset, fieldData.Size);
+                //var dataSerializer = fieldData.SerializationMethods;
+                //dataSerializer.Read(fieldDataOffset, input);
+
+                fieldData.DataSerializer.Read(tempSpan, ref input);
             }
         }
     }

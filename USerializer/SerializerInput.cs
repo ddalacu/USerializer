@@ -227,7 +227,10 @@ namespace USerialization
                 var newBuffer = _pool.Rent(expanded);
 
                 if (unusedBytes > 0)
-                    _buffer.AsSpan(_bufferPosition, unusedBytes).CopyTo(newBuffer);
+                {
+                    Unsafe.CopyBlockUnaligned(ref newBuffer[0], ref _buffer[_bufferPosition], (uint)unusedBytes);
+                    //_buffer.AsSpan(_bufferPosition, unusedBytes).CopyTo(newBuffer);
+                }
 
                 _pool.Return(_buffer);
                 _buffer = newBuffer;
@@ -235,7 +238,9 @@ namespace USerialization
             else
             {
                 if (unusedBytes > 0)
+                {
                     _buffer.AsSpan(_bufferPosition, unusedBytes).CopyTo(_buffer);
+                }
             }
 
             _bufferPosition = 0;
