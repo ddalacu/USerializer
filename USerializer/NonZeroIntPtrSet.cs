@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace USerialization
 {
-    public unsafe struct NonZeroIntPtrSet : IDisposable
+    public struct NonZeroIntPtrSet
     {
         private int _count;
 
@@ -12,7 +12,7 @@ namespace USerialization
 
         private int _rehash;
 
-        private IntPtr* _keys;
+        private IntPtr[] _keys;
 
         public int Count => _count;
 
@@ -24,10 +24,7 @@ namespace USerialization
             _rehash = (int)(_capacity * 0.75f);
             _count = 0;
 
-            int size = _capacity * sizeof(IntPtr);
-
-            _keys = (IntPtr*)Marshal.AllocHGlobal(size);
-            Unsafe.InitBlockUnaligned(_keys, 0, (uint)size);
+            _keys = new IntPtr[_capacity];
         }
         
         public bool Insert(IntPtr key)
@@ -58,10 +55,7 @@ namespace USerialization
             //expand
             int newCapacity = _capacity * 2;
 
-            int size = newCapacity * sizeof(IntPtr);
-
-            IntPtr* expandedKeys = (IntPtr*)Marshal.AllocHGlobal(size);
-            Unsafe.InitBlockUnaligned(expandedKeys, 0, (uint)size);
+            IntPtr[] expandedKeys = new IntPtr[newCapacity];
 
             int rehashed = 0;
             for (int i = 0; i < _capacity; i++)
@@ -85,8 +79,6 @@ namespace USerialization
                     }
                 }
             }
-
-            Marshal.FreeHGlobal(new IntPtr(_keys));
 
             _capacity = newCapacity;
             _rehash = (int)(_capacity * 0.75f);
@@ -123,17 +115,8 @@ namespace USerialization
         {
             if (_keys != null)
             {
-                Unsafe.InitBlockUnaligned(_keys, 0, (uint)(_capacity * sizeof(IntPtr)));
+                Array.Clear(_keys, 0, _keys.Length);
                 _count = 0;
-            }
-        }
-
-        public void Dispose()
-        {
-            if (_keys != null)
-            {
-                Marshal.FreeHGlobal(new IntPtr(_keys));
-                _keys = null;
             }
         }
     }

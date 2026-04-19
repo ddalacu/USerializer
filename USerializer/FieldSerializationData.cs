@@ -127,7 +127,7 @@ namespace USerialization
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-            using var fieldsIterator = new TypeFieldsIterator(type, bindingFlags);
+            var fieldsIterator = new TypeFieldsIterator(type, bindingFlags);
 
             var fields = new List<(FieldMetaData, FieldSerializationData)>(32);
 
