@@ -170,7 +170,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ReadOnlySpan<T> GetNext<T>(int count) where T : unmanaged
+        public ReadOnlySpan<T> GetSpan<T>(int count) where T : unmanaged
         {
             var byteCount = count * Unsafe.SizeOf<T>();
             if (_bufferPosition + byteCount > _bufferCount)
@@ -181,7 +181,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ReadOnlySpan<byte> GetNext(int count)
+        public ReadOnlySpan<byte> GetSpan(int count)
         {
             if (_bufferPosition + count > _bufferCount)
                 ReadMore(count);
@@ -192,7 +192,7 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadSpan(Span<byte> readPtr)
+        public void FillSpan(Span<byte> readPtr)
         {
             var length = readPtr.Length;
 
@@ -206,9 +206,9 @@ namespace USerialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadSpan<T>(Span<T> span) where T : unmanaged
+        public void FillSpan<T>(Span<T> span) where T : unmanaged
         {
-            ReadSpan(MemoryMarshal.AsBytes(span));
+            FillSpan(MemoryMarshal.AsBytes(span));
         }
 
         private void ReadMore(int count)

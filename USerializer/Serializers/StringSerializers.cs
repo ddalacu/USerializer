@@ -2,12 +2,20 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace USerialization
 {
     public sealed class StringSerializer : CustomDataSerializer
     {
         public override DataType DataType => DataType.String;
+
+        private UTF8Encoding _encoding;
+
+        public StringSerializer()
+        {
+            _encoding = new UTF8Encoding(false);
+        }
 
         public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
@@ -16,17 +24,28 @@ namespace USerialization
 
             if (value == null)
             {
-                //Write7BitEncodedInt(0);
-                output.WriteByte(0);
+                output.WriteNull();
                 return;
             }
 
-            var valueLength = value.Length;
-            var byteLength = valueLength * sizeof(char);
+            var length = value.Length;
 
-            output.EnsureNext(byteLength + 5); //5 if from the max size of Write7BitEncodedIntUnchecked
-            output.Write7BitEncodedIntUnchecked(valueLength + 1);
-            output.WriteSpan(value.AsSpan());
+            if (length == 0)
+            {
+                output.Write<int>(0);
+                return;
+            }
+
+            var maxPossible = _encoding.GetMaxByteCount(length);
+            
+            var track = output.BeginSizeTrack();
+            {
+                var outputSpan = output.GetWriteableSpan(maxPossible);
+                var written = _encoding.GetBytes(value.AsSpan(), outputSpan);
+                output.AdvancePosition(written);
+            }
+
+            output.WriteSizeTrack(track);
         }
 
         public override void Read(Span<byte> span, ref SerializerInput input)
@@ -34,29 +53,23 @@ namespace USerialization
             Debug.Assert(span.Length == IntPtr.Size);
             ref var value = ref Unsafe.As<byte, string>(ref MemoryMarshal.GetReference(span));
 
-            var length = input.Read7BitEncodedInt();
-
-            length -= 1;
-
-            if (length == -1)
+            var length = input.Read<int>();
+            if (length >= 0)
+            {
+                if (length == 0)
+                {
+                    value = string.Empty;
+                }
+                else
+                {
+                    var byteSpan = input.GetSpan(length);
+                    value = _encoding.GetString(byteSpan);
+                }
+            }
+            else
             {
                 value = null;
-                return;
             }
-
-#if DEBUG
-            if (length < 0)
-                throw new Exception("byteLength is negative!");
-#endif
-            
-            if (length == 0)
-            {
-                value = string.Empty;
-                return;
-            }
-            
-            var chars = input.GetNext<char>(length);
-            value = new string(chars);
         }
     }
 
@@ -64,14 +77,8 @@ namespace USerialization
     {
         public void Skip(ref SerializerInput input)
         {
-            var chars = input.Read7BitEncodedInt();
-
-            chars -= 1;
-
-            if (chars == -1) //null
-                return;
-
-            input.Skip(chars * sizeof(char));
+            var bytes = input.Read<int>();
+            input.Skip(bytes);
         }
     }
 }

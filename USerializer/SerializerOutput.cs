@@ -6,14 +6,11 @@ using System.Buffers;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace USerialization
 {
-    public enum SizeTracker : long
-    {
-    }
-
-    public enum LateWrite : long
+    public enum SizeTracker
     {
     }
 
@@ -28,7 +25,7 @@ namespace USerialization
         private readonly ArrayPool<byte> _pool;
 
         public object Context;
-        
+
         public SerializerOutput(int capacity, ArrayPool<byte> pool)
         {
             _pool = pool;
@@ -73,14 +70,7 @@ namespace USerialization
             _position += 4;
             return (SizeTracker)(_position);
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SizeTracker BeginSizeTrackUnchecked()
-        {
-            _position += 4;
-            return (SizeTracker)(_position);
-        }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteSizeTrack(SizeTracker tracker)
         {
@@ -88,6 +78,19 @@ namespace USerialization
 
             var point = (int)(tracker - 4);
             Unsafe.WriteUnaligned(ref _buffer[point], length);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<byte> GetWriteableSpan(int size)
+        {
+            EnsureNext(size);
+            return _buffer.AsSpan(_position, size);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AdvancePosition(int size)
+        {
+            _position += size;
         }
 
         public void Write7BitEncodedIntUnchecked(int value)
@@ -115,7 +118,7 @@ namespace USerialization
         {
             var byteSpanLength = span.Length * Unsafe.SizeOf<T>();
             EnsureNext(byteSpanLength);
-            
+
             ref byte src = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
 
             Unsafe.CopyBlockUnaligned(ref _buffer[_position], ref src, (uint)byteSpanLength);

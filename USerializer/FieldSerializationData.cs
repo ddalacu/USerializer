@@ -247,7 +247,7 @@ namespace USerialization
         public void Read(Span<byte> objectAddress, ref SerializerInput input)
         {
             var fieldCount = input.ReadByte();
-            var streamData = input.GetNext(fieldCount * 5);
+            var streamData = input.GetSpan(fieldCount * 5);
             var localData = new ReadOnlySpan<byte>(_headerData, 1, _headerData.Length - 1);
 
             if (streamData.SequenceEqual(localData))
