@@ -10,9 +10,9 @@ namespace USerialization
     {
         public override DataType DataType => DataType.String;
 
-        private UTF8Encoding _encoding;
+        private static UTF8Encoding _encoding;
 
-        public StringSerializer()
+        static StringSerializer()
         {
             _encoding = new UTF8Encoding(false);
         }
