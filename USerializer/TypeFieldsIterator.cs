@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace USerialization
 {
-    public struct TypeFieldsIterator : IDisposable
+    public struct TypeFieldsIterator
     {
         private readonly BindingFlags _flags;
 
@@ -60,15 +60,6 @@ namespace USerialization
 
             info = temp;
             return true;
-        }
-
-        public void Dispose()
-        {
-            if (_set.IsValid == false)
-                return;
-
-            _set.Dispose();
-            _set = default;
         }
     }
 }

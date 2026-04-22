@@ -30,16 +30,18 @@ namespace USerializerTests
 
             if (itemsMember == null || sizeMember == null)
                 throw new InvalidOperationException("Could not find List internal fields.");
-            
+
             var runtimeUtils = BinaryUtility.USerializer.RuntimeUtils;
             var itemsField = new FieldAccessHelper<List<T>, T[]>(itemsMember, runtimeUtils);
             var sizeField = new FieldAccessHelper<List<T>, int>(sizeMember, runtimeUtils);
             var array = itemsField.GetFieldRef(ref list);
             var count = sizeField.GetFieldRef(ref list);
-            
+
             BinaryUtility.Serialize(list, memStream);
 
-            for (var i = 0; i < elements.Length; i++)//fill some of the remaining space with non default values so we can check they are cleared
+            for (var i = 0;
+                 i < elements.Length;
+                 i++) //fill some of the remaining space with non default values so we can check they are cleared
                 list.Add(elements[i]);
 
             memStream.Position = 0;
@@ -50,7 +52,7 @@ namespace USerializerTests
 
             Assert.AreEqual(count, deserializeCount);
             Assert.AreSame(array, deserializeArray);
-            
+
             for (var i = count; i < deserializeArray.Length; i++)
             {
                 Console.WriteLine(deserializeArray[i]);
@@ -61,21 +63,53 @@ namespace USerializerTests
         }
 
         [Test]
-        public void ReuseIntBufferSuccess()
+        [TestCase(default(sbyte))]
+        [TestCase(default(byte))]
+        [TestCase(default(short))]
+        [TestCase(default(ushort))]
+        [TestCase(default(int))]
+        [TestCase(default(uint))]
+        [TestCase(default(long))]
+        [TestCase(default(ulong))]
+        [TestCase(default(char))]
+        [TestCase(default(float))]
+        [TestCase(default(double))]
+        [TestCase(default(bool))]
+        public void ReusePrimitiveBufferSuccess<T>(T dummy)
         {
-            TestReuseBuffer(1, 2, 3, 4);
+            var elements = new T[4];
+            for (int i = 0; i < 4; i++)
+            {
+                elements[i] = (T)Convert.ChangeType(i + 1, typeof(T));
+            }
+
+            TestReuseBuffer(elements);
         }
 
         [Test]
-        public void ReuseByteBufferSuccess()
+        [TestCase(default(sbyte))]
+        [TestCase(default(byte))]
+        [TestCase(default(short))]
+        [TestCase(default(ushort))]
+        [TestCase(default(int))]
+        [TestCase(default(uint))]
+        [TestCase(default(long))]
+        [TestCase(default(ulong))]
+        [TestCase(default(char))]
+        [TestCase(default(float))]
+        [TestCase(default(double))]
+        [TestCase(default(bool))]
+        public void List_Primitive_SerializationWorks<T>(T dummy)
         {
-            TestReuseBuffer<byte>(1, 2, 3, 4);
-        }
-
-        [Test]
-        public void ReuseBoolBufferSuccess()
-        {
-            TestReuseBuffer<bool>(true, true, true);
+            var initial = new List<T>();
+            initial.Add((T)Convert.ChangeType(1, typeof(T)));
+            initial.Add((T)Convert.ChangeType(2, typeof(T)));
+            initial.Add((T)Convert.ChangeType(3, typeof(T)));
+            
+            var result = TestUtils.SerializeDeserializeTest(initial);
+            
+            Assert.AreEqual(initial.Count, result.Count);
+            Assert.AreEqual(initial.ToArray(), result.ToArray());
         }
 
         [Serializable]

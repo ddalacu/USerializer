@@ -30,7 +30,7 @@ namespace USerializerTests
         [Test]
         public void ReturnAllFields()
         {
-            using var iterator = new TypeFieldsIterator(typeof(C),
+            var iterator = new TypeFieldsIterator(typeof(C),
                 BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             var items = new List<FieldInfo>();

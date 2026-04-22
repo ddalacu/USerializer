@@ -1,27 +1,122 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
+using USerialization;
 
 namespace USerializerTests;
 
 public class StackSerializationTests
 {
-    [Test]
-    public void Stack_Int_SerializationWorks()
+    private void TestReuseBuffer<T>(params T[] elements)
     {
-        var initial = new Stack<int>();
-        initial.Push(1);
-        initial.Push(2);
-        initial.Push(3);
+        // Create initial stack with some capacity
+        var stack = new Stack<T>(elements.Length * 4);
+        foreach (var e in elements)
+        {
+            stack.Push(e);
+        }
+
+        var memStream = new System.IO.MemoryStream();
+        
+        var stackType = typeof(Stack<T>);
+        var itemsMember = stackType.GetField("_array", BindingFlags.Instance | BindingFlags.NonPublic);
+        var sizeMember = stackType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
+        
+        if (itemsMember == null || sizeMember == null)
+            throw new InvalidOperationException("Could not find Stack internal fields.");
+
+        var runtimeUtils = BinaryUtility.USerializer.RuntimeUtils;
+        var itemsField = new FieldAccessHelper<object, Array>(itemsMember, runtimeUtils);
+        var sizeField = new FieldAccessHelper<object, int>(sizeMember, runtimeUtils);
+
+        object stackObj = stack;
+        var arrayBefore = itemsField.GetFieldRef(ref stackObj);
+        var sizeBefore = sizeField.GetFieldRef(ref stackObj);
+
+        BinaryUtility.Serialize(stack, memStream);
+
+        // Add some more elements to fill space so we can check if they are cleared
+        for (int i = 0; i < elements.Length; i++)
+        {
+            stack.Push(elements[i]);
+        }
+
+        memStream.Position = 0;
+        BinaryUtility.TryDeserialize(memStream, ref stack);
+
+        stackObj = stack;
+        var arrayAfter = itemsField.GetFieldRef(ref stackObj);
+        var sizeAfter = sizeField.GetFieldRef(ref stackObj);
+
+        Assert.That(sizeAfter, Is.EqualTo(sizeBefore));
+        Assert.That(arrayAfter, Is.SameAs(arrayBefore));
+        
+        var arrayAfterTyped = (T[])arrayAfter;
+        for (int i = sizeAfter; i < arrayAfterTyped.Length; i++)
+        {
+            Assert.That(arrayAfterTyped[i], Is.EqualTo(default(T)), $"Element at index {i} should be cleared");
+        }
+    }
+
+    [Test]
+    [TestCase(default(sbyte))]
+    [TestCase(default(byte))]
+    [TestCase(default(short))]
+    [TestCase(default(ushort))]
+    [TestCase(default(int))]
+    [TestCase(default(uint))]
+    [TestCase(default(long))]
+    [TestCase(default(ulong))]
+    [TestCase(default(char))]
+    [TestCase(default(float))]
+    [TestCase(default(double))]
+    [TestCase(default(bool))]
+    public void Stack_ReusePrimitiveBuffer_Works<T>(T dummy)
+    {
+        var elements = new T[4];
+        for (int i = 0; i < 4; i++)
+        {
+            elements[i] = (T)Convert.ChangeType(i + 1, typeof(T));
+        }
+        TestReuseBuffer(elements);
+    }
+
+    [Serializable]
+    public class TestObj
+    {
+        public int Value;
+    }
+
+    [Test]
+    public void Stack_ReuseClassBuffer_Works()
+    {
+        TestReuseBuffer(new TestObj { Value = 1 }, new TestObj { Value = 2 });
+    }
+    [Test]
+    [TestCase(default(sbyte))]
+    [TestCase(default(byte))]
+    [TestCase(default(short))]
+    [TestCase(default(ushort))]
+    [TestCase(default(int))]
+    [TestCase(default(uint))]
+    [TestCase(default(long))]
+    [TestCase(default(ulong))]
+    [TestCase(default(char))]
+    [TestCase(default(float))]
+    [TestCase(default(double))]
+    [TestCase(default(bool))]
+    public void Stack_Primitive_SerializationWorks<T>(T dummy)
+    {
+        var initial = new Stack<T>();
+        initial.Push((T)Convert.ChangeType(1, typeof(T)));
+        initial.Push((T)Convert.ChangeType(2, typeof(T)));
+        initial.Push((T)Convert.ChangeType(3, typeof(T)));
         
         var result = TestUtils.SerializeDeserializeTest(initial);
         
         Assert.That(result.Count, Is.EqualTo(initial.Count));
-        
-        var initialArray = initial.ToArray();
-        var resultArray = result.ToArray();
-        
-        Assert.That(resultArray, Is.EqualTo(initialArray));
+        Assert.That(result.ToArray(), Is.EqualTo(initial.ToArray()));
     }
 
     [Test]
@@ -38,38 +133,7 @@ public class StackSerializationTests
         Assert.That(result.Count, Is.EqualTo(initial.Count));
         Assert.That(result.ToArray(), Is.EqualTo(initial.ToArray()));
     }
-
-    [Test]
-    public void Stack_Mixed_ReuseWorks()
-    {
-        var initial = new Stack<int>();
-        initial.Push(1);
-        initial.Push(2);
-
-        var result = TestUtils.SerializeDeserializeTest(initial);
-        Assert.That(result.ToArray(), Is.EqualTo(new[] { 2, 1 }));
-
-        // Reuse stack with more elements
-        result.Push(3);
-        result.Push(4);
-        result.Push(5);
-        
-        var initial2 = new Stack<int>();
-        initial2.Push(10);
-        initial2.Push(20);
-        initial2.Push(30);
-
-        // Serialize initial2 into result (which has 5 elements now)
-        var memStream = new System.IO.MemoryStream();
-        BinaryUtility.Serialize(initial2, memStream);
-        memStream.Position = 0;
-        
-        BinaryUtility.TryDeserialize(memStream, ref result);
-        
-        Assert.That(result.Count, Is.EqualTo(3));
-        Assert.That(result.ToArray(), Is.EqualTo(new[] { 30, 20, 10 }));
-    }
-
+    
     [Test]
     public void Stack_Empty_SerializationWorks()
     {

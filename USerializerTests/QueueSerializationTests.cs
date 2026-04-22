@@ -1,19 +1,122 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using NUnit.Framework;
+using USerialization;
 
 namespace USerializerTests;
 
 public class QueueSerializationTests
 {
-    [Test]
-    public void Queue_Int_SerializationWorks()
+    private void TestReuseBuffer<T>(params T[] elements)
     {
-        var initial = new Queue<int>();
-        initial.Enqueue(1);
-        initial.Enqueue(2);
-        initial.Enqueue(3);
+        // Create initial queue with some capacity
+        var queue = new Queue<T>(elements.Length * 4);
+        foreach (var e in elements)
+        {
+            queue.Enqueue(e);
+        }
+
+        var memStream = new MemoryStream();
+        
+        var queueType = typeof(Queue<T>);
+        var itemsMember = queueType.GetField("_array", BindingFlags.Instance | BindingFlags.NonPublic);
+        var sizeMember = queueType.GetField("_size", BindingFlags.Instance | BindingFlags.NonPublic);
+        
+        if (itemsMember == null || sizeMember == null)
+            throw new InvalidOperationException("Could not find Queue internal fields.");
+
+        var runtimeUtils = BinaryUtility.USerializer.RuntimeUtils;
+        var itemsField = new FieldAccessHelper<object, Array>(itemsMember, runtimeUtils);
+        var sizeField = new FieldAccessHelper<object, int>(sizeMember, runtimeUtils);
+
+        object queueObj = queue;
+        var arrayBefore = itemsField.GetFieldRef(ref queueObj);
+        var sizeBefore = sizeField.GetFieldRef(ref queueObj);
+
+        BinaryUtility.Serialize(queue, memStream);
+
+        // Add some more elements to fill space so we can check if they are cleared
+        for (int i = 0; i < elements.Length; i++)
+        {
+            queue.Enqueue(elements[i]);
+        }
+
+        memStream.Position = 0;
+        BinaryUtility.TryDeserialize(memStream, ref queue);
+
+        queueObj = queue;
+        var arrayAfter = itemsField.GetFieldRef(ref queueObj);
+        var sizeAfter = sizeField.GetFieldRef(ref queueObj);
+
+        Assert.That(sizeAfter, Is.EqualTo(sizeBefore));
+        Assert.That(arrayAfter, Is.SameAs(arrayBefore));
+        
+        // After deserialization, QueueSerializer sets head=0 and tail=count
+        // and it should have cleared any existing items if the size changed or just to be safe.
+        // QueueSerializer.Read clears currentSize elements starting from currentHead.
+        
+        var arrayAfterTyped = (T[])arrayAfter;
+        for (int i = sizeAfter; i < arrayAfterTyped.Length; i++)
+        {
+            Assert.That(arrayAfterTyped[i], Is.EqualTo(default(T)), $"Element at index {i} should be cleared");
+        }
+    }
+
+    [Test]
+    [TestCase(default(sbyte))]
+    [TestCase(default(byte))]
+    [TestCase(default(short))]
+    [TestCase(default(ushort))]
+    [TestCase(default(int))]
+    [TestCase(default(uint))]
+    [TestCase(default(long))]
+    [TestCase(default(ulong))]
+    [TestCase(default(char))]
+    [TestCase(default(float))]
+    [TestCase(default(double))]
+    [TestCase(default(bool))]
+    public void Queue_ReusePrimitiveBuffer_Works<T>(T dummy)
+    {
+        var elements = new T[4];
+        for (int i = 0; i < 4; i++)
+        {
+            elements[i] = (T)Convert.ChangeType(i + 1, typeof(T));
+        }
+        TestReuseBuffer(elements);
+    }
+
+    [Serializable]
+    public class TestObj
+    {
+        public int Value;
+    }
+
+    [Test]
+    public void Queue_ReuseClassBuffer_Works()
+    {
+        TestReuseBuffer(new TestObj { Value = 1 }, new TestObj { Value = 2 });
+    }
+    [Test]
+    [TestCase(default(sbyte))]
+    [TestCase(default(byte))]
+    [TestCase(default(short))]
+    [TestCase(default(ushort))]
+    [TestCase(default(int))]
+    [TestCase(default(uint))]
+    [TestCase(default(long))]
+    [TestCase(default(ulong))]
+    [TestCase(default(char))]
+    [TestCase(default(float))]
+    [TestCase(default(double))]
+    [TestCase(default(bool))]
+    public void Queue_Primitive_SerializationWorks<T>(T dummy)
+    {
+        var initial = new Queue<T>();
+        initial.Enqueue((T)Convert.ChangeType(1, typeof(T)));
+        initial.Enqueue((T)Convert.ChangeType(2, typeof(T)));
+        initial.Enqueue((T)Convert.ChangeType(3, typeof(T)));
         
         var result = TestUtils.SerializeDeserializeTest(initial);
         
