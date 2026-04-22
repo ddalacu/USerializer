@@ -10,12 +10,7 @@ namespace USerialization
     {
         public override DataType DataType => DataType.String;
 
-        private static UTF8Encoding _encoding;
-
-        static StringSerializer()
-        {
-            _encoding = new UTF8Encoding(false);
-        }
+        private static readonly UTF8Encoding Utf8 = new UTF8Encoding(false);
 
         public override void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
         {
@@ -36,12 +31,12 @@ namespace USerialization
                 return;
             }
 
-            var maxPossible = _encoding.GetMaxByteCount(length);
-            
+            var maxPossible = Utf8.GetMaxByteCount(length);
+
             var track = output.BeginSizeTrack();
             {
                 var outputSpan = output.GetWriteableSpan(maxPossible);
-                var written = _encoding.GetBytes(value.AsSpan(), outputSpan);
+                var written = Utf8.GetBytes(value.AsSpan(), outputSpan);
                 output.AdvancePosition(written);
             }
 
@@ -63,7 +58,7 @@ namespace USerialization
                 else
                 {
                     var byteSpan = input.GetSpan(length);
-                    value = _encoding.GetString(byteSpan);
+                    value = Utf8.GetString(byteSpan);
                 }
             }
             else
