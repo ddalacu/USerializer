@@ -45,7 +45,8 @@ namespace USerializerTests
                 list.Add(elements[i]);
 
             memStream.Position = 0;
-            BinaryUtility.TryDeserialize(memStream, ref list);
+            var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+            BinaryUtility.TryDeserialize(span, ref list);
 
             var deserializeArray = itemsField.GetFieldRef(ref list);
             var deserializeCount = sizeField.GetFieldRef(ref list);
@@ -105,9 +106,9 @@ namespace USerializerTests
             initial.Add((T)Convert.ChangeType(1, typeof(T)));
             initial.Add((T)Convert.ChangeType(2, typeof(T)));
             initial.Add((T)Convert.ChangeType(3, typeof(T)));
-            
+
             var result = TestUtils.SerializeDeserializeTest(initial);
-            
+
             Assert.AreEqual(initial.Count, result.Count);
             Assert.AreEqual(initial.ToArray(), result.ToArray());
         }

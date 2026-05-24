@@ -155,7 +155,7 @@ namespace PerformanceTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        protected override void Serialize(T obj, Stream stream)
+        protected override void Serialize(T obj, MemoryStream stream)
         {
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var dataSerializer) == false)
                 throw new Exception($"Cannot serialize {typeof(T)}");
@@ -168,17 +168,18 @@ namespace PerformanceTests
 
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        protected override T Deserialize(Stream stream)
+        protected override T Deserialize(MemoryStream stream)
         {
-            var input = new SerializerInput(2048 * 20, stream, ArrayPool<byte>.Shared);
+            var buffer = stream.GetBuffer();
+            var span = new ReadOnlySpan<byte>(buffer, 0, (int) stream.Length);
+            
+            var input = new SerializerInput(span);
 
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var dataSerializer, true) == false)
                 throw new Exception($"Cannot serialize {typeof(T)}");
 
             T result = default;
             dataSerializer.Deserialize(ref result, ref input);
-            input.FinishRead();
-            input.Dispose();
             return result;
         }
     }

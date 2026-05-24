@@ -18,14 +18,13 @@ public class ReaderTests
         });
         stream.Position = 0;
 
-        var input = new SerializerInput(5, stream, ArrayPool<byte>.Shared);
+        var span = new Span<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+        var input = new SerializerInput(span);
 
         input.Read<byte>();
-        
+
         input.Read<int>();
         input.Read<int>();
         input.Read<byte>();
-        
-        input.Dispose();
     }
 }

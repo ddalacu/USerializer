@@ -196,26 +196,18 @@ namespace USerializerTests
             if (BinaryUtility.USerializer.TryGetDataSerializer(typeof(SimpleStruct), out var structSer) == false)
                 throw new Exception("Cannot get data serialzier!");
 
-            var stream = new MemoryStream();
-
             var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
 
             structSer.Serialize(ref initial, ref output);
 
-            output.Flush(stream);
+            var buffer = output.ToArray();
             output.Dispose();
 
-            stream.Position = 0;
-
-            Assert.True(stream.Length > 0);
-
-            var input = new SerializerInput(2048, stream, ArrayPool<byte>.Shared);
+            var input = new SerializerInput(buffer);
 
             SimpleStruct result = default;
             structSer.Deserialize(ref result, ref input);
-            input.FinishRead();
 
-            input.Dispose();
             Assert.True(EqualityComparer<SimpleStruct>.Default.Equals(initial, result));
         }
 

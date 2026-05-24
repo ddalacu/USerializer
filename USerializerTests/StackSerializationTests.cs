@@ -43,7 +43,8 @@ public class StackSerializationTests
         }
 
         memStream.Position = 0;
-        BinaryUtility.TryDeserialize(memStream, ref stack);
+        var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+        BinaryUtility.TryDeserialize(span, ref stack);
 
         stackObj = stack;
         var arrayAfter = itemsField.GetFieldRef(ref stackObj);

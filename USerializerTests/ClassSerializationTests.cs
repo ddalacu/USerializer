@@ -50,13 +50,13 @@ namespace USerializerTests
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
                 if (obj.GetType() != this.GetType()) return false;
-                return Equals((SimpleClass) obj);
+                return Equals((SimpleClass)obj);
             }
 
             public override int GetHashCode()
             {
                 return HashCode.Combine(IntValue, FloatValue, BoolValue, StringValue, Strings, Reference,
-                    (int) EnumValue, EnumArray);
+                    (int)EnumValue, EnumArray);
             }
 
             public static bool operator ==(SimpleClass left, SimpleClass right)
@@ -236,7 +236,8 @@ namespace USerializerTests
 
             FormerlyClass2 class2 = default;
 
-            BinaryUtility.TryDeserialize(stream, ref class2);
+            var span = new Span<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+            BinaryUtility.TryDeserialize(new Span<byte>(stream.GetBuffer(), 0, (int)stream.Length), ref class2);
 
             Assert.True(class1.IntValue == class2.Form);
         }
@@ -253,7 +254,7 @@ namespace USerializerTests
             public List<double> ListToSkip;
 
             public SkipFieldClass1 ObjectToSkip;
-            
+
             public byte ByteValue;
             public sbyte SByteValue;
             public char CharValue;
@@ -304,11 +305,10 @@ namespace USerializerTests
             stream.Position = 0;
 
             SkipFieldClass2 class2 = default;
-
-            BinaryUtility.TryDeserialize(stream, ref class2);
-
-            Assert.True(stream.Position == end);
-
+            
+            var span = new Span<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+            BinaryUtility.TryDeserialize(span, ref class2);
+            
             Assert.True(class1.IntValue == class2.IntValue);
         }
 
@@ -334,7 +334,7 @@ namespace USerializerTests
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
                 if (obj.GetType() != this.GetType()) return false;
-                return Equals((NestedCustom) obj);
+                return Equals((NestedCustom)obj);
             }
 
             public override int GetHashCode()
@@ -366,7 +366,7 @@ namespace USerializerTests
             public A Ref;
             public int Value = 0;
         }
-        
+
         [Serializable]
         public class Referencing
         {
@@ -379,13 +379,12 @@ namespace USerializerTests
                 return "Hello World";
             }
         }
-        
+
         [Serializable]
         public class Other
         {
-            
         }
-        
+
         [Test]
         public void TestReferences()
         {
@@ -395,7 +394,7 @@ namespace USerializerTests
                 //B = new Other(),
                 //C = new Other(),
             };
-            
+
             var stream = new MemoryStream();
             BinaryUtility.Serialize(instance, stream);
             stream.Position = 0;
@@ -423,7 +422,8 @@ namespace USerializerTests
             BinaryUtility.Serialize(inst, stream);
             stream.Position = 0;
             A result = default;
-            BinaryUtility.TryDeserialize(stream, ref result);
+            var span = new Span<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+            BinaryUtility.TryDeserialize(span, ref result);
 
             Assert.True(result.Value == inst.Value);
             Assert.True(result.Ref.Value == inst.Ref.Value);
@@ -457,7 +457,9 @@ namespace USerializerTests
 
             memStream.Position = 0;
             ExampleClass result = default;
-            var deser = BinaryUtility.TryDeserialize(memStream, ref result);
+            
+            var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+            var deser = BinaryUtility.TryDeserialize(span, ref result);
             Assert.True(deser);
             Assert.True(
                 EqualityComparer<ExampleClass.ChildClass>.Default.Equals(exampleClass.Property, result.Property));
@@ -481,7 +483,8 @@ namespace USerializerTests
 
             memStream.Position = 0;
             NestedCustom nestedResult = default;
-            deser = BinaryUtility.TryDeserialize(memStream, ref nestedResult);
+            var spanb = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+            deser = BinaryUtility.TryDeserialize(spanb, ref nestedResult);
             Assert.True(deser);
 
             Assert.True(EqualityComparer<NestedCustom>.Default.Equals(nested, nestedResult));
@@ -532,7 +535,9 @@ namespace USerializerTests
             Assert.True(serialized);
             stream.Position = 0;
             GenericClass<DateTime> result = default;
-            var deserialized = BinaryUtility.TryDeserialize(stream, ref result);
+            
+            var span = new Span<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+            var deserialized = BinaryUtility.TryDeserialize(span, ref result);
 
             Assert.True(deserialized);
 

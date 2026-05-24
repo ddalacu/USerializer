@@ -66,6 +66,12 @@ namespace USerialization
             _position = 0;
         }
 
+        public byte[] ToArray()
+        {
+            var span = new ReadOnlySpan<byte>(_buffer, 0, _position);
+            return span.ToArray();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SizeTracker BeginSizeTrack()
         {

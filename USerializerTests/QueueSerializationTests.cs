@@ -44,7 +44,8 @@ public class QueueSerializationTests
         }
 
         memStream.Position = 0;
-        BinaryUtility.TryDeserialize(memStream, ref queue);
+        var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+        BinaryUtility.TryDeserialize(span, ref queue);
 
         queueObj = queue;
         var arrayAfter = itemsField.GetFieldRef(ref queueObj);
@@ -187,7 +188,8 @@ public class QueueSerializationTests
         BinaryUtility.Serialize(initial2, memStream);
         memStream.Position = 0;
         
-        BinaryUtility.TryDeserialize(memStream, ref result);
+        var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+        BinaryUtility.TryDeserialize(span, ref result);
         
         Assert.That(result.Count, Is.EqualTo(3));
         Assert.That(result.ToArray(), Is.EqualTo(new[] { 10, 20, 30 }));

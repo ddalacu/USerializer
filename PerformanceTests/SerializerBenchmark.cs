@@ -34,8 +34,8 @@ namespace PerformanceTests
             Deserialize(_deserializeStream);
         }
 
-        protected abstract void Serialize(T obj, Stream stream);
+        protected abstract void Serialize(T obj, MemoryStream stream);
 
-        protected abstract T Deserialize(Stream stream);
+        protected abstract T Deserialize(MemoryStream stream);
     }
 }

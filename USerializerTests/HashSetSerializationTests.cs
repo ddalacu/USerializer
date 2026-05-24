@@ -19,7 +19,8 @@ namespace USerializerTests
 
             memStream.Position = 0;
             HashSet<int> deserialized = null;
-            BinaryUtility.TryDeserialize(memStream, ref deserialized);
+            var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+            BinaryUtility.TryDeserialize(span, ref deserialized);
 
             Assert.IsNotNull(deserialized);
             Assert.AreEqual(hashSet.Count, deserialized.Count);
@@ -39,7 +40,8 @@ namespace USerializerTests
 
             memStream.Position = 0;
             HashSet<string> deserialized = null;
-            BinaryUtility.TryDeserialize(memStream, ref deserialized);
+            var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+            BinaryUtility.TryDeserialize(span, ref deserialized);
 
             Assert.IsNotNull(deserialized);
             Assert.AreEqual(hashSet.Count, deserialized.Count);
@@ -59,7 +61,8 @@ namespace USerializerTests
 
             memStream.Position = 0;
             HashSet<int> deserialized = null;
-            BinaryUtility.TryDeserialize(memStream, ref deserialized);
+            var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+            BinaryUtility.TryDeserialize(span, ref deserialized);
 
             Assert.IsNotNull(deserialized);
             Assert.AreEqual(0, deserialized.Count);
@@ -85,7 +88,8 @@ namespace USerializerTests
 
             memStream.Position = 0;
             var originalReference = hashSet;
-            BinaryUtility.TryDeserialize(memStream, ref hashSet);
+            var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+            BinaryUtility.TryDeserialize(span, ref hashSet);
 
             Assert.AreSame(originalReference, hashSet);
             Assert.AreEqual(3, hashSet.Count);

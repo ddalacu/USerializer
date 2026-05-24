@@ -88,7 +88,8 @@ namespace USerializerTests
             BinaryUtility.Serialize(myClass, memStream, "OnBeforeSerialize");
 
             memStream.Position = 0;
-            var deser = BinaryUtility.TryDeserialize(memStream, ref myClass, "OnAfterSerialize");
+            var span = new Span<byte>(memStream.GetBuffer(), 0, (int)memStream.Length);
+            var deser = BinaryUtility.TryDeserialize(span, ref myClass, "OnAfterSerialize");
             
             Assert.IsTrue(myClass.Before);
             Assert.IsTrue(myClass.After);

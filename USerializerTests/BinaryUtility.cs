@@ -171,7 +171,7 @@ namespace USerializerTests
                 new EnumSerializer(),
                 new ArraySerializer(),
                 new ListSerializer(),
-                
+
                 new TupleSerializationProvider(),
                 new NullableSerializationProvider(),
                 new KeyValuePairSerializationProvider(),
@@ -179,7 +179,7 @@ namespace USerializerTests
                 new HashSetSerializerProvider(),
                 new StackSerializerProvider(),
                 new QueueSerializerProvider(),
-                
+
                 new CustomClassSerializationProvider(),
                 new ClassSerializationProvider(),
                 new StructSerializationProvider(),
@@ -220,25 +220,19 @@ namespace USerializerTests
         /// Creates a object with data from the stream
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="stream"></param>
+        /// <param name="span"></param>
         /// <param name="result"></param>
         /// <param name="context"></param>
         /// <param name="bufferSize"></param>
         /// <returns>false if type is not serializable</returns>
-        public static bool TryDeserialize<T>(MemoryStream stream, ref T result, object context = null,
-            int bufferSize = 512) where T : class
+        public static bool TryDeserialize<T>(ReadOnlySpan<byte> span, ref T result, object context = null) where T : class
         {
-            if (stream == null)
-                throw new ArgumentNullException(nameof(stream));
-
             if (_uSerializer.TryGetDataSerializer(typeof(T), out var data) == false)
                 return false;
-
-            var serializerInput = new SerializerInput(bufferSize, stream, ArrayPool<byte>.Shared);
+            
+            var serializerInput = new SerializerInput(span);
             serializerInput.Context = context;
             data.Deserialize(ref result, ref serializerInput);
-            serializerInput.Dispose();
-            serializerInput.FinishRead();
             return true;
         }
     }
