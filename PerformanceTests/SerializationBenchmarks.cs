@@ -46,9 +46,14 @@ namespace PerformanceTests
             {
                 Books = Enumerable.Range(1, nToCreate).Select(i => new Book
                     {
-                        Id = i,
+                        MetaData =
+                        {
+                            Id = (uint) i,
+                            Type = 123
+                        },
                         ByteValue = 123,
-                        DoubleValue = 123
+                        DoubleValue = 123,
+                        BookName = $"Book:{i}"
                     }
                 ).ToList()
             };
@@ -98,21 +103,30 @@ namespace PerformanceTests
         public byte ByteValue;
     }
 
+    [MemoryPackable(GenerateType.VersionTolerant)]
+    public partial struct BookMetaData
+    {
+        [MemoryPackOrder(1)]
+        public uint Id;
+        
+        [MemoryPackOrder(2)]
+        public byte Type;
+    }
+
     [Serializable]
     [MemoryPackable(GenerateType.VersionTolerant)]
     public partial class Book
     {
-        //public string Title;
-        [MemoryPackOrder(1)]
-        public int Id;
-
         [MemoryPackOrder(2)]
         public double DoubleValue;
         
-        [MemoryPackOrder(2)]
+        [MemoryPackOrder(3)]
         public byte ByteValue;
-        
-        //
-        // public byte[] BookData;
+
+        [MemoryPackOrder(4)]
+        public string BookName;
+
+        [MemoryPackOrder(5)]
+        public BookMetaData MetaData;
     }
 }
