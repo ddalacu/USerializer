@@ -23,37 +23,39 @@ It uses no code generation, making it ideal for AOT (Ahead-Of-Time) environments
 ```csharp
 // Setup the serializer with desired providers
 var consoleLogger = new MyLogger();
-ISerializationProvider[] providers =
-{
-    new PrimitivesSerializerProvider(),
-    new CustomSerializerProvider(consoleLogger),
-    new EnumSerializer(),
-    new ArraySerializer(),
-    new ListSerializer(),
-    new DictionarySerializerProvider(),
-    new ClassSerializationProvider(),
-    new StructSerializationProvider(),
-};
+var providers = ProvidersUtils.GetDefaultProviders(consoleLogger);
 
-var serializer = new USerializer(new UnitySerializationPolicy(), providers, new DataTypesDatabase(), consoleLogger);
+var serializer = new USerializer(
+    new UnitySerializationPolicy(),
+    providers,
+    new DataTypesDatabase(),
+    consoleLogger,
+    new NETRuntimeUtils());
 
 // Serialization
 using var output = new SerializerOutput(8192, ArrayPool<byte>.Shared);
 if (serializer.TryGetDataSerializer(myObject.GetType(), out var data))
 {
-    data.Write(SpanUtils.GetByteSpan(ref myObject), output, context);
+    output.Context = context;
+    data.Serialize(ref myObject, ref output);
     output.Flush(myStream);
 }
 
 // Deserialization
-using var input = new SerializerInput(512, myStream, ArrayPool<byte>.Shared);
+var buffer = myStream.GetBuffer();
+var span = new ReadOnlySpan<byte>(buffer, 0, (int)myStream.Length);
+var input = new SerializerInput(span);
+
 if (serializer.TryGetDataSerializer(typeof(MyClass), out var data))
 {
     MyClass result = null;
-    data.Read(SpanUtils.GetByteSpan(ref result), input, context);
-    input.FinishRead();
+    input.Context = context;
+    data.Deserialize(ref result, ref input);
 }
 ```
+
+`SerializerInput` is backed by a `ReadOnlySpan<byte>`. If your serialized data is in a stream,
+read or expose the bytes first, then pass that span to `new SerializerInput(span)`.
 
 ### Limitations
 - **No Polymorphism:** Only the exact type is serialized; derived types are not handled automatically.
