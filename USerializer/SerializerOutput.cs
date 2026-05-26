@@ -124,13 +124,20 @@ namespace USerialization
         {
             var byteSpanLength = span.Length * Unsafe.SizeOf<T>();
             EnsureNext(byteSpanLength);
-
             ref byte src = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
-
             Unsafe.CopyBlockUnaligned(ref _buffer[_position], ref src, (uint)byteSpanLength);
             _position += byteSpanLength;
         }
-
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteBytes(byte[] buffer)
+        {
+            var byteSpanLength = buffer.Length;
+            EnsureNext(byteSpanLength);
+            Unsafe.CopyBlockUnaligned(ref _buffer[_position], ref buffer[0], (uint)byteSpanLength);
+            _position += byteSpanLength;
+        }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte data)
         {

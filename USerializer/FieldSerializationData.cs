@@ -229,7 +229,7 @@ namespace USerialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlySpan<byte> objectAddress, ref SerializerOutput output)
         {
-            output.WriteSpan<byte>(_headerData.AsSpan());
+            output.WriteBytes(_headerData);
 
             var typeDataFields = _fields;
             var fieldsLength = typeDataFields.Length;
