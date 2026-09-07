@@ -90,7 +90,10 @@ namespace USerialization
             if (input.BeginReadSize(out var end))
             {
                 var count = input.Read7BitEncodedInt();
-                array = new T[count];
+                if (array == null || array.Length != count)
+                {
+                    array = count == 0 ? Array.Empty<T>() : new T[count];
+                }
 
                 if (count > 0)
                 {
