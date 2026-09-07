@@ -45,6 +45,14 @@ namespace USerialization
     {
         private DataType _elementDataType;
 
+        protected override void Initialize(USerializer serializer)
+        {
+            if (!serializer.TryGetDataSerializer(typeof(T), out var elementSerializer))
+                throw new InvalidOperationException($"Could not find serializer for {typeof(T)}");
+
+            _elementDataType = elementSerializer.DataType;
+        }
+
         public override DataType DataType => DataType.Array;
 
         public override unsafe void Write(ReadOnlySpan<byte> span, ref SerializerOutput output)
@@ -120,6 +128,14 @@ namespace USerialization
         where T : unmanaged
     {
         private DataType _elementDataType;
+
+        protected override void Initialize(USerializer serializer)
+        {
+            if (!serializer.TryGetDataSerializer(typeof(T), out var elementSerializer))
+                throw new InvalidOperationException($"Could not find serializer for {typeof(T)}");
+
+            _elementDataType = elementSerializer.DataType;
+        }
 
         private FieldAccessHelper<List<T>, T[]> _itemsField;
 

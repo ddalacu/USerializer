@@ -53,7 +53,7 @@ namespace USerializerTests
         [Test]
         public void ReadMismatchedElementTypeClearsReusedArrayAndSkipsPayload()
         {
-            var serializer = new GenericUnmanagedArraySerializer<int>();
+            Assert.IsTrue(BinaryUtility.USerializer.TryGetDataSerializer(typeof(int[]), out var serializer));
             var destination = new[] { 10, 20, 30 };
             var original = destination;
             var output = new SerializerOutput(64, ArrayPool<byte>.Shared);
