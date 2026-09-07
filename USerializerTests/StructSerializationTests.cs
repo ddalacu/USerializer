@@ -200,7 +200,7 @@ namespace USerializerTests
 
             structSer.Serialize(ref initial, ref output);
 
-            var buffer = output.ToArray();
+            var buffer = output.BufferSpan.ToArray();
             output.Dispose();
 
             var input = new SerializerInput(buffer);

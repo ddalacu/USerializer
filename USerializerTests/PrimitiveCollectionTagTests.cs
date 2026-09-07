@@ -63,7 +63,7 @@ namespace USerializerTests
             {
                 serializer.Serialize(ref source, ref output);
                 output.WriteByte(99);
-                return output.ToArray();
+                return output.BufferSpan.ToArray();
             }
             finally
             {

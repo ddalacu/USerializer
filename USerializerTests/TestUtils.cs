@@ -84,7 +84,7 @@ namespace USerializerTests
 
             var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             valueSerializer.Serialize(ref value, ref output);
-            var initialBuffer = output.ToArray();
+            var initialBuffer = output.BufferSpan.ToArray();
             output.Dispose();
 
             T deserialize = default;
@@ -94,7 +94,7 @@ namespace USerializerTests
 
             var output2 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             valueSerializer.Serialize(ref deserialize, ref output2);
-            var secondBuffer = output2.ToArray();
+            var secondBuffer = output2.BufferSpan.ToArray();
             output2.Dispose();
 
             T ob = default;
@@ -121,7 +121,7 @@ namespace USerializerTests
 
             var output = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             valueSerializer.Serialize(ref value, ref output);
-            var buffer = output.ToArray();
+            var buffer = output.BufferSpan.ToArray();
             output.Dispose();
 
             T? deserialize = default;
@@ -131,7 +131,7 @@ namespace USerializerTests
 
             var output2 = new SerializerOutput(2048, ArrayPool<byte>.Shared);
             valueSerializer.Serialize(ref deserialize, ref output2);
-            var secondBuffer = output2.ToArray();
+            var secondBuffer = output2.BufferSpan.ToArray();
             output2.Dispose();
 
             T? ob = default;

@@ -26,6 +26,8 @@ namespace USerialization
 
         public object Context;
 
+        public ReadOnlySpan<byte> BufferSpan => new(_buffer, 0, _position);
+        
         public SerializerOutput(int capacity, ArrayPool<byte> pool)
         {
             _pool = pool;
@@ -62,13 +64,7 @@ namespace USerialization
             stream.Write(span);
             _position = 0;
         }
-
-        public byte[] ToArray()
-        {
-            var span = new ReadOnlySpan<byte>(_buffer, 0, _position);
-            return span.ToArray();
-        }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SizeTracker BeginSizeTrack()
         {

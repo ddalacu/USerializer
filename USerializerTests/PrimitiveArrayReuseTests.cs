@@ -66,7 +66,7 @@ namespace USerializerTests
                 output.WriteSizeTrack(tracker);
                 output.WriteByte(99);
 
-                var input = new SerializerInput(output.ToArray());
+                var input = new SerializerInput(output.BufferSpan.ToArray());
                 serializer.Deserialize(ref destination, ref input);
 
                 Assert.AreSame(original, destination);
@@ -86,7 +86,7 @@ namespace USerializerTests
             try
             {
                 serializer.Serialize(ref source, ref output);
-                var input = new SerializerInput(output.ToArray());
+                var input = new SerializerInput(output.BufferSpan.ToArray());
                 serializer.Deserialize(ref destination, ref input);
             }
             finally
