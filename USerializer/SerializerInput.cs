@@ -57,6 +57,7 @@ namespace USerialization
             SetPosition((int)endObject);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetPosition(int initialPosition)
         {
             _bufferPosition = initialPosition;
